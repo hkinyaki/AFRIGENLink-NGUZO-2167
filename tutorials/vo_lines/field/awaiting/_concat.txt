@@ -1,0 +1,7 @@
+file '/home/user/afrigen/tutorials/vo_lines/field/awaiting/00.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/awaiting/01.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/awaiting/02.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/awaiting/03.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/awaiting/04.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/awaiting/05.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/awaiting/06.mp3'

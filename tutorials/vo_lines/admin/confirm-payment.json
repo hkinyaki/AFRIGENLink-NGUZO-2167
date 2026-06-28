@@ -1,0 +1,81 @@
+{
+  "id": "confirm-payment",
+  "phase": "ADMIN",
+  "step": "Desk 2 \u2014 Gate 2: Payment",
+  "title": "Confirm the escrow",
+  "seg_dur": 49.63,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Here is the gate that makes Nguzo different from any ordinary broker, confirming the payment.",
+      "action": "hover",
+      "arg": "Action required",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/confirm-payment/00.mp3",
+      "dur": 5.277
+    },
+    {
+      "i": 1,
+      "text": "The client has uploaded their T.T proof, the bank transfer that funds the entire job.",
+      "action": "hover",
+      "arg": "Confirm the TT proof",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/confirm-payment/01.mp3",
+      "dur": 5.381
+    },
+    {
+      "i": 2,
+      "text": "This panel shows you the exact escrow amount to confirm, held by Nguzo on the client's behalf.",
+      "action": "hover",
+      "arg": "Escrow to confirm",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/confirm-payment/02.mp3",
+      "dur": 6.113
+    },
+    {
+      "i": 3,
+      "text": "This is the trust layer, the single biggest reason both sides use the platform.",
+      "action": "hover",
+      "arg": "Escrow to confirm",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/confirm-payment/03.mp3",
+      "dur": 4.415
+    },
+    {
+      "i": 4,
+      "text": "The supplier can see the money is real and secured, but it stays locked until the work is actually done.",
+      "action": "hover",
+      "arg": "Escrow to confirm",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/confirm-payment/04.mp3",
+      "dur": 6.034
+    },
+    {
+      "i": 5,
+      "text": "You open the documents panel and check the T.T proof against the figure shown on screen.",
+      "action": "hover",
+      "arg": "Documents",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/confirm-payment/05.mp3",
+      "dur": 4.963
+    },
+    {
+      "i": 6,
+      "text": "You're confirming the amount matches, the reference is right, and the funds have genuinely landed.",
+      "action": "hover",
+      "arg": "Documents",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/confirm-payment/06.mp3",
+      "dur": 5.016
+    },
+    {
+      "i": 7,
+      "text": "Once the funds match, you confirm payment received, and the escrow is officially recorded as held by Nguzo.",
+      "action": "hoverbtn",
+      "arg": "Confirm payment received",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/confirm-payment/07.mp3",
+      "dur": 6.583
+    },
+    {
+      "i": 8,
+      "text": "Now both sides are protected, the client's money is safe, and the supplier knows it's there waiting for them.",
+      "action": "hover",
+      "arg": "Activity",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/confirm-payment/08.mp3",
+      "dur": 5.851
+    }
+  ]
+}

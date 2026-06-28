@@ -1,0 +1,6 @@
+file '/home/user/afrigen/tutorials/vo_lines/field/verify-vin/00.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/verify-vin/01.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/verify-vin/02.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/verify-vin/03.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/verify-vin/04.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/verify-vin/05.mp3'

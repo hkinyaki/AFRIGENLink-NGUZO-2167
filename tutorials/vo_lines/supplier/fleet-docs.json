@@ -1,0 +1,65 @@
+{
+  "id": "fleet-docs",
+  "phase": "SUPPLIER",
+  "step": "Step 5 \u2014 Upload fleet documents",
+  "title": "Prove the asset is real",
+  "seg_dur": 29.54,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Next gate, your machine and fleet documents.",
+      "action": "hover",
+      "arg": "Machine / fleet docs",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/fleet-docs/00.mp3",
+      "dur": 2.769
+    },
+    {
+      "i": 1,
+      "text": "Upload your registration, inspection certificates, and insurance for the asset on this job.",
+      "action": "hover",
+      "arg": "registration",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/fleet-docs/01.mp3",
+      "dur": 5.46
+    },
+    {
+      "i": 2,
+      "text": "This is what our field inspector will check against the real machine on the ground, so it has to match.",
+      "action": "upload",
+      "arg": "MACH",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/fleet-docs/02.mp3",
+      "dur": 5.564
+    },
+    {
+      "i": 3,
+      "text": "Attach the documents and submit them for inspection.",
+      "action": "hoverbtn",
+      "arg": "Submit documents for inspection",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/fleet-docs/03.mp3",
+      "dur": 3.004
+    },
+    {
+      "i": 4,
+      "text": "This step is exactly why a client trusts Nguzo over a faceless marketplace.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/fleet-docs/04.mp3",
+      "dur": 5.146
+    },
+    {
+      "i": 5,
+      "text": "Every asset is verified by a real person before a shilling moves.",
+      "action": "scroll",
+      "arg": 120,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/fleet-docs/05.mp3",
+      "dur": 4.075
+    },
+    {
+      "i": 6,
+      "text": "Get it uploaded, and the job heads to field verification.",
+      "action": "scroll",
+      "arg": -120,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/fleet-docs/06.mp3",
+      "dur": 3.527
+    }
+  ]
+}

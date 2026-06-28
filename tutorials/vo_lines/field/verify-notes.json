@@ -1,0 +1,60 @@
+{
+  "id": "verify-notes",
+  "phase": "FIELD",
+  "step": "Step 5 \u2014 Mechanical & legal notes",
+  "title": "Write what you found",
+  "seg_dur": 26.54,
+  "lines": [
+    {
+      "i": 0,
+      "text": "In the notes field you write your honest on-site assessment.",
+      "action": "hover",
+      "arg": "Mechanical & legal notes",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/verify-notes/00.mp3",
+      "dur": 3.527
+    },
+    {
+      "i": 1,
+      "text": "Engine hours, hydraulics, undercarriage wear, leaks, and whether the documents match the machine.",
+      "action": "typeph",
+      "arg": [
+        "Hours, hydraulics",
+        "Hydraulics within tolerance. Undercarriage 78% life. Engine hours 4,210. Registration and insurance match the chassis. Legitimacy confirmed."
+      ],
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/verify-notes/01.mp3",
+      "dur": 6.034
+    },
+    {
+      "i": 2,
+      "text": "Be specific and be truthful, this note is the record both the client and Nguzo rely on.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/verify-notes/02.mp3",
+      "dur": 5.329
+    },
+    {
+      "i": 3,
+      "text": "A good inspector writes what they actually saw, not what's convenient.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/verify-notes/03.mp3",
+      "dur": 3.997
+    },
+    {
+      "i": 4,
+      "text": "This single note is the difference between a real verification and a rubber stamp.",
+      "action": "scroll",
+      "arg": 120,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/verify-notes/04.mp3",
+      "dur": 4.415
+    },
+    {
+      "i": 5,
+      "text": "Once your findings are recorded, you make the final call.",
+      "action": "scroll",
+      "arg": -120,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/verify-notes/05.mp3",
+      "dur": 3.239
+    }
+  ]
+}

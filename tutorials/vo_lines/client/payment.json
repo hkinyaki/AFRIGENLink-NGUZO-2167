@@ -1,0 +1,73 @@
+{
+  "id": "payment",
+  "phase": "CLIENT",
+  "step": "Step 7 \u2014 Payment & escrow",
+  "title": "Funds tracked, not held",
+  "seg_dur": 46.26,
+  "lines": [
+    {
+      "i": 0,
+      "text": "With permits verified, you reach the payment step.",
+      "action": "hover",
+      "arg": "Your step \u2014 Payment proof",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/payment/00.mp3",
+      "dur": 3.161
+    },
+    {
+      "i": 1,
+      "text": "Here you see the escrow preview, the total amount for your job, held by Nguzo.",
+      "action": "hover",
+      "arg": "Escrow preview",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/payment/01.mp3",
+      "dur": 5.146
+    },
+    {
+      "i": 2,
+      "text": "This is the trust layer. Your money sits with Nguzo as escrow, it is tracked, not released, until work is signed off.",
+      "action": "hover",
+      "arg": "Escrow preview",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/payment/02.mp3",
+      "dur": 7.549
+    },
+    {
+      "i": 3,
+      "text": "You upload your T.T payment proof, the bank transfer confirmation, right here.",
+      "action": "hover",
+      "arg": "Your step \u2014 Payment proof",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/payment/03.mp3",
+      "dur": 5.016
+    },
+    {
+      "i": 4,
+      "text": "Then submit it. Our admin confirms the funds, and only then does the job move to execution.",
+      "action": "hoverbtn",
+      "arg": "Submit payment proof",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/payment/04.mp3",
+      "dur": 5.93
+    },
+    {
+      "i": 5,
+      "text": "This solves the oldest problem in this business, suppliers fear they won't be paid, clients fear they'll pay and get nothing.",
+      "action": "hover",
+      "arg": "Activity",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/payment/05.mp3",
+      "dur": 7.131
+    },
+    {
+      "i": 6,
+      "text": "Escrow removes both fears at once, the money is real and visible, but locked until the work is done.",
+      "action": "hover",
+      "arg": "Escrow preview",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/payment/06.mp3",
+      "dur": 6.034
+    },
+    {
+      "i": 7,
+      "text": "The supplier knows the money is secured, you know it won't be released until the job is done. Everyone's protected.",
+      "action": "hover",
+      "arg": "Status",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/payment/07.mp3",
+      "dur": 6.296
+    }
+  ]
+}

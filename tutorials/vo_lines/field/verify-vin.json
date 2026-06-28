@@ -1,0 +1,60 @@
+{
+  "id": "verify-vin",
+  "phase": "FIELD",
+  "step": "Step 4 \u2014 Capture the V.I.N",
+  "title": "Match the machine's fingerprint",
+  "seg_dur": 28.84,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Now the most important field, the V.I.N or chassis read.",
+      "action": "hover",
+      "arg": "VIN / chassis read",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/verify-vin/00.mp3",
+      "dur": 3.527
+    },
+    {
+      "i": 1,
+      "text": "You physically read the number stamped on the machine and type exactly what you see.",
+      "action": "typeph",
+      "arg": [
+        "Capture / type VIN",
+        "VIN read: CAT0320DKMEG01188 \u2014 matched chassis plate"
+      ],
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/verify-vin/01.mp3",
+      "dur": 4.598
+    },
+    {
+      "i": 2,
+      "text": "This is the machine's fingerprint. It must match the registration document you just reviewed.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/verify-vin/02.mp3",
+      "dur": 5.433
+    },
+    {
+      "i": 3,
+      "text": "If the V.I.N doesn't match, you stop right here, that's a different machine, and the job does not proceed.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/verify-vin/03.mp3",
+      "dur": 6.348
+    },
+    {
+      "i": 4,
+      "text": "Matching this number is what makes a paper promise into a verified, real asset.",
+      "action": "scroll",
+      "arg": 120,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/verify-vin/04.mp3",
+      "dur": 4.676
+    },
+    {
+      "i": 5,
+      "text": "With the V.I.N captured, you record your hands-on mechanical findings.",
+      "action": "scroll",
+      "arg": -120,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/verify-vin/05.mp3",
+      "dur": 4.258
+    }
+  ]
+}

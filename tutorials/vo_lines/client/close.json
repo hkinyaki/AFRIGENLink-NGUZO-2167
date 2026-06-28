@@ -1,0 +1,49 @@
+{
+  "id": "close",
+  "phase": "CLIENT",
+  "step": "You're in control",
+  "title": "Welcome to Nguzo",
+  "seg_dur": 24.32,
+  "lines": [
+    {
+      "i": 0,
+      "text": "So that's your dashboard, two screens, one protected journey.",
+      "action": "nav",
+      "arg": "My Jobs",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/close/00.mp3",
+      "dur": 3.788
+    },
+    {
+      "i": 1,
+      "text": "Post what you need, let suppliers compete, confirm your award.",
+      "action": "nav",
+      "arg": "Post a Job",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/close/01.mp3",
+      "dur": 4.023
+    },
+    {
+      "i": 2,
+      "text": "Then upload permits, fund the escrow, and watch the staged gate carry it to completion.",
+      "action": "nav",
+      "arg": "My Jobs",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/close/02.mp3",
+      "dur": 5.016
+    },
+    {
+      "i": 3,
+      "text": "Every step is checked, every machine is inspected, and your money is protected until the work is done.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/close/03.mp3",
+      "dur": 5.878
+    },
+    {
+      "i": 4,
+      "text": "That's the Nguzo promise, you bring the demand, we coordinate the trust. Welcome aboard.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/close/04.mp3",
+      "dur": 5.616
+    }
+  ]
+}

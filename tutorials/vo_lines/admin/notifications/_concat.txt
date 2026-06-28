@@ -1,0 +1,7 @@
+file '/home/user/afrigen/tutorials/vo_lines/admin/notifications/00.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/admin/notifications/01.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/admin/notifications/02.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/admin/notifications/03.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/admin/notifications/04.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/admin/notifications/05.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/admin/notifications/06.mp3'

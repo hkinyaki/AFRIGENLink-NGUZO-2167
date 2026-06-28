@@ -1,0 +1,68 @@
+{
+  "id": "post-details",
+  "phase": "CLIENT",
+  "step": "Step 2 \u2014 The details",
+  "title": "Type, units, route",
+  "seg_dur": 27.06,
+  "lines": [
+    {
+      "i": 0,
+      "text": "First, the machine type. You pick from the dropdown of equipment we coordinate.",
+      "action": "selectidx",
+      "arg": [
+        0,
+        1
+      ],
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/post-details/00.mp3",
+      "dur": 4.676
+    },
+    {
+      "i": 1,
+      "text": "Then how many units you need. This is the demand, you can ask for two, five, ten machines at once.",
+      "action": "typenum",
+      "arg": [
+        "2"
+      ],
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/post-details/01.mp3",
+      "dur": 5.93
+    },
+    {
+      "i": 2,
+      "text": "Next, describe the project so suppliers understand the job.",
+      "action": "typeph",
+      "arg": [
+        "earthworks",
+        "Bulk earthworks and trenching for a warehouse foundation"
+      ],
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/post-details/02.mp3",
+      "dur": 3.788
+    },
+    {
+      "i": 3,
+      "text": "Then choose whether it's a domestic move or cross-border, which changes the permits we prepare.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/post-details/03.mp3",
+      "dur": 5.381
+    },
+    {
+      "i": 4,
+      "text": "And the destination, where the machine needs to be.",
+      "action": "typeph",
+      "arg": [
+        "e.g. Geita",
+        "Dodoma"
+      ],
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/post-details/04.mp3",
+      "dur": 2.926
+    },
+    {
+      "i": 5,
+      "text": "You can give it a title, or leave it blank and we'll generate one for you.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/post-details/05.mp3",
+      "dur": 4.362
+    }
+  ]
+}

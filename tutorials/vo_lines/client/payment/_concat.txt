@@ -1,0 +1,8 @@
+file '/home/user/afrigen/tutorials/vo_lines/client/payment/00.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/payment/01.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/payment/02.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/payment/03.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/payment/04.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/payment/05.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/payment/06.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/payment/07.mp3'

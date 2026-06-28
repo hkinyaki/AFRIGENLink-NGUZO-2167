@@ -1,0 +1,57 @@
+{
+  "id": "intro",
+  "phase": "ADMIN",
+  "step": "The Nguzo control desk",
+  "title": "Where the corridor is run",
+  "seg_dur": 36.26,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Welcome to the Nguzo Africa admin dashboard, the control desk for the whole corridor.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/intro/00.mp3",
+      "dur": 5.381
+    },
+    {
+      "i": 1,
+      "text": "If the client posts the demand and the supplier carries it, this is where Nguzo holds the trust between them.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/intro/01.mp3",
+      "dur": 5.982
+    },
+    {
+      "i": 2,
+      "text": "Everything that protects both sides, escrow, permit checks, field verification, settlement, is operated from these screens.",
+      "action": "nav",
+      "arg": "Overview",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/intro/02.mp3",
+      "dur": 7.837
+    },
+    {
+      "i": 3,
+      "text": "On the left you have seven desks, Overview, Jobs, Ground Force, Verification, Team, Notifications, and Ledger.",
+      "action": "nav",
+      "arg": "Jobs",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/intro/03.mp3",
+      "dur": 7.288
+    },
+    {
+      "i": 4,
+      "text": "We will work through every single one, so you understand not just what each button does, but why it exists.",
+      "action": "nav",
+      "arg": "Overview",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/intro/04.mp3",
+      "dur": 6.348
+    },
+    {
+      "i": 5,
+      "text": "Let's begin where every shift begins, the Overview.",
+      "action": "nav",
+      "arg": "Overview",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/intro/05.mp3",
+      "dur": 3.422
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "id": "audits-form",
+  "phase": "FIELD",
+  "step": "Step 7 \u2014 Yard Audits",
+  "title": "A full asset check",
+  "seg_dur": 28.66,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Next section, Yard Audits.",
+      "action": "nav",
+      "arg": "Yard Audits",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/audits-form/00.mp3",
+      "dur": 1.933
+    },
+    {
+      "i": 1,
+      "text": "This is for a deeper, standalone check of any asset in a supplier's yard, not tied to one job.",
+      "action": "hover",
+      "arg": "Yard Audit",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/audits-form/01.mp3",
+      "dur": 5.878
+    },
+    {
+      "i": 2,
+      "text": "First you choose the asset under inspection from the dropdown.",
+      "action": "selectidx",
+      "arg": [
+        0,
+        1
+      ],
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/audits-form/02.mp3",
+      "dur": 3.579
+    },
+    {
+      "i": 3,
+      "text": "Then you capture the V.I.N photo reference, exactly like in a job inspection.",
+      "action": "typeph",
+      "arg": [
+        "Capture / type VIN",
+        "Chassis read matched plate \u2014 photo on file"
+      ],
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/audits-form/03.mp3",
+      "dur": 4.676
+    },
+    {
+      "i": 4,
+      "text": "Record your mechanical notes, hours, hydraulics, undercarriage, leaks.",
+      "action": "typeph",
+      "arg": [
+        "Hours, hydraulics",
+        "Full yard check: hydraulics good, no leaks, undercarriage healthy, papers in order."
+      ],
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/audits-form/04.mp3",
+      "dur": 4.676
+    },
+    {
+      "i": 5,
+      "text": "Then tick to confirm the asset's legitimacy is verified.",
+      "action": "check",
+      "arg": "legitimacy verified",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/audits-form/05.mp3",
+      "dur": 3.37
+    },
+    {
+      "i": 6,
+      "text": "And sign off the audit, which permanently records this asset as inspected.",
+      "action": "hoverbtn",
+      "arg": "Sign off audit",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/audits-form/06.mp3",
+      "dur": 4.545
+    }
+  ]
+}

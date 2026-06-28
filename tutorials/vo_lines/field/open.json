@@ -1,0 +1,57 @@
+{
+  "id": "open",
+  "phase": "FIELD",
+  "step": "Step 2 \u2014 Open a job",
+  "title": "What you'll verify",
+  "seg_dur": 29.49,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Opening a job brings up everything you need before you sign anything off.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/open/00.mp3",
+      "dur": 3.944
+    },
+    {
+      "i": 1,
+      "text": "At the top, the job title, the machine type, the units, and the full route.",
+      "action": "hover",
+      "arg": "Aggregate haul",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/open/01.mp3",
+      "dur": 4.545
+    },
+    {
+      "i": 2,
+      "text": "Below that, the supplier's documents to review, their registration, insurance, and fleet papers.",
+      "action": "hover",
+      "arg": "Supplier documents",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/open/02.mp3",
+      "dur": 5.851
+    },
+    {
+      "i": 3,
+      "text": "Then your own inspection form, where you capture the V.I.N read and your mechanical notes.",
+      "action": "scroll",
+      "arg": 180,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/open/03.mp3",
+      "dur": 5.329
+    },
+    {
+      "i": 4,
+      "text": "And finally the verify button, which only unlocks once you confirm the inspection passed.",
+      "action": "hover",
+      "arg": "Verify & advance",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/open/04.mp3",
+      "dur": 5.094
+    },
+    {
+      "i": 5,
+      "text": "So everything you need is on one screen. Let's review the documents first.",
+      "action": "scroll",
+      "arg": -180,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/open/05.mp3",
+      "dur": 4.728
+    }
+  ]
+}

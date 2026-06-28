@@ -1,0 +1,66 @@
+{
+  "id": "border-form",
+  "phase": "FIELD",
+  "step": "Step 9 \u2014 Border Log",
+  "title": "Record what happens at the border",
+  "seg_dur": 26.41,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Last section, the Border Liaison Log.",
+      "action": "nav",
+      "arg": "Border Log",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/border-form/00.mp3",
+      "dur": 2.638
+    },
+    {
+      "i": 1,
+      "text": "When you're stationed at a border post, you record the reality on the ground here.",
+      "action": "hover",
+      "arg": "Border Liaison Log",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/border-form/01.mp3",
+      "dur": 4.441
+    },
+    {
+      "i": 2,
+      "text": "First, pick which One-Stop Border Post you're at, Tunduma, Namanga, Rusumo, or Kabanga.",
+      "action": "selectidx",
+      "arg": [
+        0,
+        1
+      ],
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/border-form/02.mp3",
+      "dur": 5.695
+    },
+    {
+      "i": 3,
+      "text": "Then log the institutional wait time in minutes, the real delay the cargo faced.",
+      "action": "typeph",
+      "arg": [
+        "e.g. 180",
+        "240"
+      ],
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/border-form/03.mp3",
+      "dur": 5.016
+    },
+    {
+      "i": 4,
+      "text": "And write a clearance override note, what went wrong and how you resolved it in person.",
+      "action": "typeph",
+      "arg": [
+        "Portal failure",
+        "TANSAD portal failed mid-clearance. Re-validated manually with the customs desk; convoy released after 4 hours."
+      ],
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/border-form/04.mp3",
+      "dur": 4.859
+    },
+    {
+      "i": 5,
+      "text": "Then log the entry. This is your physical moat made visible.",
+      "action": "hoverbtn",
+      "arg": "Log entry",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/border-form/05.mp3",
+      "dur": 3.762
+    }
+  ]
+}

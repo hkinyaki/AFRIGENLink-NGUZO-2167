@@ -1,0 +1,73 @@
+{
+  "id": "ledger",
+  "phase": "ADMIN",
+  "step": "Desk 7 \u2014 Master Ledger",
+  "title": "Where the money settles",
+  "seg_dur": 44.33,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Finally, the Master Ledger, the settlement record across every contract.",
+      "action": "nav",
+      "arg": "Ledger",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/ledger/00.mp3",
+      "dur": 4.545
+    },
+    {
+      "i": 1,
+      "text": "Currently Locked shows the escrow Nguzo is holding right now, across all live jobs.",
+      "action": "hover",
+      "arg": "Currently Locked",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/ledger/01.mp3",
+      "dur": 5.251
+    },
+    {
+      "i": 2,
+      "text": "Platform Revenue is the seven percent Nguzo has earned from settled work.",
+      "action": "hover",
+      "arg": "Platform Revenue",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/ledger/02.mp3",
+      "dur": 4.598
+    },
+    {
+      "i": 3,
+      "text": "Parts Credit Extended tracks any emergency spare parts Nguzo advanced against escrow to keep a job moving.",
+      "action": "hover",
+      "arg": "Parts Credit Extended",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/ledger/03.mp3",
+      "dur": 7.053
+    },
+    {
+      "i": 4,
+      "text": "And Settled Contracts counts the jobs fully paid out and closed.",
+      "action": "hover",
+      "arg": "Settled Contracts",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/ledger/04.mp3",
+      "dur": 3.605
+    },
+    {
+      "i": 5,
+      "text": "Below, every contract shows its escrow, our fee, any parts credit, and the final supplier payout.",
+      "action": "hover",
+      "arg": "Supplier Payout",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/ledger/05.mp3",
+      "dur": 6.766
+    },
+    {
+      "i": 6,
+      "text": "When a job is signed off, the split is automatic, supplier payout equals escrow, minus our fee, minus any parts credit.",
+      "action": "hover",
+      "arg": "Fee",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/ledger/06.mp3",
+      "dur": 7.837
+    },
+    {
+      "i": 7,
+      "text": "No chasing, no disputes over numbers, the ledger settles everyone cleanly.",
+      "action": "scroll",
+      "arg": 150,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/ledger/07.mp3",
+      "dur": 4.676
+    }
+  ]
+}

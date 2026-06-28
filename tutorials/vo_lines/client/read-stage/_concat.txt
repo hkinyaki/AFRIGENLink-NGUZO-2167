@@ -1,0 +1,7 @@
+file '/home/user/afrigen/tutorials/vo_lines/client/read-stage/00.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/read-stage/01.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/read-stage/02.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/read-stage/03.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/read-stage/04.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/read-stage/05.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/read-stage/06.mp3'

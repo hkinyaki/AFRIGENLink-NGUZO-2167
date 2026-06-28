@@ -1,0 +1,6 @@
+file '/home/user/afrigen/tutorials/vo_lines/supplier/my-awards/00.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/my-awards/01.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/my-awards/02.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/my-awards/03.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/my-awards/04.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/my-awards/05.mp3'

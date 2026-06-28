@@ -1,0 +1,7 @@
+file '/home/user/afrigen/tutorials/vo_lines/client/bids-award/00.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/bids-award/01.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/bids-award/02.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/bids-award/03.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/bids-award/04.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/bids-award/05.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/bids-award/06.mp3'

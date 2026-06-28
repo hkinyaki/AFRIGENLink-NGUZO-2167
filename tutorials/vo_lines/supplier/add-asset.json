@@ -1,0 +1,90 @@
+{
+  "id": "add-asset",
+  "phase": "SUPPLIER",
+  "step": "Step 6 \u2014 Add an asset",
+  "title": "Register a new machine",
+  "seg_dur": 31.32,
+  "lines": [
+    {
+      "i": 0,
+      "text": "To add a machine, open Add Asset.",
+      "action": "click",
+      "arg": "Add Asset",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/add-asset/00.mp3",
+      "dur": 2.769
+    },
+    {
+      "i": 1,
+      "text": "You will pick the type, excavator, prime mover, tipper, and so on.",
+      "action": "selectopt",
+      "arg": [
+        "Tipper Truck",
+        0
+      ],
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/add-asset/01.mp3",
+      "dur": 4.362
+    },
+    {
+      "i": 2,
+      "text": "Then enter the manufacturer and model.",
+      "action": "typeph",
+      "arg": [
+        "Caterpillar",
+        "FAW"
+      ],
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/add-asset/02.mp3",
+      "dur": 2.273
+    },
+    {
+      "i": 3,
+      "text": "Set your day rate in shillings.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/add-asset/03.mp3",
+      "dur": 1.907
+    },
+    {
+      "i": 4,
+      "text": "And crucially, the engine serial and the V.I.N. or chassis number.",
+      "action": "hover",
+      "arg": "VIN",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/add-asset/04.mp3",
+      "dur": 4.023
+    },
+    {
+      "i": 5,
+      "text": "Those two numbers are the machine's fingerprint, what the field inspector matches on-site.",
+      "action": "hover",
+      "arg": "Engine serial",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/add-asset/05.mp3",
+      "dur": 5.146
+    },
+    {
+      "i": 6,
+      "text": "Finally, set the yard location where it is based.",
+      "action": "typeph",
+      "arg": [
+        "Vingunguti",
+        "Vingunguti yard, Dar"
+      ],
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/add-asset/06.mp3",
+      "dur": 3.109
+    },
+    {
+      "i": 7,
+      "text": "Save the asset and it is instantly available to put against new jobs.",
+      "action": "hoverbtn",
+      "arg": "Save asset",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/add-asset/07.mp3",
+      "dur": 4.31
+    },
+    {
+      "i": 8,
+      "text": "Keep this list honest and complete, it is your shop window.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/add-asset/08.mp3",
+      "dur": 3.422
+    }
+  ]
+}

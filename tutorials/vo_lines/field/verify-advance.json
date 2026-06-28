@@ -1,0 +1,57 @@
+{
+  "id": "verify-advance",
+  "phase": "FIELD",
+  "step": "Step 6 \u2014 Verify & advance",
+  "title": "Release to the next stage",
+  "seg_dur": 26.75,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Only when you are genuinely satisfied do you tick this box.",
+      "action": "check",
+      "arg": "On-site inspection passed",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/verify-advance/00.mp3",
+      "dur": 3.422
+    },
+    {
+      "i": 1,
+      "text": "On-site inspection passed, verify and release to the permits stage.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/verify-advance/01.mp3",
+      "dur": 4.31
+    },
+    {
+      "i": 2,
+      "text": "Notice the Verify button was locked until you ticked it, you cannot advance a job by accident.",
+      "action": "hover",
+      "arg": "Verify & advance",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/verify-advance/02.mp3",
+      "dur": 5.381
+    },
+    {
+      "i": 3,
+      "text": "Press Verify and advance, and the staged gate moves forward for everyone.",
+      "action": "hoverbtn",
+      "arg": "Verify & advance",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/verify-advance/03.mp3",
+      "dur": 4.624
+    },
+    {
+      "i": 4,
+      "text": "The client is now unblocked to upload permits, the supplier knows their machine cleared.",
+      "action": "scroll",
+      "arg": 130,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/verify-advance/04.mp3",
+      "dur": 5.251
+    },
+    {
+      "i": 5,
+      "text": "Your signature here is the moment trust becomes real in the system.",
+      "action": "scroll",
+      "arg": -130,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/verify-advance/05.mp3",
+      "dur": 3.762
+    }
+  ]
+}

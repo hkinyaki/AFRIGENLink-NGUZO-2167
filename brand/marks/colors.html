@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Nguzo Africa — Color Options</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=IBM+Plex+Mono:wght@500&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#1B1F26;padding:46px 36px;font-family:'Sora',sans-serif}
+  .wrap{max-width:1040px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  .card{border-radius:16px;padding:40px 34px;display:flex;flex-direction:column;align-items:center;gap:16px;min-height:240px;justify-content:center;position:relative}
+  .tag{position:absolute;top:14px;left:18px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;opacity:.55}
+  .mk{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .wm{font-weight:800;font-size:26px;letter-spacing:-.01em}
+  .sub{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.2em;margin-top:4px}
+  svg{display:block}
+</style>
+</head>
+<body>
+<div class="wrap" id="grid"></div>
+<script>
+// accent, base, sub-color, name, label
+const opts = [
+  ["#5B8C7B","#222831","#9AA6AE","Sage Pine","muted green-grey · calm, grounded, premium"],
+  ["#C9762F","#262220","#A99B8E","Burnt Copper","warm metal · industrial, earthy, expensive"],
+  ["#4E7CA8","#222831","#97A4AE","Slate Blue","quiet trust · corporate-calm, not flashy"],
+  ["#B5733F","#23252B","#9DA3AC","Terracotta Bronze","warm ochre · African earth, refined"],
+  ["#7A8B5C","#23262B","#9AA39A","Olive Khaki","field/industry tone · understated, rugged"],
+  ["#9A9DA3","#20242B","#8B9097","Graphite Mono","no color · steel grey only, ultra-premium"]
+];
+const grid = document.getElementById('grid');
+function logo(accent, sub){
+  return `<svg width="120" height="136" viewBox="0 0 150 170" fill="none">
+    <rect x="40" y="120" width="70" height="9" rx="2" fill="${accent}"/>
+    <rect x="46" y="129" width="58" height="7" rx="2" fill="${accent}" opacity=".7"/>
+    <rect x="58" y="74" width="34" height="46" fill="${accent}"/>
+    <rect x="86" y="74" width="6" height="46" fill="#fff" opacity=".12"/>
+    <rect x="48" y="66" width="54" height="8" rx="2" fill="${accent}"/>
+    <path d="M62 12 C70 8 84 9 88 16 C92 22 90 28 94 33 C98 38 96 46 90 50 C86 53 86 60 82 64 L74 64 C70 58 66 58 63 52 C59 46 60 40 57 35 C54 30 55 22 59 18 C60 16 60 14 62 12 Z" fill="${accent}"/>
+    <path d="M75 60 L75 22 M75 22 L67 32 M75 22 L83 32" stroke="${sub}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+opts.forEach(([accent,base,sub,name,desc])=>{
+  const arrowStroke = base; // arrow knocks out to base color for contrast
+  const div = document.createElement('div');
+  div.className='card';
+  div.style.background=base;
+  div.innerHTML = `<span class="tag" style="color:${sub}">${accent}</span>
+    <div class="mk">
+      ${logo(accent, base)}
+      <div style="text-align:center">
+        <div class="wm"><span style="color:#EDEFF2">NGUZO</span> <span style="color:${accent}">AFRICA</span></div>
+        <div class="sub" style="color:${sub}">CARGO &amp; MACHINERY COORDINATION — SECURED</div>
+      </div>
+    </div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:${sub};text-align:center;letter-spacing:.03em">${name} — ${desc}</div>`;
+  grid.appendChild(div);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+{
+  "id": "read-stage",
+  "phase": "CLIENT",
+  "step": "Reading your jobs",
+  "title": "The staged gate",
+  "seg_dur": 42.4,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Here on My Jobs you'll see every demand you've posted, each as its own card.",
+      "action": "hover",
+      "arg": "My Jobs",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/read-stage/00.mp3",
+      "dur": 4.963
+    },
+    {
+      "i": 1,
+      "text": "A card shows the job title, what you need, how many units, and the route.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/read-stage/01.mp3",
+      "dur": 4.624
+    },
+    {
+      "i": 2,
+      "text": "And this bar across the card is the staged gate, the heart of how Nguzo protects you.",
+      "action": "hover",
+      "arg": "Bidding",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/read-stage/02.mp3",
+      "dur": 5.198
+    },
+    {
+      "i": 3,
+      "text": "Every job moves through fixed stages in order, bidding, award, agreements, inspection, permits, payment, and execution.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/read-stage/03.mp3",
+      "dur": 8.438
+    },
+    {
+      "i": 4,
+      "text": "Nothing skips ahead. A machine cannot move until it has been inspected, and money is only released when work is signed off.",
+      "action": "scroll",
+      "arg": 150,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/read-stage/04.mp3",
+      "dur": 6.922
+    },
+    {
+      "i": 5,
+      "text": "This is the difference between Nguzo and a simple marketplace, the gate enforces trust, it doesn't just connect you.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/read-stage/05.mp3",
+      "dur": 6.922
+    },
+    {
+      "i": 6,
+      "text": "So at a glance you always know exactly where your job stands. Now let's post one.",
+      "action": "scroll",
+      "arg": -150,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/read-stage/06.mp3",
+      "dur": 5.329
+    }
+  ]
+}

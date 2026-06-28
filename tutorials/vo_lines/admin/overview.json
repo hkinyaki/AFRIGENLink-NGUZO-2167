@@ -1,0 +1,121 @@
+{
+  "id": "overview",
+  "phase": "ADMIN",
+  "step": "Desk 1 \u2014 Overview",
+  "title": "The live operating picture",
+  "seg_dur": 76.07,
+  "lines": [
+    {
+      "i": 0,
+      "text": "This is your Operations Overview, the live picture across the corridor at a glance.",
+      "action": "hover",
+      "arg": "Operations Overview",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/overview/00.mp3",
+      "dur": 4.859
+    },
+    {
+      "i": 1,
+      "text": "It's the first thing you open at the start of a shift, because it answers the only questions that really matter.",
+      "action": "hover",
+      "arg": "Operations Overview",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/overview/01.mp3",
+      "dur": 5.851
+    },
+    {
+      "i": 2,
+      "text": "How much money are we holding, how much have we earned, and how many jobs are in motion.",
+      "action": "hover",
+      "arg": "Live operating picture",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/overview/02.mp3",
+      "dur": 4.598
+    },
+    {
+      "i": 3,
+      "text": "The first figure, Locked Escrow, is the total client money Nguzo is currently holding in trust.",
+      "action": "hover",
+      "arg": "Locked Escrow",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/overview/03.mp3",
+      "dur": 5.799
+    },
+    {
+      "i": 4,
+      "text": "This is the heart of the model, that money is real and tracked, but not released until work is signed off.",
+      "action": "hover",
+      "arg": "Locked Escrow",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/overview/04.mp3",
+      "dur": 6.087
+    },
+    {
+      "i": 5,
+      "text": "Platform Revenue is the seven percent service fee Nguzo earns once jobs settle.",
+      "action": "hover",
+      "arg": "Platform Revenue",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/overview/05.mp3",
+      "dur": 4.963
+    },
+    {
+      "i": 6,
+      "text": "That single fee is how Nguzo makes its money, fairly and transparently, the same percentage on every deal.",
+      "action": "hover",
+      "arg": "Platform Revenue",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/overview/06.mp3",
+      "dur": 6.635
+    },
+    {
+      "i": 7,
+      "text": "Then your counts, active contracts on the network, and the suppliers registered to carry them.",
+      "action": "hover",
+      "arg": "Contracts",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/overview/07.mp3",
+      "dur": 5.329
+    },
+    {
+      "i": 8,
+      "text": "Assets shows how much verified machinery and how many trucks are available across your suppliers.",
+      "action": "hover",
+      "arg": "Suppliers",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/overview/08.mp3",
+      "dur": 5.198
+    },
+    {
+      "i": 9,
+      "text": "And Breakdowns, which turns amber the moment a machine reports a fault in the field.",
+      "action": "hover",
+      "arg": "Breakdowns",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/overview/09.mp3",
+      "dur": 4.31
+    },
+    {
+      "i": 10,
+      "text": "When that counter lights up, you know a job needs attention before it stalls.",
+      "action": "hover",
+      "arg": "Breakdowns",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/overview/10.mp3",
+      "dur": 4.31
+    },
+    {
+      "i": 11,
+      "text": "Below the counters sits every contract in the system, with its route, escrow, fee, and status.",
+      "action": "hover",
+      "arg": "All contracts",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/overview/11.mp3",
+      "dur": 6.165
+    },
+    {
+      "i": 12,
+      "text": "Each row tells you whether it's a domestic move or a cross-border one, and where it stands in its life cycle.",
+      "action": "hover",
+      "arg": "Route",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/overview/12.mp3",
+      "dur": 6.504
+    },
+    {
+      "i": 13,
+      "text": "In one screen you can see exactly how much money is in trust and where every job stands.",
+      "action": "scroll",
+      "arg": 160,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/overview/13.mp3",
+      "dur": 5.46
+    }
+  ]
+}

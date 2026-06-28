@@ -1,0 +1,142 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  /* Base — navy (from logo) */
+  --color-navy-900: #0F1626;
+  --color-navy-800: #141B2E;
+  --color-navy-700: #1C2540;
+  --color-navy-600: #2A3654;
+  --color-slate-700: #3A4350;
+  --color-slate-500: #5A6573;
+  --color-slate-300: #9AA6AE;
+  --color-slate-100: #E3E7EC;
+  --color-canvas: #F1F3F6;
+  --color-canvas-line: #D9DEE4;
+  --color-ink: #1B1F26;
+
+  /* Accent — Amber/Gold (from logo) */
+  --color-amber-500: #D99A2B;
+  --color-amber-600: #BD8420;
+  --color-amber-400: #E7B45A;
+  --color-amber-bg: #2A2415;
+
+  /* Light base for marketing surfaces */
+  --color-paper: #F7F6F3;
+  --color-paper-2: #FFFFFF;
+  --color-paper-line: #E5E2DA;
+  --color-paper-ink: #141B2E;
+  --color-paper-muted: #5A6473;
+
+  --color-good: #3E8E5A;
+  --color-bad: #C76A60;
+
+  --font-display: "Sora", ui-sans-serif, system-ui;
+  --font-body: "Manrope", ui-sans-serif, system-ui;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+* {
+  border-color: var(--color-navy-600);
+}
+
+body {
+  background: #F7F6F3;
+  color: var(--color-slate-100);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--color-canvas); }
+::-webkit-scrollbar-thumb { background: var(--color-navy-600); border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-slate-500); }
+
+/* canvas data surfaces (client + admin tables) */
+.canvas {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
+.canvas * { border-color: var(--color-canvas-line); }
+
+/* light marketing surface */
+.paper {
+  background: var(--color-paper);
+  color: var(--color-paper-ink);
+}
+.paper * { border-color: var(--color-paper-line); }
+
+@keyframes amber-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(245,166,35,0.5); }
+  70% { box-shadow: 0 0 0 8px rgba(245,166,35,0); }
+  100% { box-shadow: 0 0 0 0 rgba(245,166,35,0); }
+}
+.amber-pulse { animation: amber-pulse 1.6s ease-out 2; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.rise { animation: rise 0.4s ease-out both; }
+
+/* ── Premium system utilities ─────────────────────────── */
+
+/* scroll reveal — base hidden, .in when intersecting */
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1); }
+.reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+
+/* light marketing card — hairline + layered shadow + hover lift */
+.card-lite {
+  background: #fff;
+  border: 1px solid var(--color-paper-line);
+  border-radius: 1.25rem;
+  box-shadow: 0 1px 2px rgba(20,27,46,.04), 0 8px 24px -16px rgba(20,27,46,.12);
+  transition: transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s cubic-bezier(.22,1,.36,1), border-color .35s ease;
+}
+.card-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 1px 2px rgba(20,27,46,.05), 0 24px 48px -24px rgba(20,27,46,.22);
+  border-color: rgba(217,154,43,.45);
+}
+
+/* dark dashboard surface — subtle top highlight + depth */
+.surface-dark {
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0) 40%), var(--color-navy-800);
+  border: 1px solid var(--color-navy-600);
+  border-radius: .85rem;
+  box-shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 12px 30px -20px rgba(0,0,0,.6);
+}
+.surface-lift { transition: transform .3s cubic-bezier(.22,1,.36,1), box-shadow .3s ease, border-color .3s ease; }
+.surface-lift:hover { transform: translateY(-2px); border-color: var(--color-slate-700); box-shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 18px 40px -22px rgba(0,0,0,.7); }
+
+/* eyebrow label */
+.eyebrow { font-family: var(--font-body); font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; }
+
+/* focus ring */
+.focus-ring:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(217,154,43,.35); border-color: var(--color-amber-500) !important; }
+
+/* tighter heading tracking on big display */
+.tracking-display { letter-spacing: -0.025em; }
+
+@media print {
+  body { background: #fff; color: #000; }
+  .no-print { display: none !important; }
+}

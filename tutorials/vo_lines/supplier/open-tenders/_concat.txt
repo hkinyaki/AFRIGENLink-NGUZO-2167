@@ -1,0 +1,7 @@
+file '/home/user/afrigen/tutorials/vo_lines/supplier/open-tenders/00.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/open-tenders/01.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/open-tenders/02.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/open-tenders/03.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/open-tenders/04.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/open-tenders/05.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/open-tenders/06.mp3'

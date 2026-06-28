@@ -1,0 +1,57 @@
+{
+  "id": "border-history",
+  "phase": "FIELD",
+  "step": "Step 10 \u2014 Border history & close",
+  "title": "Why your work matters",
+  "seg_dur": 30.04,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Below, every border entry you've logged is recorded with its wait time and resolution.",
+      "action": "scroll",
+      "arg": 160,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/border-history/00.mp3",
+      "dur": 4.911
+    },
+    {
+      "i": 1,
+      "text": "This data is gold, it tells Nguzo which corridors are slow and where to station liaison agents.",
+      "action": "scroll",
+      "arg": -160,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/border-history/01.mp3",
+      "dur": 6.217
+    },
+    {
+      "i": 2,
+      "text": "And that is your whole role, three sections, one mission.",
+      "action": "nav",
+      "arg": "Inspections",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/border-history/02.mp3",
+      "dur": 3.527
+    },
+    {
+      "i": 3,
+      "text": "Verify machines on site, audit yards in depth, and keep the borders moving.",
+      "action": "nav",
+      "arg": "Yard Audits",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/border-history/03.mp3",
+      "dur": 4.859
+    },
+    {
+      "i": 4,
+      "text": "You are the reason a client can trust a machine they've never seen, and a supplier can trust they'll be paid.",
+      "action": "nav",
+      "arg": "Border Log",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/border-history/04.mp3",
+      "dur": 5.799
+    },
+    {
+      "i": 5,
+      "text": "Be thorough, be honest, and the whole network holds. Welcome to the ground force.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/border-history/05.mp3",
+      "dur": 4.728
+    }
+  ]
+}

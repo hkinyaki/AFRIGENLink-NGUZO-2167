@@ -1,0 +1,89 @@
+{
+  "id": "verify-permits",
+  "phase": "ADMIN",
+  "step": "Desk 2 \u2014 Gate 1: Permits",
+  "title": "Check the paperwork",
+  "seg_dur": 55.3,
+  "lines": [
+    {
+      "i": 0,
+      "text": "This job has reached the permits gate, and the action card at the top tells you exactly what's needed.",
+      "action": "hover",
+      "arg": "Action required",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/verify-permits/00.mp3",
+      "dur": 5.46
+    },
+    {
+      "i": 1,
+      "text": "Before you do anything, glance at the stage tracker, it confirms the job has cleared inspection and is now waiting on permits.",
+      "action": "hover",
+      "arg": "Action required",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/verify-permits/01.mp3",
+      "dur": 6.87
+    },
+    {
+      "i": 2,
+      "text": "The client has uploaded their transit permits, and now it's your job to confirm they're valid before anything moves.",
+      "action": "hover",
+      "arg": "Confirm the uploaded permits are valid",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/verify-permits/02.mp3",
+      "dur": 6.034
+    },
+    {
+      "i": 3,
+      "text": "Open the documents panel and you can view every permit they've attached.",
+      "action": "hover",
+      "arg": "Documents",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/verify-permits/03.mp3",
+      "dur": 4.127
+    },
+    {
+      "i": 4,
+      "text": "You'd open each one, check the route, the dates, and the load details against what the job actually requires.",
+      "action": "hover",
+      "arg": "Documents",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/verify-permits/04.mp3",
+      "dur": 6.635
+    },
+    {
+      "i": 5,
+      "text": "Then you mark each document verified once you're satisfied it's genuine.",
+      "action": "hover",
+      "arg": "mark verified",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/verify-permits/05.mp3",
+      "dur": 4.206
+    },
+    {
+      "i": 6,
+      "text": "Why does Nguzo gate this? Because an uncleared load can be turned back at a checkpoint, costing everyone days and money.",
+      "action": "hover",
+      "arg": "Documents",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/verify-permits/06.mp3",
+      "dur": 7.837
+    },
+    {
+      "i": 7,
+      "text": "No convoy should ever roll on paperwork nobody has checked, and this is where you stop that from happening.",
+      "action": "hover",
+      "arg": "Action required",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/verify-permits/07.mp3",
+      "dur": 5.878
+    },
+    {
+      "i": 8,
+      "text": "When the permits check out, you release the job with a single click.",
+      "action": "hoverbtn",
+      "arg": "Verify permits & release",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/verify-permits/08.mp3",
+      "dur": 3.527
+    },
+    {
+      "i": 9,
+      "text": "That moves the job to its next gate, the payment, where the money becomes real.",
+      "action": "hover",
+      "arg": "Activity",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/verify-permits/09.mp3",
+      "dur": 4.728
+    }
+  ]
+}

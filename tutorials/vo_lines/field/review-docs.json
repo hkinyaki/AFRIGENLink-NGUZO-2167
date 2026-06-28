@@ -1,0 +1,57 @@
+{
+  "id": "review-docs",
+  "phase": "FIELD",
+  "step": "Step 3 \u2014 Review the documents",
+  "title": "Check the paperwork",
+  "seg_dur": 28.63,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Before you ever touch the machine, you check the supplier's paperwork here.",
+      "action": "hover",
+      "arg": "Supplier documents",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/review-docs/00.mp3",
+      "dur": 4.127
+    },
+    {
+      "i": 1,
+      "text": "These are the documents the supplier uploaded, their fleet registration and insurance.",
+      "action": "hover",
+      "arg": "registration",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/review-docs/01.mp3",
+      "dur": 4.859
+    },
+    {
+      "i": 2,
+      "text": "Each one has a View link that opens the actual file in a new tab so you can read it in full.",
+      "action": "hover",
+      "arg": "View",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/review-docs/02.mp3",
+      "dur": 5.695
+    },
+    {
+      "i": 3,
+      "text": "At the bottom you can see exactly which supplier was awarded, and how many units they're providing.",
+      "action": "hover",
+      "arg": "Awarded",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/review-docs/03.mp3",
+      "dur": 5.512
+    },
+    {
+      "i": 4,
+      "text": "Your job is to make sure the papers match the machine you're standing in front of.",
+      "action": "scroll",
+      "arg": 150,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/review-docs/04.mp3",
+      "dur": 4.075
+    },
+    {
+      "i": 5,
+      "text": "Once the paperwork checks out, you move to capturing your own findings.",
+      "action": "scroll",
+      "arg": -150,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/review-docs/05.mp3",
+      "dur": 4.362
+    }
+  ]
+}

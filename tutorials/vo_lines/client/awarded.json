@@ -1,0 +1,73 @@
+{
+  "id": "awarded",
+  "phase": "CLIENT",
+  "step": "Step 5 \u2014 Awarded & verified",
+  "title": "Agreements and inspection",
+  "seg_dur": 41.14,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Once awarded, you can see exactly which suppliers won, listed right here.",
+      "action": "hover",
+      "arg": "Awarded Suppliers",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/awarded/00.mp3",
+      "dur": 4.545
+    },
+    {
+      "i": 1,
+      "text": "And this is the flat fair price per unit that every awarded supplier agreed to.",
+      "action": "hover",
+      "arg": "Flat fair price",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/awarded/01.mp3",
+      "dur": 4.728
+    },
+    {
+      "i": 2,
+      "text": "Each awarded supplier signs their own agreement for their share of your demand.",
+      "action": "hover",
+      "arg": "Status",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/awarded/02.mp3",
+      "dur": 4.545
+    },
+    {
+      "i": 3,
+      "text": "Then they upload their fleet documents, which you can track in the documents panel.",
+      "action": "hover",
+      "arg": "Documents",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/awarded/03.mp3",
+      "dur": 4.415
+    },
+    {
+      "i": 4,
+      "text": "A Nguzo field inspector then physically verifies the machine on site, and you watch it advance in the activity log.",
+      "action": "hover",
+      "arg": "Activity",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/awarded/04.mp3",
+      "dur": 6.818
+    },
+    {
+      "i": 5,
+      "text": "That inspection is your protection, you're never paying for a machine nobody has seen.",
+      "action": "hover",
+      "arg": "Status",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/awarded/05.mp3",
+      "dur": 4.911
+    },
+    {
+      "i": 6,
+      "text": "Splitting your demand across several suppliers also protects you, if one falls short, the others still carry the job.",
+      "action": "hover",
+      "arg": "Awarded Suppliers",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/awarded/06.mp3",
+      "dur": 6.87
+    },
+    {
+      "i": 7,
+      "text": "When the field inspection clears, the next action is yours, the permits.",
+      "action": "scroll",
+      "arg": 130,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/awarded/07.mp3",
+      "dur": 4.31
+    }
+  ]
+}

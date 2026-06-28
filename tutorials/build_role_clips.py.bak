@@ -1,0 +1,200 @@
+"""Build a per-ROLE training clip for Nguzo from recorded role webms + role VO.
+
+Reads:
+  tutorials/seg_roles/<role>/_segs.json   (segment id -> webm path)
+  tutorials/vo_roles/<role>/_durs.json    (segment id -> mp3 + caption fields)
+
+For each segment: trims the login head, retimes the recording to the narration
+length, scales to 1920x1080 on navy, overlays a lower-third caption (phase pill +
+step + title), then concats with a role title card + close card and lays a ducked
+music bed under the george VO.
+
+Output: clips/training-<role>.mp4
+Static-trim + concat only (no zoompan — hangs sandbox).
+
+Usage: python3 build_role_clips.py field
+"""
+import os, json, subprocess, sys
+from PIL import Image, ImageDraw, ImageFont
+
+ROOT = "/home/user/afrigen/tutorials"
+OUT  = f"{ROOT}/clips"
+TMP  = f"{ROOT}/_role_tmp"
+CAP  = f"{ROOT}/role_caps"
+AN   = f"{ROOT}/anim"
+for d in (OUT, TMP, CAP): os.makedirs(d, exist_ok=True)
+
+W, H = 1920, 1080
+NAVY=(20,27,46); NAVY_900=(10,14,26)
+AMBER=(217,154,43); AMBER_LT=(235,180,90); SLATE=(150,165,186); WHITE=(244,246,250)
+SORA=f"{ROOT}/../fonts/Sora.ttf"; MAN=f"{ROOT}/../fonts/Manrope.ttf"; MONO=f"{ROOT}/../fonts/IBMPlexMono.ttf"
+def F(p,s): return ImageFont.truetype(p,s)
+
+ROLE_TITLES = {
+    "field":    ("FIELD AGENT", "Training — your dashboard, end to end"),
+    "client":   ("CLIENT", "Training — posting & managing jobs"),
+    "supplier": ("SUPPLIER", "Training — bidding, awards & your fleet"),
+    "admin":    ("NGUZO HQ — ADMIN", "Training — running the platform"),
+}
+
+# Login head trim per role/segment (seconds). Recordings show ~11.5s login.
+SKIP_DEFAULT = 11.5
+
+def run(cmd): subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+def dur(f):
+    return float(subprocess.check_output(["ffprobe","-v","error","-show_entries","format=duration",
+                                          "-of","csv=p=0",f]).decode().strip())
+
+# ---------- caption (lower third) ----------
+def make_cap(seg):
+    img = Image.new("RGBA",(W,H),(0,0,0,0)); d=ImageDraw.Draw(img)
+    band_h=220; band=Image.new("RGBA",(W,band_h),(0,0,0,0)); bd=ImageDraw.Draw(band)
+    for i in range(band_h):
+        a=int(235*(i/band_h)**0.7)
+        bd.line([(0,i),(W,i)], fill=(10,14,26,a))
+    img.alpha_composite(band,(0,H-band_h))
+    y=H-140
+    # phase pill
+    phase=seg["phase"]
+    pw = d.textlength(phase, font=F(MONO,26)) + 48
+    d.rounded_rectangle([70,y-6,70+pw,y+58], radius=10, fill=(217,154,43,255))
+    d.text((70+24,y+26), phase, font=F(MONO,26), fill=NAVY, anchor="lm")
+    # step label right of pill
+    d.text((70+pw+22, y+26), seg["step"], font=F(MAN,30), fill=AMBER_LT, anchor="lm")
+    # title
+    d.text((70, y+100), seg["title"], font=F(SORA,52), fill=WHITE, anchor="lm")
+    p=f"{CAP}/{seg['id']}.png"; img.save(p); return p
+
+def build_segment(role, seg, segvid):
+    """Footage is the MASTER timeline, played at native speed so on-screen actions
+    never race ahead of (or freeze behind) the narration. The segment runs for the
+    LONGER of footage vs VO; whichever is shorter is padded at its TAIL only:
+      - if VO is longer, footage clone-holds its last frame after actions finish;
+      - if footage is longer, VO gets trailing silence.
+    We NEVER speed footage up and only very gently slow it (<=1.15x) when footage is
+    a touch short, to avoid an abrupt freeze. Length is flexible by design."""
+    src = segvid[seg["id"]]
+    t0 = SKIP_DEFAULT
+    total = dur(src)
+    raw_len = max(total - t0 - 0.3, 2.0)
+    vo_path = seg["mp3"]
+    vlen = seg["dur"]
+
+    # Gentle slow-down only (never speed up). Cap at 1.15x so motion stays natural.
+    setpts = 1.0
+    if raw_len < vlen:
+        setpts = min(vlen / raw_len, 1.15)
+    played = raw_len * setpts
+
+    # Segment length = longer side + a small read tail.
+    target = max(played, vlen) + 1.2
+    vtail  = max(target - played, 0.0)      # clone-hold footage to reach target
+    cap = make_cap(seg)
+    out = f"{TMP}/{role}_{seg['id']}.mp4"
+    vf=(f"trim=start={t0:.2f}:duration={raw_len:.2f},setpts=PTS-STARTPTS,"
+        f"setpts={setpts:.4f}*PTS,"
+        f"scale={W}:{H}:force_original_aspect_ratio=decrease,"
+        f"pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:color=0x0A0E1A,fps=30,"
+        f"tpad=stop_mode=clone:stop_duration={vtail:.2f}")
+    run(["ffmpeg","-y","-i",src,"-i",cap,
+         "-filter_complex", f"[0:v]{vf}[v];[v][1:v]overlay=0:0:format=auto,trim=0:{target:.2f},setpts=PTS-STARTPTS[vv]",
+         "-map","[vv]","-an",
+         "-c:v","libx264","-preset","veryfast","-crf","19","-pix_fmt","yuv420p", f"{TMP}/{role}_{seg['id']}_v.mp4"])
+    # VO starts at 0 and is padded with trailing silence to fill the segment.
+    run(["ffmpeg","-y","-i",vo_path,"-af",f"apad,atrim=0:{target:.2f},aresample=44100",
+         "-t",f"{target:.2f}","-c:a","aac","-b:a","160k", f"{TMP}/{role}_{seg['id']}_a.mp4"])
+    run(["ffmpeg","-y","-i",f"{TMP}/{role}_{seg['id']}_v.mp4","-i",f"{TMP}/{role}_{seg['id']}_a.mp4",
+         "-c:v","copy","-c:a","copy","-shortest", out])
+    print(f"  {role}/{seg['id']:9s} foot={raw_len:5.1f}s vo={vlen:4.1f}s setpts={setpts:.2f} hold={vtail:4.1f}s -> {dur(out):4.1f}s")
+    return out
+
+# ---------- title / close cards ----------
+def role_title_card(role):
+    eyebrow, sub = ROLE_TITLES[role]
+    img=Image.new("RGB",(W,H),NAVY_900); d=ImageDraw.Draw(img)
+    # subtle top accent
+    d.rectangle([0,0,W,6], fill=AMBER)
+    # logo wordmark
+    cx=W//2
+    d.text((cx, H//2-150), "NGUZO AFRICA", font=F(SORA,68), fill=WHITE, anchor="mm")
+    d.text((cx, H//2-78), "Cargo & Machinery Coordination — Secured", font=F(MAN,28), fill=SLATE, anchor="mm")
+    # role pill
+    pw=d.textlength(eyebrow, font=F(MONO,34))+80
+    d.rounded_rectangle([cx-pw/2, H//2+10, cx+pw/2, H//2+74], radius=12, fill=AMBER)
+    d.text((cx, H//2+42), eyebrow, font=F(MONO,34), fill=NAVY, anchor="mm")
+    d.text((cx, H//2+130), sub, font=F(SORA,40), fill=WHITE, anchor="mm")
+    p=f"{TMP}/{role}_title.png"; img.save(p); return p
+
+def role_close_card(role):
+    eyebrow, _ = ROLE_TITLES[role]
+    img=Image.new("RGB",(W,H),NAVY_900); d=ImageDraw.Draw(img)
+    d.rectangle([0,H-6,W,H], fill=AMBER)
+    cx=W//2
+    d.text((cx, H//2-40), "You're ready.", font=F(SORA,62), fill=WHITE, anchor="mm")
+    d.text((cx, H//2+40), f"Nguzo Africa · {eyebrow} training complete", font=F(MAN,30), fill=SLATE, anchor="mm")
+    p=f"{TMP}/{role}_close.png"; img.save(p); return p
+
+def card_clip(png, name, vo_text=None, secs=4.5):
+    out=f"{TMP}/{name}.mp4"
+    if vo_text:
+        vp=f"{TMP}/{name}.mp3"
+        subprocess.run(["say","-v","george",vo_text,"-o",vp],check=True,
+                       stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+        secs=max(secs, dur(vp)+1.0)
+        run(["ffmpeg","-y","-loop","1","-i",png,"-i",vp,
+             "-vf",f"scale={W}:{H},fps=30","-t",f"{secs:.2f}",
+             "-af",f"apad=pad_dur=1.5,atrim=0:{secs:.2f},aresample=44100",
+             "-c:v","libx264","-preset","veryfast","-crf","19","-pix_fmt","yuv420p",
+             "-c:a","aac","-b:a","160k","-shortest", out])
+    else:
+        run(["ffmpeg","-y","-loop","1","-i",png,"-f","lavfi","-i","anullsrc=r=44100:cl=stereo",
+             "-vf",f"scale={W}:{H},fps=30","-t",f"{secs:.2f}",
+             "-c:v","libx264","-preset","veryfast","-crf","19","-pix_fmt","yuv420p",
+             "-c:a","aac","-b:a","160k","-shortest", out])
+    return out
+
+def concat(parts, out):
+    lst=f"{TMP}/list.txt"
+    with open(lst,"w") as f:
+        for p in parts: f.write(f"file '{p}'\n")
+    run(["ffmpeg","-y","-f","concat","-safe","0","-i",lst,
+         "-fflags","+genpts","-c:v","libx264","-preset","veryfast","-crf","19",
+         "-pix_fmt","yuv420p","-c:a","aac","-b:a","160k","-vsync","cfr","-r","30", out])
+
+def add_music(video, out):
+    bed=f"{ROOT}/wt_music.mp3"
+    vlen=dur(video)
+    run(["ffmpeg","-y","-i",video,"-stream_loop","-1","-i",bed,
+         "-filter_complex",
+         f"[1:a]aloop=loop=-1:size=2e9,atrim=0:{vlen:.2f},volume=0.11[bed];"
+         f"[0:a]volume=1.0[vo];"
+         f"[bed][vo]sidechaincompress=threshold=0.03:ratio=8:attack=8:release=320[ducked];"
+         f"[vo][ducked]amix=inputs=2:duration=first:weights=1 1[a]",
+         "-map","0:v","-map","[a]","-c:v","copy","-c:a","aac","-b:a","192k","-shortest",out])
+
+INTRO_VO = {
+ "field": "This is the Nguzo field agent training. By the end you'll know exactly how to use every part "
+          "of your dashboard, and why each step matters. Let's walk through it together.",
+ "client": "This is the Nguzo client training. We'll cover how to post a job and manage it through to completion.",
+ "supplier": "This is the Nguzo supplier training. We'll cover bidding, awards, and managing your fleet.",
+ "admin": "This is the Nguzo administrator training. We'll cover every control you use to run the platform.",
+}
+
+def build(role):
+    segvid = json.load(open(f"{ROOT}/seg_roles/{role}/_segs.json"))["segs"]
+    meta = json.load(open(f"{ROOT}/vo_roles/{role}/_durs.json"))
+    print(f"Building {role} segments…")
+    seg_clips = [build_segment(role, s, segvid) for s in meta]
+    title = card_clip(role_title_card(role), f"{role}_titlecard", vo_text=INTRO_VO[role], secs=5.0)
+    close = card_clip(role_close_card(role), f"{role}_closecard", vo_text=None, secs=3.5)
+    parts = [title] + seg_clips + [close]
+    silent = f"{OUT}/_training_{role}_nomusic.mp4"
+    concat(parts, silent)
+    print("Adding music bed…")
+    final = f"{OUT}/training-{role}.mp4"
+    add_music(silent, final)
+    print("DONE", final, round(dur(final),1), "s")
+
+if __name__=="__main__":
+    role = sys.argv[1] if len(sys.argv) > 1 else "field"
+    build(role)

@@ -1,0 +1,73 @@
+{
+  "id": "team",
+  "phase": "ADMIN",
+  "step": "Desk 5 \u2014 Team & Access",
+  "title": "Control who gets in",
+  "seg_dur": 42.5,
+  "lines": [
+    {
+      "i": 0,
+      "text": "The Team and Access desk controls who can do what inside Nguzo.",
+      "action": "nav",
+      "arg": "Team",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/team/00.mp3",
+      "dur": 4.206
+    },
+    {
+      "i": 1,
+      "text": "Every user in the system is listed here, with their email, verification status, and role.",
+      "action": "hover",
+      "arg": "Team & Access",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/team/01.mp3",
+      "dur": 5.512
+    },
+    {
+      "i": 2,
+      "text": "This is your security desk, so it's worth understanding the rules built into it.",
+      "action": "hover",
+      "arg": "Team & Access",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/team/02.mp3",
+      "dur": 4.545
+    },
+    {
+      "i": 3,
+      "text": "You can change a user's role from this dropdown, granting or revoking their access in one move.",
+      "action": "hover",
+      "arg": "Role",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/team/03.mp3",
+      "dur": 6.087
+    },
+    {
+      "i": 4,
+      "text": "But notice the rule, admins and field force are internal roles, they can never be self-assigned.",
+      "action": "hover",
+      "arg": "never self-assigned",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/team/04.mp3",
+      "dur": 6.087
+    },
+    {
+      "i": 5,
+      "text": "That stops anyone signing up and quietly handing themselves control of the platform.",
+      "action": "hover",
+      "arg": "never self-assigned",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/team/05.mp3",
+      "dur": 4.728
+    },
+    {
+      "i": 6,
+      "text": "And the super-admin account is locked, so no one, not even another admin, can downgrade the owner.",
+      "action": "hover",
+      "arg": "super-admin",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/team/06.mp3",
+      "dur": 5.878
+    },
+    {
+      "i": 7,
+      "text": "This is how Nguzo stays secure, access is granted deliberately, never by accident.",
+      "action": "hover",
+      "arg": "you",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/team/07.mp3",
+      "dur": 5.46
+    }
+  ]
+}

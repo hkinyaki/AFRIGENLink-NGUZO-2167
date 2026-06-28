@@ -1,0 +1,6 @@
+file '/home/user/afrigen/tutorials/vo_lines/field/review-docs/00.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/review-docs/01.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/review-docs/02.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/review-docs/03.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/review-docs/04.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/review-docs/05.mp3'

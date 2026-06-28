@@ -1,0 +1,7 @@
+file '/home/user/afrigen/tutorials/vo_lines/supplier/fleet-docs/00.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/fleet-docs/01.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/fleet-docs/02.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/fleet-docs/03.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/fleet-docs/04.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/fleet-docs/05.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/fleet-docs/06.mp3'

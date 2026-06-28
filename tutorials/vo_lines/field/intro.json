@@ -1,0 +1,65 @@
+{
+  "id": "intro",
+  "phase": "FIELD",
+  "step": "Your inspector dashboard",
+  "title": "Where on-site work lives",
+  "seg_dur": 37.77,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Welcome. You are Nguzo's eyes and hands on the ground, the inspector who makes the whole network trustworthy.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/intro/00.mp3",
+      "dur": 6.635
+    },
+    {
+      "i": 1,
+      "text": "This is your dashboard, and it has three sections in the left rail.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/intro/01.mp3",
+      "dur": 3.892
+    },
+    {
+      "i": 2,
+      "text": "Inspections, where jobs wait for you to physically verify a supplier's machine before it can move.",
+      "action": "nav",
+      "arg": "Inspections",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/intro/02.mp3",
+      "dur": 5.747
+    },
+    {
+      "i": 3,
+      "text": "Yard Audits, where you record a full mechanical and legal check of any asset in a supplier's yard.",
+      "action": "nav",
+      "arg": "Yard Audits",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/intro/03.mp3",
+      "dur": 5.747
+    },
+    {
+      "i": 4,
+      "text": "And Border Log, where you record real wait times and clearance overrides at the border posts.",
+      "action": "nav",
+      "arg": "Border Log",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/intro/04.mp3",
+      "dur": 5.277
+    },
+    {
+      "i": 5,
+      "text": "Everything you confirm here unlocks the next stage for the client and the supplier, so accuracy matters.",
+      "action": "scroll",
+      "arg": 160,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/intro/05.mp3",
+      "dur": 6.034
+    },
+    {
+      "i": 6,
+      "text": "Nothing moves until you say it's real. Let's walk through each part.",
+      "action": "scroll",
+      "arg": -160,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/intro/06.mp3",
+      "dur": 4.441
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+file '/home/user/afrigen/tutorials/vo_lines/supplier/agreement/00.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/agreement/01.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/agreement/02.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/agreement/03.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/agreement/04.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/supplier/agreement/05.mp3'

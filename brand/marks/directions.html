@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Nguzo Africa — Design Directions</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=Sora:wght@500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&family=Manrope:wght@500;600;700;800&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#05080F;padding:50px 40px;font-family:'Manrope',sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:30px}
+  .card{border-radius:18px;padding:54px 48px;display:flex;flex-direction:column;gap:8px;align-items:flex-start;position:relative;overflow:hidden}
+  .tag{position:absolute;top:18px;right:22px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;opacity:.5}
+  .note{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.05em;margin-top:14px;opacity:.55}
+
+  /* DIRECTION 1 — Steel monolith, deep graphite + molten orange */
+  .d1{background:#12151A;color:#EDEFF2}
+  .d1 .mk{display:flex;align-items:center;gap:18px}
+  .d1 .bar{width:7px;height:46px;background:linear-gradient(#FF6B2C,#E8480F);border-radius:1px}
+  .d1 .wm{font-family:'Archivo',sans-serif;font-weight:900;font-size:42px;letter-spacing:-.02em}
+  .d1 .wm b{color:#FF6B2C}
+  .d1 .sub{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.28em;color:#7A828E;margin-top:10px;padding-left:25px}
+
+  /* DIRECTION 2 — Corridor flow, ink black + signal teal */
+  .d2{background:#0A0E12;color:#F2F5F4}
+  .d2 .mk{display:flex;align-items:baseline;gap:0}
+  .d2 .wm{font-family:'Sora',sans-serif;font-weight:800;font-size:44px;letter-spacing:-.03em}
+  .d2 .flow{display:inline-flex;gap:5px;margin:0 14px 0 2px;align-self:center}
+  .d2 .flow i{display:block;width:13px;height:4px;background:#21D0B2;border-radius:2px}
+  .d2 .flow i:nth-child(2){opacity:.6}.d2 .flow i:nth-child(3){opacity:.3}
+  .d2 .wm b{color:#21D0B2}
+  .d2 .sub{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.26em;color:#5E6B72;margin-top:12px}
+
+  /* DIRECTION 3 — Heavy industrial stencil, concrete + safety yellow */
+  .d3{background:#1A1A17;color:#F4F2EA}
+  .d3 .wm{font-family:'Archivo',sans-serif;font-weight:800;font-size:46px;letter-spacing:-.01em;text-transform:uppercase}
+  .d3 .wm span{position:relative}
+  .d3 .wm b{color:#1A1A17;background:#F2C200;padding:0 10px;font-weight:900}
+  .d3 .sub{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.3em;color:#8A8678;margin-top:14px}
+
+  /* DIRECTION 4 — Quiet premium mono, off-black + bronze */
+  .d4{background:#0E0D0B;color:#EAE7E0}
+  .d4 .wm{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:34px;letter-spacing:.02em}
+  .d4 .wm b{color:#C9A24B}
+  .d4 .dot{color:#C9A24B}
+  .d4 .sub{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.24em;color:#6B675E;margin-top:14px}
+
+  /* favicon row */
+  .fav{background:#12151A;border-radius:18px;padding:40px 48px;display:flex;gap:20px;align-items:center}
+  .chip{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Archivo',sans-serif;font-weight:900;font-size:24px}
+  .flab{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;color:#7A828E;margin-left:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="card d1">
+    <span class="tag">DIRECTION 1 · STEEL MONOLITH</span>
+    <div class="mk"><div class="bar"></div><div class="wm">NGUZO<b>.</b>AFRICA</div></div>
+    <div class="sub">CARGO &amp; MACHINERY COORDINATION — SECURED</div>
+    <div class="note">Heavy Archivo Black wordmark · molten-orange accent bar = the pillar, abstracted · graphite steel base. Industrial, weighty, confident.</div>
+  </div>
+
+  <div class="card d2">
+    <span class="tag">DIRECTION 2 · CORRIDOR FLOW</span>
+    <div class="mk"><div class="wm">NGUZO</div><div class="flow"><i></i><i></i><i></i></div><div class="wm"><b>AFRICA</b></div></div>
+    <div class="sub">CARGO &amp; MACHINERY COORDINATION — SECURED</div>
+    <div class="note">Sora wordmark · the dashes = cargo moving down a corridor between the two words · signal-teal accent. Movement made literal, modern fintech feel.</div>
+  </div>
+
+  <div class="card d3">
+    <span class="tag">DIRECTION 3 · INDUSTRIAL STENCIL</span>
+    <div class="wm"><span>NGUZO </span><b>AFRICA</b></div>
+    <div class="sub">CARGO &amp; MACHINERY COORDINATION — SECURED</div>
+    <div class="note">Highlighted-block wordmark like stencilled crate / shipping mark · safety-yellow on concrete. Reads "heavy industry &amp; freight" instantly.</div>
+  </div>
+
+  <div class="card d4">
+    <span class="tag">DIRECTION 4 · QUIET PREMIUM MONO</span>
+    <div class="wm">nguzo<b class="dot">_</b>africa</div>
+    <div class="sub">CARGO &amp; MACHINERY COORDINATION — SECURED</div>
+    <div class="note">Monospace wordmark · the "_" cursor = infrastructure / platform / precision · bronze accent. Understated, serious, "built by engineers" credibility.</div>
+  </div>
+
+  <div class="fav">
+    <div class="chip" style="background:#12151A;color:#FF6B2C;border:1px solid #2a2e35">N</div>
+    <div class="chip" style="background:#0A0E12;color:#21D0B2;border:1px solid #1c2228">N</div>
+    <div class="chip" style="background:#F2C200;color:#1A1A17">N</div>
+    <div class="chip" style="background:#0E0D0B;color:#C9A24B;font-family:'IBM Plex Mono',monospace;border:1px solid #25231f">n</div>
+    <span class="flab">favicon / app-icon test — each direction's accent</span>
+  </div>
+
+</div>
+</body>
+</html>

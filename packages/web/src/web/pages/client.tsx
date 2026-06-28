@@ -1,0 +1,628 @@
+import { useState } from "react";
+import { Route, Switch, useLocation } from "wouter";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { tzs } from "../lib/format";
+import type { Me } from "../lib/use-me";
+import { TenderAPI, generateAgreementPDF, generateInvoicePDF, generateNguzoBankPDF } from "../lib/tenders";
+import { api } from "../lib/api";
+import { DEMAND_TYPES, typeOptions, ROUTE_OPTIONS, type DemandType } from "../constants/asset-types";
+import { AppShell, Icons, type NavItem } from "../components/shell";
+import {
+  Button, Card, Field, Input, Select, SectionTitle, StatusPill, Empty, KPIStat,
+  StageTracker, Timeline, MessageThread, FileUpload,
+} from "../components/ui";
+
+const nav: NavItem[] = [
+  { label: "My Jobs", href: "/app", icon: Icons.grid },
+  { label: "Post a Job", href: "/app/new", icon: Icons.file },
+  { label: "Ledger", href: "/app/ledger", icon: Icons.vault },
+];
+
+export default function ClientApp({ me }: { me: Me }) {
+  const q = useQuery({ queryKey: ["tenders"], queryFn: () => TenderAPI.list().then((r) => r.tenders) });
+  const rows = q.data ?? [];
+  const escrowPreview = rows
+    .filter((t) => ["TTUploaded", "TTConfirmed", "Executing"].includes(t.tenderStage))
+    .reduce((s, t) => {
+      const base = t.flatFairPriceTzs * t.unitsNeeded;
+      return s + base + Math.round(base * 0.05); // value + 5% client fee
+    }, 0);
+
+  return (
+    <AppShell
+      me={me}
+      nav={nav}
+      ledgerSummary={
+        <div className="text-xs text-slate-400">
+          In escrow <span className="ml-1 font-display font-semibold text-amber-500 tnum">{tzs(escrowPreview)}</span>
+        </div>
+      }
+    >
+      <Switch>
+        <Route path="/app" component={() => <Jobs me={me} />} />
+        <Route path="/app/new" component={() => <PostJob />} />
+        <Route path="/app/ledger" component={() => <Ledger />} />
+        <Route path="/app/job/:id">{(p) => <JobDetail id={p.id} me={me} />}</Route>
+      </Switch>
+    </AppShell>
+  );
+}
+
+function Jobs({ me }: { me: Me }) {
+  const [, navigate] = useLocation();
+  const q = useQuery({ queryKey: ["tenders"], queryFn: () => TenderAPI.list().then((r) => r.tenders) });
+  const rows = q.data ?? [];
+  const open = rows.filter((r) => r.status === "Open").length;
+  const executing = rows.filter((r) => r.tenderStage === "Executing").length;
+
+  return (
+    <div className="p-6">
+      <SectionTitle sub="Post demand for cargo transport or machinery. Suppliers bid; we auto-fill the best." action={<Button variant="amber" onClick={() => navigate("/app/new")}>Post a Job</Button>}>
+        My Jobs
+      </SectionTitle>
+      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+        <KPIStat label="Total Jobs" value={String(rows.length)} />
+        <KPIStat label="Taking Bids" value={String(open)} />
+        <KPIStat label="In Execution" value={String(executing)} accent={executing ? "good" : undefined} />
+        <KPIStat label="Completed" value={String(rows.filter((r) => r.status === "Completed").length)} accent="good" />
+      </div>
+
+      {rows.length === 0 ? (
+        <Empty>
+          No jobs yet.{" "}
+          <button className="text-amber-500 underline" onClick={() => navigate("/app/new")}>Post your first job</button>
+        </Empty>
+      ) : (
+        <div className="space-y-3">
+          {rows.map((r) => (
+            <Card key={r.id} lift className="cursor-pointer p-4" >
+              <div onClick={() => navigate(`/app/job/${r.id}`)}>
+                <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <div className="font-medium text-slate-100">{r.title}</div>
+                    <div className="text-xs text-slate-500">
+                      {r.demandType === "CargoCarrier" ? "Cargo" : "Machinery"} · {r.carrierOrMachineType} · {r.unitsNeeded} unit{r.unitsNeeded > 1 ? "s" : ""} · {r.origin} → {r.destination}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={r.routeClassification === "CrossBorder" ? "text-xs text-amber-500" : "text-xs text-slate-500"}>
+                      {r.routeClassification === "CrossBorder" ? "Cross-Border" : "Domestic"}
+                    </span>
+                    <StatusPill status={r.status} />
+                  </div>
+                </div>
+                <StageTracker current={r.tenderStage} />
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+      <p className="mt-4 text-[11px] text-slate-600">Signed in as {me.profile.companyName}.</p>
+    </div>
+  );
+}
+
+function PostJob() {
+  const [, navigate] = useLocation();
+  const qc = useQueryClient();
+  const [demandType, setDemandType] = useState<DemandType>("Machinery");
+  const [carrierOrMachineType, setType] = useState("");
+  const [desc, setDesc] = useState("");
+  const [units, setUnits] = useState(1);
+  const [route, setRoute] = useState<"Domestic" | "CrossBorder">("Domestic");
+  const [origin, setOrigin] = useState("Dar es Salaam");
+  const [destination, setDestination] = useState("");
+  const [title, setTitle] = useState("");
+  // timing — cargo
+  const [needByDate, setNeedByDate] = useState("");
+  const [transitDays, setTransitDays] = useState(0);
+  // timing — machinery
+  const [startDate, setStartDate] = useState("");
+  const [jobDays, setJobDays] = useState(0);
+  const [estTransferDays, setEstTransferDays] = useState(0);
+
+  // Machinery end date = start + (jobDays - 1) = last working day (return-to-yard day excluded)
+  const computedEnd = (() => {
+    if (demandType !== "Machinery" || !startDate || jobDays < 1) return "";
+    const d = new Date(startDate + "T00:00:00Z");
+    if (isNaN(d.getTime())) return "";
+    d.setUTCDate(d.getUTCDate() + jobDays - 1);
+    return d.toISOString().slice(0, 10);
+  })();
+
+  const timingValid =
+    demandType === "CargoCarrier" ? !!needByDate : !!startDate && jobDays >= 1;
+
+  const create = useMutation({
+    mutationFn: () =>
+      TenderAPI.create({
+        title, demandType, carrierOrMachineType, cargoOrProjectDesc: desc, unitsNeeded: units,
+        routeClassification: route, origin, destination,
+        needByDate, transitDays, startDate, jobDays, estTransferDays,
+      }),
+    onSuccess: (d) => {
+      qc.invalidateQueries({ queryKey: ["tenders"] });
+      navigate(`/app/job/${d.tenderId}`);
+    },
+  });
+
+  const opts = typeOptions(demandType);
+
+  return (
+    <div className="p-6">
+      <SectionTitle sub="Tell us what you need and how many. Suppliers bid partial or full quantity.">Post a Job</SectionTitle>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="p-5 lg:col-span-2">
+          <div className="space-y-4">
+            <div>
+              <span className="mb-1 block text-[11px] uppercase tracking-wider text-slate-500">What do you need?</span>
+              <div className="grid grid-cols-2 gap-2">
+                {DEMAND_TYPES.map((d) => (
+                  <button
+                    key={d.value}
+                    onClick={() => { setDemandType(d.value); setType(""); }}
+                    className={`rounded-lg border p-3 text-left transition ${demandType === d.value ? "border-amber-500 bg-amber-bg" : "border-navy-600 bg-navy-900 hover:border-navy-500"}`}
+                  >
+                    <div className={`text-sm font-medium ${demandType === d.value ? "text-amber-500" : "text-slate-100"}`}>{d.label}</div>
+                    <div className="text-[11px] text-slate-500">{d.hint}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field label={demandType === "CargoCarrier" ? "Carrier type" : "Machine type"}>
+                <Select value={carrierOrMachineType} onChange={(e) => setType(e.target.value)}>
+                  <option value="">Select…</option>
+                  {opts.map((o) => <option key={o} value={o}>{o}</option>)}
+                </Select>
+              </Field>
+              <Field label="Units needed">
+                <Input type="number" min={1} value={units || ""} onChange={(e) => setUnits(Math.max(1, Number(e.target.value)))} />
+              </Field>
+            </div>
+
+            <Field label={demandType === "CargoCarrier" ? "Cargo to transport" : "Project / use"}>
+              <Input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={demandType === "CargoCarrier" ? "e.g. 600t river sand, Dar → Geita site" : "e.g. earthworks for warehouse foundation"} />
+            </Field>
+
+            {/* Timing */}
+            {demandType === "CargoCarrier" ? (
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Need-by date">
+                  <Input type="date" value={needByDate} onChange={(e) => setNeedByDate(e.target.value)} />
+                </Field>
+                <Field label="Estimated transit (days)">
+                  <Input type="number" min={0} value={transitDays || ""} onChange={(e) => setTransitDays(Math.max(0, Number(e.target.value)))} placeholder="e.g. 2" />
+                </Field>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="On-site start date">
+                    <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                  </Field>
+                  <Field label="Job length (working days)">
+                    <Input type="number" min={1} value={jobDays || ""} onChange={(e) => setJobDays(Math.max(0, Number(e.target.value)))} placeholder="e.g. 30" />
+                  </Field>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Est. transfer to site (days)">
+                    <Input type="number" min={0} value={estTransferDays || ""} onChange={(e) => setEstTransferDays(Math.max(0, Number(e.target.value)))} placeholder="e.g. 1" />
+                  </Field>
+                  <div className="flex flex-col justify-end">
+                    <span className="mb-1 block text-[11px] uppercase tracking-wider text-slate-500">End date (auto)</span>
+                    <div className="rounded-md border border-navy-600 bg-navy-900 px-3 py-2 text-sm text-amber-500 tnum">
+                      {computedEnd || "—"}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-500">End date is the last working day. The return / transfer-to-yard day is not charged.</p>
+              </div>
+            )}
+
+            <div>
+              <span className="mb-1 block text-[11px] uppercase tracking-wider text-slate-500">Transit classification</span>
+              <div className="flex gap-1 rounded-md border border-navy-600 bg-navy-900 p-1">
+                {ROUTE_OPTIONS.map((r) => (
+                  <button
+                    key={r.value}
+                    onClick={() => setRoute(r.value)}
+                    className={`flex-1 rounded px-3 py-2 text-sm font-medium transition ${route === r.value ? (r.value === "CrossBorder" ? "bg-amber-500 text-navy-900" : "bg-navy-700 text-slate-100") : "text-slate-500 hover:text-slate-300"}`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Origin"><Input value={origin} onChange={(e) => setOrigin(e.target.value)} /></Field>
+              <Field label="Destination"><Input value={destination} onChange={(e) => setDestination(e.target.value)} placeholder={route === "CrossBorder" ? "e.g. Kigali, Rwanda" : "e.g. Geita"} /></Field>
+            </div>
+            <Field label="Job title (optional)">
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Auto-generated if left blank" />
+            </Field>
+
+            <Button variant="amber" disabled={!carrierOrMachineType || !destination || !timingValid || create.isPending} onClick={() => create.mutate()}>
+              {create.isPending ? "Posting…" : "Post job & open for bids"}
+            </Button>
+          </div>
+        </Card>
+
+        <Card className="h-fit p-5">
+          <div className="mb-2 text-[11px] uppercase tracking-wider text-slate-500">How it works</div>
+          <ol className="space-y-3 text-sm text-slate-300">
+            <li><span className="text-amber-500">1.</span> Suppliers bid quantity + price per unit.</li>
+            <li><span className="text-amber-500">2.</span> We auto-fill the cheapest bids until your quantity is met, then set one flat fair price all awarded suppliers agree to.</li>
+            <li><span className="text-amber-500">3.</span> You confirm the award — each supplier signs their own agreement.</li>
+            <li><span className="text-amber-500">4.</span> Staged gate: agreements → fleet docs → field inspection → permits → payment → execution.</li>
+          </ol>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function JobDetail({ id, me }: { id: string; me: Me }) {
+  const qc = useQueryClient();
+  const q = useQuery({ queryKey: ["tender", id], queryFn: () => TenderAPI.get(id), refetchInterval: 4000 });
+  const refresh = () => qc.invalidateQueries({ queryKey: ["tender", id] });
+
+  const award = useMutation({ mutationFn: () => TenderAPI.confirmAward(id), onSuccess: refresh });
+  const advance = useMutation({ mutationFn: (step: string) => TenderAPI.advance(id, step), onSuccess: refresh });
+  const send = useMutation({ mutationFn: (body: string) => TenderAPI.sendMessage(id, body), onSuccess: refresh });
+  const signOff = useMutation({ mutationFn: (contractId: string) => TenderAPI.signOff(contractId), onSuccess: refresh });
+
+  if (q.isLoading || !q.data?.tender) return <div className="p-6 text-slate-500">Loading…</div>;
+  const { tender: t, bids, contracts, documents, timeline, messages: thread, stageLabel } = q.data;
+  const stage = t.tenderStage;
+  const isMachinery = t.demandType === "Machinery";
+  const baseValue = t.flatFairPriceTzs * t.unitsNeeded;
+  const clientFee = Math.round(baseValue * 0.05);
+  const escrowAmt = baseValue + clientFee; // what the client funds = value + 5%
+  const ttDoc = documents.find((d: any) => d.kind === "TTProof");
+  const permitDocs = documents.filter((d: any) => d.kind === "Permit");
+
+  return (
+    <div className="p-6">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-xl font-semibold text-slate-100">{t.title}</h1>
+          <p className="text-sm text-slate-500">
+            {t.demandType === "CargoCarrier" ? "Cargo" : "Machinery"} · {t.carrierOrMachineType} · {t.unitsNeeded} unit{t.unitsNeeded > 1 ? "s" : ""} · {t.origin} → {t.destination}
+            {t.cargoOrProjectDesc ? ` · ${t.cargoOrProjectDesc}` : ""}
+          </p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            {isMachinery
+              ? `Hire ${t.startDate || "—"} → ${t.endDate || "—"}${t.jobDays ? ` (${t.jobDays} working days)` : ""}`
+              : `Need by ${t.needByDate || "—"}${t.transitDays ? ` · ~${t.transitDays} day transit` : ""}`}
+          </p>
+        </div>
+        <StatusPill status={stage} />
+      </div>
+
+      <Card className="mb-5 p-4"><StageTracker current={stage} /></Card>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="space-y-4 lg:col-span-2">
+          {/* Bids + award */}
+          {stage === "Bidding" && (
+            <Card className="p-5">
+              <SectionTitle sub="We auto-fill cheapest bids until your quantity is met, then set one flat fair price.">Bids ({bids.length})</SectionTitle>
+              {bids.length === 0 ? (
+                <Empty>No bids yet. Suppliers will appear here as they respond.</Empty>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-navy-600 text-left text-[11px] uppercase tracking-wider text-slate-500">
+                      <th className="py-2">Supplier</th><th className="py-2 text-right">Units</th><th className="py-2 text-right">Price / unit</th><th className="py-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bids.map((b: any) => (
+                      <tr key={b.id} className="border-b border-navy-700">
+                        <td className="py-2.5 text-slate-100">{b.supplierName}</td>
+                        <td className="py-2.5 text-right tnum text-slate-300">{b.unitsOffered}</td>
+                        <td className="py-2.5 text-right tnum text-slate-200">{tzs(b.pricePerUnitTzs)}</td>
+                        <td className="py-2.5 text-right"><StatusPill status={b.status} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              {bids.length > 0 && (
+                <div className="mt-4 flex items-center justify-between rounded-md border border-navy-600 bg-navy-900 p-3">
+                  <span className="text-sm text-slate-400">Confirm the award — the system auto-fills the cheapest bids and creates one signed agreement per supplier.</span>
+                  <Button variant="amber" disabled={award.isPending} onClick={() => award.mutate()}>
+                    {award.isPending ? "Awarding…" : "Confirm award"}
+                  </Button>
+                </div>
+              )}
+              {award.error && <p className="mt-2 text-xs text-bad">{(award.error as Error).message}</p>}
+            </Card>
+          )}
+
+          {/* Awarded contracts */}
+          {stage !== "Bidding" && (
+            <Card className="p-5">
+              <SectionTitle sub={`Flat fair price: ${tzs(t.flatFairPriceTzs)} / unit`}>Awarded Suppliers</SectionTitle>
+              <div className="space-y-2">
+                {contracts.map((c: any) => (
+                  <div key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-navy-600 bg-navy-900 p-3 text-sm">
+                    <div>
+                      <div className="font-medium text-slate-100">{c.supplierName}</div>
+                      <div className="text-xs text-slate-500">{c.unitsAwarded} unit{c.unitsAwarded > 1 ? "s" : ""} · {tzs((c.contractValueTzs || c.agreedPricePerUnitTzs * c.unitsAwarded))} value</div>
+                    </div>
+                    <StatusPill status={c.contractStage} />
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Client action: permits */}
+          {stage === "FieldVerified" && (
+            <Card className="border-amber-600 p-5">
+              <SectionTitle sub="Field inspection cleared. Upload the transit permits to proceed.">Your step — Upload permits</SectionTitle>
+              <div className="space-y-3">
+                <FileUpload label="Transit permits" kind="Permit" tenderId={id} onUploaded={refresh} buttonLabel="Upload permit document" />
+                {permitDocs.length > 0 && (
+                  <Button variant="amber" disabled={advance.isPending} onClick={() => advance.mutate("permits-uploaded")}>
+                    {advance.isPending ? "Submitting…" : "Submit permits for verification"}
+                  </Button>
+                )}
+              </div>
+            </Card>
+          )}
+
+          {/* Client action: TT payment proof = escrow funding */}
+          {stage === "PermitsVerified" && (
+            <Card className="border-amber-600 p-5">
+              <SectionTitle sub="Permits verified. Upload your TT payment proof — this funds the escrow held by Nguzo.">Your step — Payment proof</SectionTitle>
+              <div className="mb-3">
+                <Button variant="ghost" onClick={() => generateNguzoBankPDF({ contractTitle: t.title, amountToFundTzs: escrowAmt, reference: t.id })}>
+                  Download Nguzo bank details (PDF)
+                </Button>
+              </div>
+              <div className="mb-3 space-y-1.5 rounded-md border border-navy-600 bg-navy-900 p-3 text-sm">
+                <div className="flex items-center justify-between text-slate-400">
+                  <span>Contract value</span><span className="tnum">{tzs(baseValue)}</span>
+                </div>
+                <div className="flex items-center justify-between text-slate-400">
+                  <span>Nguzo service fee (5%)</span><span className="tnum">+ {tzs(clientFee)}</span>
+                </div>
+                <div className="flex items-center justify-between border-t border-navy-700 pt-1.5 font-medium text-slate-100">
+                  <span>Total to fund (escrow preview)</span>
+                  <span className="tnum font-display font-semibold text-amber-500">{tzs(escrowAmt)}</span>
+                </div>
+                <p className="text-[11px] text-slate-500">Funds tracked, not held. Suppliers are paid on completion, less their own 5% fee.</p>
+              </div>
+              <div className="space-y-3">
+                <FileUpload label="TT payment proof" kind="TTProof" tenderId={id} onUploaded={refresh} buttonLabel="Upload TT proof" />
+                {ttDoc && (
+                  <Button variant="amber" disabled={advance.isPending} onClick={() => advance.mutate("tt-uploaded")}>
+                    {advance.isPending ? "Submitting…" : "Submit payment proof"}
+                  </Button>
+                )}
+              </div>
+            </Card>
+          )}
+
+          {(stage === "TTUploaded" || stage === "TTConfirmed" || stage === "Executing") && (
+            <Card className="p-5">
+              <div className="mb-2 text-[11px] uppercase tracking-wider text-slate-500">Escrow</div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-400">{stage === "TTUploaded" ? "Awaiting Nguzo confirmation" : "Held in escrow by Nguzo"}</span>
+                <span className="tnum font-display text-lg font-semibold text-amber-500">{tzs(escrowAmt)}</span>
+              </div>
+              <p className="mt-2 text-[11px] text-slate-500">Funds are tracked end-to-end (includes 5% client fee) and released to suppliers on completion, less their 5% supplier fee.</p>
+            </Card>
+          )}
+
+          {/* Client sign-off → opens the payout chain (KAM processes payment) */}
+          {stage === "Executing" && (
+            <Card className="border-amber-600 p-5">
+              <SectionTitle sub="When the job is complete, sign off each supplier line. Nguzo then processes the payout — no funds move until you sign off.">Sign off & release payment</SectionTitle>
+              <div className="space-y-2">
+                {contracts.map((c: any) => {
+                  const done = c.milestoneStatus === "FundsDisbursed";
+                  const awaiting = c.payoutStatus === "AwaitingSupplierApproval";
+                  return (
+                    <div key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-navy-600 bg-navy-900 p-3 text-sm">
+                      <div>
+                        <div className="text-slate-100">{c.supplierName} · {c.unitsAwarded} unit{c.unitsAwarded > 1 ? "s" : ""}</div>
+                        <div className="text-[11px] text-slate-500">{tzs(c.contractValueTzs || c.agreedPricePerUnitTzs * c.unitsAwarded)} value</div>
+                      </div>
+                      {done ? <span className="text-xs text-good">Settled</span>
+                        : awaiting ? <span className="text-xs text-amber-500">Payout in progress</span>
+                        : <Button variant="amber" disabled={signOff.isPending} onClick={() => signOff.mutate(c.id)}>{signOff.isPending ? "Signing…" : "Sign off"}</Button>}
+                    </div>
+                  );
+                })}
+              </div>
+              {signOff.error && <p className="mt-2 text-xs text-bad">{(signOff.error as Error).message}</p>}
+            </Card>
+          )}
+
+          {/* Machinery hire — extension panel (active execution only) */}
+          {isMachinery && (stage === "TTConfirmed" || stage === "Executing") && (
+            <ExtensionPanel contracts={contracts} onDone={refresh} />
+          )}
+
+          {/* Documents */}
+          {documents.length > 0 && (
+            <Card className="p-5">
+              <div className="mb-3 text-[11px] uppercase tracking-wider text-slate-500">Documents</div>
+              <ul className="space-y-2 text-sm">
+                {documents.map((d: any) => (
+                  <li key={d.id} className="flex items-center justify-between">
+                    <span className="text-slate-300">{d.label || d.kind} <span className="text-[11px] text-slate-500">· {d.kind}</span></span>
+                    <span className="flex items-center gap-2">
+                      {d.verifiedBy && <span className="text-[11px] text-good">verified</span>}
+                      {d.url && <a href={d.url} target="_blank" rel="noreferrer" className="text-xs text-amber-500 hover:underline">View ↗</a>}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+        </div>
+
+        {/* side: timeline + messaging */}
+        <div className="space-y-4">
+          <Card className="p-5">
+            <div className="mb-3 text-[11px] uppercase tracking-wider text-slate-500">Status</div>
+            <p className="text-sm text-slate-200">{stageLabel}</p>
+          </Card>
+          <Card className="p-5">
+            <div className="mb-3 text-[11px] uppercase tracking-wider text-slate-500">Messages</div>
+            <MessageThread messages={thread} meProfileId={me.profile.id} onSend={(b) => send.mutate(b)} sending={send.isPending} />
+          </Card>
+          <Card className="p-5">
+            <div className="mb-3 text-[11px] uppercase tracking-wider text-slate-500">Activity</div>
+            <Timeline events={timeline} />
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Machinery hire extension — request +N days, preview cost, fund via TT proof. */
+function ExtensionPanel({ contracts, onDone }: { contracts: any[]; onDone: () => void }) {
+  // Each awarded supplier line is its own contract; extend per contract.
+  const machineryContracts = contracts.filter((c) => c.dailyRateTzs > 0);
+  if (machineryContracts.length === 0) return null;
+  return (
+    <Card className="p-5">
+      <SectionTitle sub="Keep a machine on site beyond its end date. Same daily rate, +5% fee. Pay before the current end date.">Extend a hire</SectionTitle>
+      <div className="space-y-3">
+        {machineryContracts.map((c) => (
+          <ExtensionRow key={c.id} contract={c} onDone={onDone} />
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function ExtensionRow({ contract, onDone }: { contract: any; onDone: () => void }) {
+  const [days, setDays] = useState(7);
+  const [pending, setPending] = useState<null | { id: string; addedDays: number; newEndDate: string; extraAmountTzs: number; clientFeeTzs: number; amountToFundTzs: number; dueDate: string }>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [paid, setPaid] = useState(false);
+
+  const overdue = contract.extensionStatus === "PaymentOverdue" || contract.removalRight === 1;
+
+  const request = async () => {
+    setBusy(true); setErr("");
+    try {
+      const r = await TenderAPI.extend(contract.id, days);
+      setPending(r.extension);
+    } catch (e) { setErr((e as Error).message); }
+    finally { setBusy(false); }
+  };
+  const pay = async () => {
+    if (!pending) return;
+    setBusy(true); setErr("");
+    try {
+      await TenderAPI.payExtension(contract.id, pending.id);
+      setPaid(true); setPending(null); onDone();
+    } catch (e) { setErr((e as Error).message); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <div className="rounded-md border border-navy-600 bg-navy-900 p-3">
+      <div className="mb-2 flex items-center justify-between text-sm">
+        <span className="font-medium text-slate-100">{contract.supplierName}</span>
+        <span className="text-xs text-slate-500">ends {contract.endDate || "—"} · {tzs(contract.dailyRateTzs)}/day/unit</span>
+      </div>
+
+      {overdue ? (
+        <div className="rounded border border-bad/40 bg-bad/10 p-2 text-xs text-bad">
+          Extension lapsed — payment not received by the due date. The supplier may recover the machine.
+        </div>
+      ) : paid ? (
+        <div className="rounded border border-good/40 bg-good/10 p-2 text-xs text-good">Extension confirmed. Hire extended.</div>
+      ) : !pending ? (
+        <div className="flex items-end gap-2">
+          <Field label="Extra days">
+            <Input type="number" min={1} value={days || ""} onChange={(e) => setDays(Math.max(1, Number(e.target.value)))} />
+          </Field>
+          <Button disabled={busy} onClick={request}>{busy ? "Calculating…" : "Request extension"}</Button>
+        </div>
+      ) : (
+        <div className="space-y-2 text-sm">
+          <div className="space-y-1">
+            <div className="flex justify-between text-slate-400"><span>New end date</span><span className="tnum text-slate-200">{pending.newEndDate}</span></div>
+            <div className="flex justify-between text-slate-400"><span>Extra ({pending.addedDays} days × {contract.unitsAwarded} unit{contract.unitsAwarded > 1 ? "s" : ""})</span><span className="tnum">{tzs(pending.extraAmountTzs)}</span></div>
+            <div className="flex justify-between text-slate-400"><span>Service fee (5%)</span><span className="tnum">+ {tzs(pending.clientFeeTzs)}</span></div>
+            <div className="flex justify-between border-t border-navy-700 pt-1 font-medium text-slate-100"><span>Total to fund</span><span className="tnum text-amber-500">{tzs(pending.amountToFundTzs)}</span></div>
+          </div>
+          <p className="text-[11px] text-amber-500/80">Must be funded before {pending.dueDate} (current end date), or the supplier may recover the machine.</p>
+          <div className="flex gap-2">
+            <Button variant="amber" disabled={busy} onClick={pay}>{busy ? "Funding…" : "Fund extension (TT)"}</Button>
+            <Button disabled={busy} onClick={() => setPending(null)}>Cancel</Button>
+          </div>
+        </div>
+      )}
+      {err && <p className="mt-2 text-xs text-bad">{err}</p>}
+    </div>
+  );
+}
+
+function Ledger() {
+  const q = useQuery({ queryKey: ["client-contracts"], queryFn: async () => (await (await api.contracts.$get()).json()).contracts as any[] });
+  const rows = q.data ?? [];
+  const totalFunded = rows.reduce((s, c) => s + (c.totalEscrowBalanceTzs || 0), 0);
+  const settled = rows.filter((c) => c.milestoneStatus === "FundsDisbursed");
+
+  async function downloadInvoice(contractId: string, c: any) {
+    const r = await (await api.invoices[":contractId"].$get({ param: { contractId } })).json();
+    const inv = (r.invoices as any[]).find((i) => i.party === "Client");
+    if (inv) generateInvoicePDF(inv, { title: c.title, origin: c.origin, destination: c.destination, routeClassification: c.routeClassification });
+  }
+
+  return (
+    <div className="p-6">
+      <SectionTitle sub="Your contracts, escrow funded and settlement invoices.">Ledger</SectionTitle>
+      <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-3">
+        <KPIStat label="Contracts" value={String(rows.length)} />
+        <KPIStat label="Total Funded" value={tzs(totalFunded)} accent="amber" />
+        <KPIStat label="Settled" value={String(settled.length)} accent="good" />
+      </div>
+      {rows.length === 0 ? <Empty>No contracts yet.</Empty> : (
+        <Card className="overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-navy-600 text-left text-[11px] uppercase tracking-wider text-slate-500">
+                <th className="px-4 py-3">Contract</th>
+                <th className="px-4 py-3 text-right">Value</th>
+                <th className="px-4 py-3 text-right">Funded (escrow)</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((c) => (
+                <tr key={c.id} className="border-b border-navy-700">
+                  <td className="px-4 py-3 text-slate-100">{c.title}</td>
+                  <td className="px-4 py-3 text-right tnum text-slate-300">{tzs(c.contractValueTzs || c.agreedPricePerUnitTzs * c.unitsAwarded)}</td>
+                  <td className="px-4 py-3 text-right tnum text-slate-200">{tzs(c.totalEscrowBalanceTzs)}</td>
+                  <td className="px-4 py-3"><StatusPill status={c.milestoneStatus} /></td>
+                  <td className="px-4 py-3 text-right">
+                    {c.milestoneStatus === "FundsDisbursed" && (
+                      <button onClick={() => downloadInvoice(c.id, c)} className="text-xs text-amber-500 hover:underline">Invoice ↓</button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      )}
+    </div>
+  );
+}

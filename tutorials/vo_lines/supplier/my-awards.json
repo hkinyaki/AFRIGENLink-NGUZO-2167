@@ -1,0 +1,57 @@
+{
+  "id": "my-awards",
+  "phase": "SUPPLIER",
+  "step": "Step 3 \u2014 My Awards",
+  "title": "The work you've won",
+  "seg_dur": 27.85,
+  "lines": [
+    {
+      "i": 0,
+      "text": "When a client confirms the award, your job moves into My Awards.",
+      "action": "hover",
+      "arg": "My Awards",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/my-awards/00.mp3",
+      "dur": 3.997
+    },
+    {
+      "i": 1,
+      "text": "Open it, and the first thing you will notice is the stage tracker.",
+      "action": "hover",
+      "arg": "Your award",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/my-awards/01.mp3",
+      "dur": 3.605
+    },
+    {
+      "i": 2,
+      "text": "This is your map for the whole job, showing every step from the signed agreement through to execution.",
+      "action": "hover",
+      "arg": "flat fair",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/my-awards/02.mp3",
+      "dur": 5.878
+    },
+    {
+      "i": 3,
+      "text": "It shows exactly where you are right now.",
+      "action": "scroll",
+      "arg": 140,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/my-awards/03.mp3",
+      "dur": 2.586
+    },
+    {
+      "i": 4,
+      "text": "Below it you will see your award in plain numbers, the units you have been given and the flat fair price per unit.",
+      "action": "hover",
+      "arg": "flat fair",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/my-awards/04.mp3",
+      "dur": 6.452
+    },
+    {
+      "i": 5,
+      "text": "There are no surprises and no hidden deductions, what you see is what you are contracted for.",
+      "action": "scroll",
+      "arg": -140,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/my-awards/05.mp3",
+      "dur": 5.329
+    }
+  ]
+}

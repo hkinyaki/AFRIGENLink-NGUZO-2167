@@ -1,0 +1,73 @@
+{
+  "id": "permits",
+  "phase": "CLIENT",
+  "step": "Step 6 \u2014 Upload permits",
+  "title": "Clear the paperwork",
+  "seg_dur": 39.03,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Now the gate hands you your step, uploading the transit permits.",
+      "action": "hover",
+      "arg": "Your step \u2014 Upload permits",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/permits/00.mp3",
+      "dur": 3.762
+    },
+    {
+      "i": 1,
+      "text": "These are the road and transit clearances the cargo or machine needs to move legally.",
+      "action": "hover",
+      "arg": "Transit permits",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/permits/01.mp3",
+      "dur": 5.146
+    },
+    {
+      "i": 2,
+      "text": "You attach the permit document right here, simply and securely.",
+      "action": "hover",
+      "arg": "Transit permits",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/permits/02.mp3",
+      "dur": 3.788
+    },
+    {
+      "i": 3,
+      "text": "Then you submit it for verification, where our admin team checks it before anything proceeds.",
+      "action": "hoverbtn",
+      "arg": "Submit permits for verification",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/permits/03.mp3",
+      "dur": 5.669
+    },
+    {
+      "i": 4,
+      "text": "This keeps you compliant, no convoy moves on paperwork that hasn't been checked.",
+      "action": "hover",
+      "arg": "Documents",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/permits/04.mp3",
+      "dur": 4.728
+    },
+    {
+      "i": 5,
+      "text": "Why does Nguzo gate this? Because an uncleared load can be turned back at a checkpoint, costing you days and money.",
+      "action": "hover",
+      "arg": "Activity",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/permits/05.mp3",
+      "dur": 6.949
+    },
+    {
+      "i": 6,
+      "text": "By checking permits before the machine moves, we stop those problems before they ever start.",
+      "action": "hover",
+      "arg": "Your step \u2014 Upload permits",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/permits/06.mp3",
+      "dur": 5.146
+    },
+    {
+      "i": 7,
+      "text": "Once permits are verified, the final step is yours, the payment.",
+      "action": "hover",
+      "arg": "Status",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/permits/07.mp3",
+      "dur": 3.84
+    }
+  ]
+}

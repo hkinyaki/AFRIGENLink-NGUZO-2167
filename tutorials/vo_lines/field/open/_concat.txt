@@ -1,0 +1,6 @@
+file '/home/user/afrigen/tutorials/vo_lines/field/open/00.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/open/01.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/open/02.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/open/03.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/open/04.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/open/05.mp3'

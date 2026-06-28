@@ -1,0 +1,73 @@
+{
+  "id": "approve-execute",
+  "phase": "ADMIN",
+  "step": "Desk 2 \u2014 Gate 3: Execute",
+  "title": "Release the work",
+  "seg_dur": 46.03,
+  "lines": [
+    {
+      "i": 0,
+      "text": "With permits cleared and payment confirmed, the job reaches its final gate, approval to execute.",
+      "action": "hover",
+      "arg": "Action required",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/approve-execute/00.mp3",
+      "dur": 5.878
+    },
+    {
+      "i": 1,
+      "text": "This is the green light, authorising the supplier and the field force to begin the work on the ground.",
+      "action": "hover",
+      "arg": "Authorise the supplier and field force",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/approve-execute/01.mp3",
+      "dur": 5.564
+    },
+    {
+      "i": 2,
+      "text": "Take a moment here, because this is the point of no return, after this the machines move.",
+      "action": "hover",
+      "arg": "Action required",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/approve-execute/02.mp3",
+      "dur": 5.512
+    },
+    {
+      "i": 3,
+      "text": "By now everything is verified, the machine inspected on site, the permits checked, the money held in escrow.",
+      "action": "hover",
+      "arg": "Escrow",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/approve-execute/03.mp3",
+      "dur": 7.105
+    },
+    {
+      "i": 4,
+      "text": "You can see the escrow is now recorded as held by Nguzo, so the supplier is guaranteed payment.",
+      "action": "hover",
+      "arg": "Held by Nguzo",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/approve-execute/04.mp3",
+      "dur": 5.878
+    },
+    {
+      "i": 5,
+      "text": "Only when every single safeguard is in place do you release the job.",
+      "action": "hoverbtn",
+      "arg": "Approve to execute",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/approve-execute/05.mp3",
+      "dur": 4.127
+    },
+    {
+      "i": 6,
+      "text": "That one approval turns a careful paperwork process into a moving convoy, with full protection behind it.",
+      "action": "hover",
+      "arg": "Held by Nguzo",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/approve-execute/06.mp3",
+      "dur": 6.504
+    },
+    {
+      "i": 7,
+      "text": "And from here, the field force takes over on the ground, while you watch the job run to completion.",
+      "action": "hover",
+      "arg": "Activity",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/approve-execute/07.mp3",
+      "dur": 5.46
+    }
+  ]
+}

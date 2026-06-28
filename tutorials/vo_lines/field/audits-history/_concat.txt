@@ -1,0 +1,4 @@
+file '/home/user/afrigen/tutorials/vo_lines/field/audits-history/00.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/audits-history/01.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/audits-history/02.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/audits-history/03.mp3'

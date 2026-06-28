@@ -1,0 +1,57 @@
+{
+  "id": "intro",
+  "phase": "CLIENT",
+  "step": "Your client dashboard",
+  "title": "Where your jobs live",
+  "seg_dur": 33.28,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Welcome to Nguzo. You're the client, the one who needs trucks or machinery and wants it done without the usual risk.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/intro/00.mp3",
+      "dur": 7.288
+    },
+    {
+      "i": 1,
+      "text": "This is your dashboard. It's deliberately simple, just two sections in the left rail.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/intro/01.mp3",
+      "dur": 5.251
+    },
+    {
+      "i": 2,
+      "text": "My Jobs, where every demand you've posted lives and where you track its progress.",
+      "action": "nav",
+      "arg": "My Jobs",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/intro/02.mp3",
+      "dur": 5.016
+    },
+    {
+      "i": 3,
+      "text": "And Post a Job, where you tell us what you need and let suppliers compete for it.",
+      "action": "nav",
+      "arg": "Post a Job",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/intro/03.mp3",
+      "dur": 4.545
+    },
+    {
+      "i": 4,
+      "text": "Everything you do flows through these two screens, so let's start by understanding what a job actually is.",
+      "action": "nav",
+      "arg": "My Jobs",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/intro/04.mp3",
+      "dur": 5.799
+    },
+    {
+      "i": 5,
+      "text": "Think of Nguzo as the trusted middle. You post once, we coordinate the rest.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/intro/05.mp3",
+      "dur": 5.381
+    }
+  ]
+}

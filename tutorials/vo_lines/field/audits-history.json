@@ -1,0 +1,41 @@
+{
+  "id": "audits-history",
+  "phase": "FIELD",
+  "step": "Step 8 \u2014 Audit history",
+  "title": "Your track record",
+  "seg_dur": 16.07,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Below the form is your recent audits list.",
+      "action": "hover",
+      "arg": "Recent audits",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/audits-history/00.mp3",
+      "dur": 2.534
+    },
+    {
+      "i": 1,
+      "text": "Every audit you sign off is logged here with its notes, building a permanent inspection trail.",
+      "action": "scroll",
+      "arg": 160,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/audits-history/01.mp3",
+      "dur": 5.381
+    },
+    {
+      "i": 2,
+      "text": "This history is what gives suppliers and clients confidence that checks really happened.",
+      "action": "scroll",
+      "arg": -160,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/audits-history/02.mp3",
+      "dur": 4.911
+    },
+    {
+      "i": 3,
+      "text": "It's also your own record of the work you've done on the ground.",
+      "action": "hover",
+      "arg": "Recent audits",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/field/audits-history/03.mp3",
+      "dur": 3.239
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+file '/home/user/afrigen/tutorials/vo_lines/field/verify-advance/00.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/verify-advance/01.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/verify-advance/02.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/verify-advance/03.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/verify-advance/04.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/verify-advance/05.mp3'

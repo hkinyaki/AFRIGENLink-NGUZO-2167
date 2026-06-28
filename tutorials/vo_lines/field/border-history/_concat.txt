@@ -1,0 +1,6 @@
+file '/home/user/afrigen/tutorials/vo_lines/field/border-history/00.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/border-history/01.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/border-history/02.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/border-history/03.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/border-history/04.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/border-history/05.mp3'

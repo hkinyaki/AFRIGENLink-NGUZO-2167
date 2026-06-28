@@ -1,0 +1,81 @@
+{
+  "id": "intro",
+  "phase": "SUPPLIER",
+  "step": "Your supplier dashboard",
+  "title": "Where your work lives",
+  "seg_dur": 33.44,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Welcome to Nguzo Africa.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/intro/00.mp3",
+      "dur": 1.75
+    },
+    {
+      "i": 1,
+      "text": "If you own trucks or machinery, this is the dashboard that turns your idle assets into paid work, with your money protected.",
+      "action": "nav",
+      "arg": "Jobs",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/intro/01.mp3",
+      "dur": 7.367
+    },
+    {
+      "i": 2,
+      "text": "Start on the Jobs page.",
+      "action": "nav",
+      "arg": "Jobs",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/intro/02.mp3",
+      "dur": 1.698
+    },
+    {
+      "i": 3,
+      "text": "This first counter, Open to bid, shows live jobs you can compete for right now.",
+      "action": "hover",
+      "arg": "Open to bid",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/intro/03.mp3",
+      "dur": 4.78
+    },
+    {
+      "i": 4,
+      "text": "My awards is the work you have already won.",
+      "action": "hover",
+      "arg": "My awards",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/intro/04.mp3",
+      "dur": 2.586
+    },
+    {
+      "i": 5,
+      "text": "Executing is what is moving on the ground today.",
+      "action": "hover",
+      "arg": "Executing",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/intro/05.mp3",
+      "dur": 3.056
+    },
+    {
+      "i": 6,
+      "text": "And Bids placed is how many offers you currently have on the table.",
+      "action": "hover",
+      "arg": "Bids placed",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/intro/06.mp3",
+      "dur": 3.657
+    },
+    {
+      "i": 7,
+      "text": "Over on the left you have four places to work, Jobs, Fleet, Escrow Vault, and Report Breakdown.",
+      "action": "nav",
+      "arg": "Fleet",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/intro/07.mp3",
+      "dur": 5.616
+    },
+    {
+      "i": 8,
+      "text": "We will walk through every single one of them together.",
+      "action": "nav",
+      "arg": "Escrow Vault",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/intro/08.mp3",
+      "dur": 2.926
+    }
+  ]
+}

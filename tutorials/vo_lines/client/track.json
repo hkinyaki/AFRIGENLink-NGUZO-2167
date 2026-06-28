@@ -1,0 +1,57 @@
+{
+  "id": "track",
+  "phase": "CLIENT",
+  "step": "Step 8 \u2014 Track to completion",
+  "title": "Watch it finish",
+  "seg_dur": 33.88,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Back on My Jobs, you simply watch the staged gate march to completion.",
+      "action": "nav",
+      "arg": "My Jobs",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/track/00.mp3",
+      "dur": 4.362
+    },
+    {
+      "i": 1,
+      "text": "Award, agreements, inspection, permits, payment, and finally execution, every stage visible.",
+      "action": "hover",
+      "arg": "My Jobs",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/track/01.mp3",
+      "dur": 6.504
+    },
+    {
+      "i": 2,
+      "text": "You never have to phone around or wonder where things stand, the dashboard always tells you.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/track/02.mp3",
+      "dur": 4.859
+    },
+    {
+      "i": 3,
+      "text": "When the work is signed off, Nguzo settles the suppliers and the job closes, cleanly.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/track/03.mp3",
+      "dur": 5.277
+    },
+    {
+      "i": 4,
+      "text": "And if something ever goes wrong on the ground, our field and admin teams act, you're never left chasing a supplier alone.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/track/04.mp3",
+      "dur": 7.131
+    },
+    {
+      "i": 5,
+      "text": "That's the whole point, you post once, and a verified, escrow-protected job runs itself.",
+      "action": "scroll",
+      "arg": 140,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/track/05.mp3",
+      "dur": 5.747
+    }
+  ]
+}

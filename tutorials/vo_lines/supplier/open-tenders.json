@@ -1,0 +1,65 @@
+{
+  "id": "open-tenders",
+  "phase": "SUPPLIER",
+  "step": "Step 1 \u2014 Open Tenders",
+  "title": "Find jobs to bid on",
+  "seg_dur": 29.81,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Under your counters sits the Open Tenders list.",
+      "action": "hover",
+      "arg": "Open Tenders",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/open-tenders/00.mp3",
+      "dur": 2.873
+    },
+    {
+      "i": 1,
+      "text": "Every job here is one a client has posted that matches what you can carry or operate.",
+      "action": "hover",
+      "arg": "Excavator hire",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/open-tenders/01.mp3",
+      "dur": 5.042
+    },
+    {
+      "i": 2,
+      "text": "Each row tells you the essentials at a glance, what is needed, how many units, and the route.",
+      "action": "hover",
+      "arg": "Excavator hire",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/open-tenders/02.mp3",
+      "dur": 5.512
+    },
+    {
+      "i": 3,
+      "text": "It also tells you whether it is a domestic move or a cross-border one.",
+      "action": "scroll",
+      "arg": 150,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/open-tenders/03.mp3",
+      "dur": 4.127
+    },
+    {
+      "i": 4,
+      "text": "Nothing here is hidden, and nothing is first come first served.",
+      "action": "hover",
+      "arg": "Grader",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/open-tenders/04.mp3",
+      "dur": 4.127
+    },
+    {
+      "i": 5,
+      "text": "You read the job, decide if it fits your fleet, and click in to make your offer.",
+      "action": "hover",
+      "arg": "Grader",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/open-tenders/05.mp3",
+      "dur": 4.545
+    },
+    {
+      "i": 6,
+      "text": "Take your time, a good bid starts with reading the job properly.",
+      "action": "scroll",
+      "arg": -150,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/open-tenders/06.mp3",
+      "dur": 3.579
+    }
+  ]
+}

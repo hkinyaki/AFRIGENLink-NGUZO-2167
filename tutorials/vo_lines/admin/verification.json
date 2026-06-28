@@ -1,0 +1,73 @@
+{
+  "id": "verification",
+  "phase": "ADMIN",
+  "step": "Desk 4 \u2014 Verification",
+  "title": "Vet your suppliers",
+  "seg_dur": 40.67,
+  "lines": [
+    {
+      "i": 0,
+      "text": "The Verification desk is where you vet the suppliers who want to work on the network.",
+      "action": "nav",
+      "arg": "Verification",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/verification/00.mp3",
+      "dur": 4.31
+    },
+    {
+      "i": 1,
+      "text": "This is your first line of defence, no supplier should ever reach a client unchecked.",
+      "action": "hover",
+      "arg": "Verification Queue",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/verification/01.mp3",
+      "dur": 4.624
+    },
+    {
+      "i": 2,
+      "text": "Every supplier shows their current status, and field audits on the ground drive these approvals.",
+      "action": "hover",
+      "arg": "Verification Queue",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/verification/02.mp3",
+      "dur": 5.695
+    },
+    {
+      "i": 3,
+      "text": "You can see their company name, their contact, and any notes the field team has left after visiting them.",
+      "action": "hover",
+      "arg": "no notes",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/verification/03.mp3",
+      "dur": 6.113
+    },
+    {
+      "i": 4,
+      "text": "The status pill tells you instantly whether they're pending, audited, or fully approved.",
+      "action": "hover",
+      "arg": "Verification Queue",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/verification/04.mp3",
+      "dur": 5.198
+    },
+    {
+      "i": 5,
+      "text": "Once a supplier has been physically audited on the ground, you mark them audited here.",
+      "action": "hoverbtn",
+      "arg": "Mark Audited",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/verification/05.mp3",
+      "dur": 4.78
+    },
+    {
+      "i": 6,
+      "text": "And when they fully meet the standard, you approve them to bid on real jobs.",
+      "action": "hoverbtn",
+      "arg": "Approve",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/verification/06.mp3",
+      "dur": 4.206
+    },
+    {
+      "i": 7,
+      "text": "This gate is exactly why a client never deals with an unvetted operator, because you've already checked them.",
+      "action": "hover",
+      "arg": "Verification Queue",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/verification/07.mp3",
+      "dur": 5.747
+    }
+  ]
+}

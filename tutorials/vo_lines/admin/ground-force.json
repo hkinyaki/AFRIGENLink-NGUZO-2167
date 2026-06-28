@@ -1,0 +1,81 @@
+{
+  "id": "ground-force",
+  "phase": "ADMIN",
+  "step": "Desk 3 \u2014 Ground Force",
+  "title": "The physical moat",
+  "seg_dur": 51.1,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Next is Ground Force, the physical moat that no software-only competitor can copy.",
+      "action": "nav",
+      "arg": "Ground Force",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/ground-force/00.mp3",
+      "dur": 5.146
+    },
+    {
+      "i": 1,
+      "text": "Anyone can build a website, but only Nguzo puts real people next to the machines and at the borders.",
+      "action": "hover",
+      "arg": "the physical moat",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/ground-force/01.mp3",
+      "dur": 5.878
+    },
+    {
+      "i": 2,
+      "text": "On the left, every field inspection your inspectors have carried out, with their notes and sign-off status.",
+      "action": "hover",
+      "arg": "Field inspections",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/ground-force/02.mp3",
+      "dur": 5.93
+    },
+    {
+      "i": 3,
+      "text": "Each entry is a real person who stood next to a machine and confirmed it exists and actually works.",
+      "action": "hover",
+      "arg": "Field inspections",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/ground-force/03.mp3",
+      "dur": 5.982
+    },
+    {
+      "i": 4,
+      "text": "The status pill tells you whether each inspection is still pending or fully verified.",
+      "action": "hover",
+      "arg": "Field inspections",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/ground-force/04.mp3",
+      "dur": 4.963
+    },
+    {
+      "i": 5,
+      "text": "On the right, the border logs, recorded by your liaison agents stationed at the crossings.",
+      "action": "hover",
+      "arg": "Border logs",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/ground-force/05.mp3",
+      "dur": 5.042
+    },
+    {
+      "i": 6,
+      "text": "They capture the institutional wait time at each post, and it turns amber when a crossing is stalling.",
+      "action": "hover",
+      "arg": "Border logs",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/ground-force/06.mp3",
+      "dur": 6.113
+    },
+    {
+      "i": 7,
+      "text": "This is how Nguzo turns up at the border in person, instead of leaving a supplier stranded at a portal failure.",
+      "action": "hover",
+      "arg": "Border logs",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/ground-force/07.mp3",
+      "dur": 6.583
+    },
+    {
+      "i": 8,
+      "text": "Boots on the ground is the moat, and this desk is where you watch it work, shift after shift.",
+      "action": "scroll",
+      "arg": 120,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/ground-force/08.mp3",
+      "dur": 5.46
+    }
+  ]
+}

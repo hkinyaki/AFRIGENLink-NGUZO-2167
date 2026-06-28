@@ -1,0 +1,8 @@
+file '/home/user/afrigen/tutorials/vo_lines/admin/approve-execute/00.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/admin/approve-execute/01.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/admin/approve-execute/02.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/admin/approve-execute/03.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/admin/approve-execute/04.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/admin/approve-execute/05.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/admin/approve-execute/06.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/admin/approve-execute/07.mp3'

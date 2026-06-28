@@ -1,0 +1,65 @@
+{
+  "id": "vault",
+  "phase": "SUPPLIER",
+  "step": "Step 7 \u2014 Escrow Vault",
+  "title": "See your money before it lands",
+  "seg_dur": 29.57,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Here is the part suppliers love most, the Escrow Vault.",
+      "action": "hover",
+      "arg": "Escrow Vault",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/vault/00.mp3",
+      "dur": 3.527
+    },
+    {
+      "i": 1,
+      "text": "For every job you win, the client's payment is locked in escrow before the wheels even turn.",
+      "action": "hover",
+      "arg": "Escrow Vault",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/vault/01.mp3",
+      "dur": 5.329
+    },
+    {
+      "i": 2,
+      "text": "So the money is already secured by Nguzo before you commit your asset.",
+      "action": "scroll",
+      "arg": 150,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/vault/02.mp3",
+      "dur": 4.258
+    },
+    {
+      "i": 3,
+      "text": "This table shows, per contract, exactly what is locked.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/vault/03.mp3",
+      "dur": 3.579
+    },
+    {
+      "i": 4,
+      "text": "It shows any emergency parts credit drawn against it, and your clean net payout once the job is signed off.",
+      "action": "scroll",
+      "arg": 150,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/vault/04.mp3",
+      "dur": 6.348
+    },
+    {
+      "i": 5,
+      "text": "You are never chasing an invoice and never wondering if you will be paid.",
+      "action": "scroll",
+      "arg": -150,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/vault/05.mp3",
+      "dur": 3.788
+    },
+    {
+      "i": 6,
+      "text": "You can see the money waiting for you from day one.",
+      "action": "hover",
+      "arg": "Escrow Vault",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/vault/06.mp3",
+      "dur": 2.743
+    }
+  ]
+}

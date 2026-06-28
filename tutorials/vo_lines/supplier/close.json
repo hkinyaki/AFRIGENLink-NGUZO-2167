@@ -1,0 +1,65 @@
+{
+  "id": "close",
+  "phase": "SUPPLIER",
+  "step": "You're set up to win work",
+  "title": "From bid to payout",
+  "seg_dur": 26.51,
+  "lines": [
+    {
+      "i": 0,
+      "text": "And that is your whole world as a Nguzo supplier.",
+      "action": "hover",
+      "arg": "Open to bid",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/close/00.mp3",
+      "dur": 3.056
+    },
+    {
+      "i": 1,
+      "text": "Find the right jobs, bid an honest price, win the work.",
+      "action": "hover",
+      "arg": "My awards",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/close/01.mp3",
+      "dur": 3.527
+    },
+    {
+      "i": 2,
+      "text": "Sign and verify, then watch your secured payout sit waiting in the vault.",
+      "action": "hover",
+      "arg": "Executing",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/close/02.mp3",
+      "dur": 4.206
+    },
+    {
+      "i": 3,
+      "text": "With a real safety net if a machine ever falters.",
+      "action": "hover",
+      "arg": "Bids placed",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/close/03.mp3",
+      "dur": 3.056
+    },
+    {
+      "i": 4,
+      "text": "You compete fairly, you are paid reliably, and you are never left stranded.",
+      "action": "scroll",
+      "arg": 150,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/close/04.mp3",
+      "dur": 4.545
+    },
+    {
+      "i": 5,
+      "text": "Keep your fleet current, bid with confidence, and let Nguzo handle the trust.",
+      "action": "scroll",
+      "arg": -150,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/close/05.mp3",
+      "dur": 4.963
+    },
+    {
+      "i": 6,
+      "text": "Welcome to the network, let's get your assets earning.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/close/06.mp3",
+      "dur": 3.161
+    }
+  ]
+}

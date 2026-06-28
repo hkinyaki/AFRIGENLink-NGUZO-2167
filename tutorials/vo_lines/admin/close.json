@@ -1,0 +1,57 @@
+{
+  "id": "close",
+  "phase": "ADMIN",
+  "step": "You run the corridor",
+  "title": "Welcome to Nguzo HQ",
+  "seg_dur": 30.38,
+  "lines": [
+    {
+      "i": 0,
+      "text": "So that's the control desk, seven screens that run the entire corridor.",
+      "action": "nav",
+      "arg": "Overview",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/close/00.mp3",
+      "dur": 3.997
+    },
+    {
+      "i": 1,
+      "text": "Overview shows you the money and the jobs, and the Jobs desk is where you action the three gates.",
+      "action": "nav",
+      "arg": "Jobs",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/close/01.mp3",
+      "dur": 5.198
+    },
+    {
+      "i": 2,
+      "text": "Ground Force is your boots on the ground, and Verification keeps every supplier vetted.",
+      "action": "nav",
+      "arg": "Ground Force",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/close/02.mp3",
+      "dur": 5.042
+    },
+    {
+      "i": 3,
+      "text": "Team controls access, Notifications keep the record, and the Ledger settles every shilling.",
+      "action": "nav",
+      "arg": "Ledger",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/close/03.mp3",
+      "dur": 5.799
+    },
+    {
+      "i": 4,
+      "text": "Every gate you hold protects both the client and the supplier, that is the whole job.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/close/04.mp3",
+      "dur": 5.016
+    },
+    {
+      "i": 5,
+      "text": "You bring the discipline, the platform brings the structure. Welcome to Nguzo HQ.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/close/05.mp3",
+      "dur": 5.329
+    }
+  ]
+}

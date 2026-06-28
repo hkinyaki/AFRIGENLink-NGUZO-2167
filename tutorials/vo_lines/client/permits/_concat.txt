@@ -1,0 +1,8 @@
+file '/home/user/afrigen/tutorials/vo_lines/client/permits/00.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/permits/01.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/permits/02.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/permits/03.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/permits/04.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/permits/05.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/permits/06.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/client/permits/07.mp3'

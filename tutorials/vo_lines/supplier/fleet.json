@@ -1,0 +1,65 @@
+{
+  "id": "fleet",
+  "phase": "SUPPLIER",
+  "step": "Step 6 \u2014 Fleet Configuration",
+  "title": "Your assets on file",
+  "seg_dur": 29.15,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Now let us leave the job and look after your business.",
+      "action": "hover",
+      "arg": "Fleet Configuration",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/fleet/00.mp3",
+      "dur": 2.952
+    },
+    {
+      "i": 1,
+      "text": "The Fleet page is where you list every heavy asset you own.",
+      "action": "hover",
+      "arg": "Fleet Configuration",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/fleet/01.mp3",
+      "dur": 3.605
+    },
+    {
+      "i": 2,
+      "text": "Keeping it current means you bid faster and look more credible to clients.",
+      "action": "hover",
+      "arg": "Assets",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/fleet/02.mp3",
+      "dur": 4.127
+    },
+    {
+      "i": 3,
+      "text": "These counters show your totals, how many assets you have and how many are available.",
+      "action": "hover",
+      "arg": "Available",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/fleet/03.mp3",
+      "dur": 4.833
+    },
+    {
+      "i": 4,
+      "text": "They also show how many are active on jobs, and any in breakdown.",
+      "action": "hover",
+      "arg": "Breakdown",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/fleet/04.mp3",
+      "dur": 4.127
+    },
+    {
+      "i": 5,
+      "text": "Each asset card carries its engine serial, day rate, and yard location.",
+      "action": "scroll",
+      "arg": 170,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/fleet/05.mp3",
+      "dur": 4.493
+    },
+    {
+      "i": 6,
+      "text": "Those details make it a verified, trackable machine, not just a line in a spreadsheet.",
+      "action": "scroll",
+      "arg": -170,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/fleet/06.mp3",
+      "dur": 5.016
+    }
+  ]
+}

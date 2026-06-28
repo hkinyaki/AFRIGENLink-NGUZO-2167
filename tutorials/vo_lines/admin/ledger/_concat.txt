@@ -1,0 +1,8 @@
+file '/home/user/afrigen/tutorials/vo_lines/admin/ledger/00.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/admin/ledger/01.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/admin/ledger/02.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/admin/ledger/03.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/admin/ledger/04.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/admin/ledger/05.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/admin/ledger/06.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/admin/ledger/07.mp3'

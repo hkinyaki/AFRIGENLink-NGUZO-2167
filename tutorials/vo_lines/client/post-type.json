@@ -1,0 +1,65 @@
+{
+  "id": "post-type",
+  "phase": "CLIENT",
+  "step": "Step 1 \u2014 Post a job",
+  "title": "Tell us what you need",
+  "seg_dur": 37.59,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Click Post a Job, and you're asked the first question, what do you need?",
+      "action": "nav",
+      "arg": "Post a Job",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/post-type/00.mp3",
+      "dur": 4.258
+    },
+    {
+      "i": 1,
+      "text": "Two choices. Cargo transport, when you need trucks to move sand, aggregate, or goods.",
+      "action": "hover",
+      "arg": "Cargo transport",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/post-type/01.mp3",
+      "dur": 6.034
+    },
+    {
+      "i": 2,
+      "text": "Or Machinery rental, when you need heavy equipment for a project or site.",
+      "action": "hover",
+      "arg": "Machinery rental",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/post-type/02.mp3",
+      "dur": 4.206
+    },
+    {
+      "i": 3,
+      "text": "Let's say we need an excavator for some earthworks, so we choose Machinery rental.",
+      "action": "click",
+      "arg": "Machinery rental",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/post-type/03.mp3",
+      "dur": 4.963
+    },
+    {
+      "i": 4,
+      "text": "Notice how the form adapts to your choice, asking only what's relevant.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/post-type/04.mp3",
+      "dur": 4.127
+    },
+    {
+      "i": 5,
+      "text": "If you'd picked Cargo transport instead, we'd ask about carrier type and the cargo to move. Same simple flow, either way.",
+      "action": "hover",
+      "arg": "Cargo transport",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/post-type/05.mp3",
+      "dur": 7.654
+    },
+    {
+      "i": 6,
+      "text": "Choosing the right category up front means suppliers see exactly the kind of work it is, and bid accurately.",
+      "action": "hover",
+      "arg": "Machinery rental",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/post-type/06.mp3",
+      "dur": 6.348
+    }
+  ]
+}

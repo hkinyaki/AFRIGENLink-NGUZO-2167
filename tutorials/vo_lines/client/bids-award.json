@@ -1,0 +1,65 @@
+{
+  "id": "bids-award",
+  "phase": "CLIENT",
+  "step": "Step 4 \u2014 Review bids & award",
+  "title": "Auto-fill the best price",
+  "seg_dur": 38.09,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Open a job that's received bids, and you'll see them listed here.",
+      "action": "hover",
+      "arg": "Bids (",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/bids-award/00.mp3",
+      "dur": 3.84
+    },
+    {
+      "i": 1,
+      "text": "Each row shows a supplier, how many units they'll provide, and their price per unit.",
+      "action": "hover",
+      "arg": "Price / unit",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/bids-award/01.mp3",
+      "dur": 5.198
+    },
+    {
+      "i": 2,
+      "text": "You don't have to negotiate. Nguzo auto-fills the cheapest bids until your quantity is met.",
+      "action": "hover",
+      "arg": "Supplier",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/bids-award/02.mp3",
+      "dur": 5.512
+    },
+    {
+      "i": 3,
+      "text": "It combines bids until your full quantity is covered, then settles on one flat fair rate every awarded supplier accepts.",
+      "action": "hover",
+      "arg": "auto-fill cheapest",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/bids-award/03.mp3",
+      "dur": 7.236
+    },
+    {
+      "i": 4,
+      "text": "All you do is confirm the award. That single click locks in your suppliers and your price.",
+      "action": "hoverbtn",
+      "arg": "Confirm award",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/bids-award/04.mp3",
+      "dur": 5.512
+    },
+    {
+      "i": 5,
+      "text": "Because suppliers compete, you get a genuinely fair market price, not whatever one operator decides to charge you.",
+      "action": "hover",
+      "arg": "Activity",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/bids-award/05.mp3",
+      "dur": 6.766
+    },
+    {
+      "i": 6,
+      "text": "From here the staged gate takes over, protecting you at every step.",
+      "action": "hover",
+      "arg": "Status",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/client/bids-award/06.mp3",
+      "dur": 4.023
+    }
+  ]
+}

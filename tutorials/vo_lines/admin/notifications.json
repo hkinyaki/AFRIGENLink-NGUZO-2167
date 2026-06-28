@@ -1,0 +1,65 @@
+{
+  "id": "notifications",
+  "phase": "ADMIN",
+  "step": "Desk 6 \u2014 Notifications",
+  "title": "Every message on record",
+  "seg_dur": 38.71,
+  "lines": [
+    {
+      "i": 0,
+      "text": "The Notifications desk is the on-record log of every message the system sends.",
+      "action": "nav",
+      "arg": "Notifications",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/notifications/00.mp3",
+      "dur": 4.963
+    },
+    {
+      "i": 1,
+      "text": "Every award, every stage change, every confirmation is captured here, with its recipient and channel.",
+      "action": "hover",
+      "arg": "On-record notification log",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/notifications/01.mp3",
+      "dur": 6.4
+    },
+    {
+      "i": 2,
+      "text": "You can see exactly who was told what, and whether it went by email or another channel.",
+      "action": "hover",
+      "arg": "email",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/notifications/02.mp3",
+      "dur": 4.911
+    },
+    {
+      "i": 3,
+      "text": "Right now these are logged for the record, real email and S.M.S delivery activates later as we scale.",
+      "action": "hover",
+      "arg": "Real email",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/notifications/03.mp3",
+      "dur": 5.982
+    },
+    {
+      "i": 4,
+      "text": "But the principle matters today, nothing is sent in the dark, every communication is auditable.",
+      "action": "hover",
+      "arg": "On-record notification log",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/notifications/04.mp3",
+      "dur": 5.695
+    },
+    {
+      "i": 5,
+      "text": "If a client or supplier ever asks what they were told and when, the answer is right here.",
+      "action": "scroll",
+      "arg": 140,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/notifications/05.mp3",
+      "dur": 5.198
+    },
+    {
+      "i": 6,
+      "text": "Transparency is part of the trust Nguzo sells, and this desk keeps the receipts.",
+      "action": "scroll",
+      "arg": -120,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/notifications/06.mp3",
+      "dur": 5.564
+    }
+  ]
+}

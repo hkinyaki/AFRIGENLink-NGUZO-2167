@@ -1,0 +1,40 @@
+# deps / build
+node_modules/
+dist/
+packages/*/dist/
+packages/*/node_modules/
+.turbo/
+.venv/
+__pycache__/
+*.pyc
+
+# secrets / local db
+.env
+.env.local
+*.log
+local.db
+*.sqlite
+*.sqlite3
+.turso/
+
+# heavy media build artifacts (regenerable; not source)
+tutorials/raw/
+tutorials/seg/
+tutorials/seg_roles/
+tutorials/vo_roles/
+tutorials/_audit/
+tutorials/clips/_*.mp4
+tutorials/clips/*-orig.mp4
+tutorials/clips/*-premux.mp4
+tutorials/*.wav
+anim/
+vo/
+music/
+shots/
+overlays/
+video_silent.mp4
+vo_full.wav
+*.webm
+
+.DS_Store
+booklets/build/

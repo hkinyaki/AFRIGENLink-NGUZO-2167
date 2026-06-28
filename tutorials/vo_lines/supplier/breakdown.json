@@ -1,0 +1,119 @@
+{
+  "id": "breakdown",
+  "phase": "SUPPLIER",
+  "step": "Step 8 \u2014 Report Breakdown",
+  "title": "Fill it in, field by field",
+  "lines": [
+    {
+      "i": 0,
+      "text": "Finally, Report Breakdown, your safety net when a machine goes down mid-job.",
+      "action": "hover",
+      "arg": "Report Breakdown",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/breakdown/00.mp3",
+      "dur": 4.833
+    },
+    {
+      "i": 1,
+      "text": "Let's fill this form together so you know exactly what to do when it happens.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/breakdown/01.mp3",
+      "dur": 4.31
+    },
+    {
+      "i": 2,
+      "text": "First field, the affected contract. Open the dropdown and pick the active job your machine is stranded on.",
+      "action": "selectidx",
+      "arg": [
+        0,
+        1
+      ],
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/breakdown/02.mp3",
+      "dur": 6.296
+    },
+    {
+      "i": 3,
+      "text": "Here I'm selecting the job currently in transit that needs the part.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/breakdown/03.mp3",
+      "dur": 4.127
+    },
+    {
+      "i": 4,
+      "text": "Notice it even shows the escrow balance locked on that job, right there in the option.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/breakdown/04.mp3",
+      "dur": 4.911
+    },
+    {
+      "i": 5,
+      "text": "Second field, the spare part. Open the parts catalog dropdown.",
+      "action": "selectidx",
+      "arg": [
+        1,
+        1
+      ],
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/breakdown/05.mp3",
+      "dur": 4.258
+    },
+    {
+      "i": 6,
+      "text": "Pick the part that's failed, here, the Hydraulic Pump Assembly.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/breakdown/06.mp3",
+      "dur": 3.605
+    },
+    {
+      "i": 7,
+      "text": "The instant you choose it, this cost panel appears, retail price, logistics handling, and the total draw.",
+      "action": "hover",
+      "arg": "Total draw",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/breakdown/07.mp3",
+      "dur": 6.713
+    },
+    {
+      "i": 8,
+      "text": "It even names the Dar wholesale supplier the part ships from, so nothing is hidden.",
+      "action": "hover",
+      "arg": "Source",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/breakdown/08.mp3",
+      "dur": 4.911
+    },
+    {
+      "i": 9,
+      "text": "Now Nguzo checks the locked escrow on that job covers the part and its delivery.",
+      "action": "hold",
+      "arg": null,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/breakdown/09.mp3",
+      "dur": 4.78
+    },
+    {
+      "i": 10,
+      "text": "If it does, you hit Report breakdown and request dispatch, and it's auto-approved.",
+      "action": "hoverbtn",
+      "arg": "Report breakdown & request dispatch",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/breakdown/10.mp3",
+      "dur": 5.094
+    },
+    {
+      "i": 11,
+      "text": "The part ships up-country by express courier, drawn against the escrow, never your own pocket.",
+      "action": "scroll",
+      "arg": 120,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/breakdown/11.mp3",
+      "dur": 5.93
+    },
+    {
+      "i": 12,
+      "text": "A breakdown that used to cost you days of downtime now costs you minutes.",
+      "action": "scroll",
+      "arg": -120,
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/supplier/breakdown/12.mp3",
+      "dur": 4.206
+    }
+  ],
+  "seg_dur": 63.97
+}

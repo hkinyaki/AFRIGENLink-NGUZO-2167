@@ -1,0 +1,89 @@
+{
+  "id": "jobs",
+  "phase": "ADMIN",
+  "step": "Desk 2 \u2014 Jobs",
+  "title": "Where you action the gate",
+  "seg_dur": 56.89,
+  "lines": [
+    {
+      "i": 0,
+      "text": "Next is the Jobs desk, every job across the corridor in one list.",
+      "action": "nav",
+      "arg": "Jobs",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/jobs/00.mp3",
+      "dur": 4.127
+    },
+    {
+      "i": 1,
+      "text": "This is where most of your work happens, so it's worth understanding exactly how it's laid out.",
+      "action": "hover",
+      "arg": "Jobs",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/jobs/01.mp3",
+      "dur": 5.277
+    },
+    {
+      "i": 2,
+      "text": "This banner at the top is the most important thing on the page, it tells you how many jobs are waiting for your action right now.",
+      "action": "hover",
+      "arg": "awaiting your action",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/jobs/02.mp3",
+      "dur": 6.766
+    },
+    {
+      "i": 3,
+      "text": "Think of it as your to-do list, if that banner is empty, every job is moving on its own.",
+      "action": "hover",
+      "arg": "awaiting your action",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/jobs/03.mp3",
+      "dur": 5.198
+    },
+    {
+      "i": 4,
+      "text": "Nguzo controls three gates, verifying permits, confirming payment, and approving execution. Nothing moves past them without you.",
+      "action": "hover",
+      "arg": "verify permits, confirm payment, approve execution",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/jobs/04.mp3",
+      "dur": 8.594
+    },
+    {
+      "i": 5,
+      "text": "Those three gates are the entire reason clients and suppliers trust this platform, so we'll action all three.",
+      "action": "hover",
+      "arg": "Jobs",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/jobs/05.mp3",
+      "dur": 6.504
+    },
+    {
+      "i": 6,
+      "text": "Any job needing your hand is flagged with an amber action tag, so you never miss one in the list.",
+      "action": "hover",
+      "arg": "action",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/jobs/06.mp3",
+      "dur": 5.329
+    },
+    {
+      "i": 7,
+      "text": "Each row also carries its own stage tracker, showing exactly how far along that job is at a glance.",
+      "action": "hover",
+      "arg": "Bidding",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/jobs/07.mp3",
+      "dur": 6.583
+    },
+    {
+      "i": 8,
+      "text": "So you can scan the whole corridor and instantly see what's waiting, what's moving, and what's done.",
+      "action": "hover",
+      "arg": "Bidding",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/jobs/08.mp3",
+      "dur": 5.329
+    },
+    {
+      "i": 9,
+      "text": "Let's open a job that's waiting on us, and action it properly.",
+      "action": "hover",
+      "arg": "action",
+      "mp3": "/home/user/afrigen/tutorials/vo_lines/admin/jobs/09.mp3",
+      "dur": 3.187
+    }
+  ]
+}

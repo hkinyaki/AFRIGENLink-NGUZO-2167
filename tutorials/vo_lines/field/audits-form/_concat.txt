@@ -1,0 +1,7 @@
+file '/home/user/afrigen/tutorials/vo_lines/field/audits-form/00.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/audits-form/01.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/audits-form/02.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/audits-form/03.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/audits-form/04.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/audits-form/05.mp3'
+file '/home/user/afrigen/tutorials/vo_lines/field/audits-form/06.mp3'
