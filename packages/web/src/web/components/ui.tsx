@@ -457,7 +457,7 @@ export function KycFileUpload({
   );
 }
 
-/** "Your Nguzo Manager" contact card — shows the assigned KAM for suppliers. */
+/** "Your AFRIGEN Link Manager" contact card — shows the assigned KAM for suppliers. */
 export function ManagerCard({ managerId, verificationStatus }: { managerId?: string | null; verificationStatus?: string }) {
   const [m, setM] = useState<{ fullName?: string; companyName?: string; phone?: string; userCode?: string } | null>(null);
   const [tried, setTried] = useState(false);
@@ -468,7 +468,7 @@ export function ManagerCard({ managerId, verificationStatus }: { managerId?: str
   if (!managerId) {
     return (
       <div className="mb-5 rounded-lg border border-navy-600 bg-navy-800 p-4">
-        <div className="text-[11px] uppercase tracking-wider text-slate-500">Your Nguzo manager</div>
+        <div className="text-[11px] uppercase tracking-wider text-slate-500">Your AFRIGEN Link manager</div>
         <p className="mt-1 text-sm text-slate-400">A Key Account Manager will be assigned to you shortly. They'll reach out to guide you through verification.</p>
       </div>
     );
@@ -476,7 +476,7 @@ export function ManagerCard({ managerId, verificationStatus }: { managerId?: str
   return (
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-600/40 bg-amber-bg/40 p-4">
       <div>
-        <div className="text-[11px] uppercase tracking-wider text-amber-500">Your Nguzo manager</div>
+        <div className="text-[11px] uppercase tracking-wider text-amber-500">Your AFRIGEN Link manager</div>
         <div className="mt-1 text-sm text-slate-100">{m?.fullName || m?.companyName || (tried ? "Assigned" : "Loading…")}{m?.userCode ? <span className="ml-2 font-mono text-[11px] text-slate-500">{m.userCode}</span> : null}</div>
         {m?.phone && <div className="text-xs text-slate-400">{m.phone}</div>}
       </div>

@@ -237,7 +237,7 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
             <Card className="border-amber-600 p-5">
               <SectionTitle sub="Verify the payment proof, then confirm the escrow funding.">Confirm payment</SectionTitle>
               <div className="mb-3 flex items-center justify-between rounded-md border border-navy-600 bg-navy-900 p-3 text-sm">
-                <span className="text-slate-400">Escrow to confirm (held by Nguzo)</span>
+                <span className="text-slate-400">Escrow to confirm (held by AFRIGEN Link)</span>
                 <span className="tnum font-display font-semibold text-amber-500">{tzs(escrowAmt)}</span>
               </div>
               <DocList docs={ttDocs} onVerify={(d) => verifyDoc.mutate(d)} />
@@ -581,7 +581,7 @@ function Agents() {
         <div className="mb-3 text-[11px] uppercase tracking-wider text-slate-500">Request a new field agent</div>
         <div className="grid gap-3 md:grid-cols-3">
           <Field label="Full name"><Input value={form.proposedName} onChange={(e) => setForm({ ...form, proposedName: e.target.value })} placeholder="e.g. John Mushi" /></Field>
-          <Field label="Email"><Input value={form.proposedEmail} onChange={(e) => setForm({ ...form, proposedEmail: e.target.value })} placeholder="agent@nguzo.africa" /></Field>
+          <Field label="Email"><Input value={form.proposedEmail} onChange={(e) => setForm({ ...form, proposedEmail: e.target.value })} placeholder="agent@afrigen.link" /></Field>
           <Field label="Phone"><Input value={form.proposedPhone} onChange={(e) => setForm({ ...form, proposedPhone: e.target.value })} placeholder="+255…" /></Field>
         </div>
         <Button className="mt-3" variant="amber" disabled={create.isPending || !form.proposedName.trim() || !form.proposedEmail.trim()} onClick={() => create.mutate(form)}>

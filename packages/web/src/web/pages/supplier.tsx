@@ -229,7 +229,7 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
 
               <div className="mb-4 space-y-1 rounded-md border border-navy-600 bg-navy-900 p-3 text-sm">
                 <div className="flex justify-between text-slate-400"><span>Contract value</span><span className="tnum">{tzs(ctrValue)}</span></div>
-                <div className="flex justify-between text-slate-400"><span>Nguzo service fee (5%)</span><span className="tnum">− {tzs(supplierFee)}</span></div>
+                <div className="flex justify-between text-slate-400"><span>AFRIGEN Link service fee (5%)</span><span className="tnum">− {tzs(supplierFee)}</span></div>
                 <div className="flex justify-between border-t border-navy-700 pt-1 font-medium text-slate-100"><span>Your net payout on completion</span><span className="tnum text-good">{tzs(netPayout)}</span></div>
               </div>
 
@@ -318,7 +318,7 @@ function Fleet() {
   return (
     <div className="p-6">
       <div className="mb-4">
-        <SectionTitle sub="Your fleet is built and verified by Nguzo field agents during inspection — you cannot edit or remove assets here. Each machine shows its live status and job history.">My Fleet</SectionTitle>
+        <SectionTitle sub="Your fleet is built and verified by AFRIGEN Link field agents during inspection — you cannot edit or remove assets here. Each machine shows its live status and job history.">My Fleet</SectionTitle>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -329,7 +329,7 @@ function Fleet() {
       </div>
 
       {rows.length === 0 ? (
-        <Empty>No assets yet. Your fleet appears here once a Nguzo field agent inspects and verifies a machine.</Empty>
+        <Empty>No assets yet. Your fleet appears here once an AFRIGEN Link field agent inspects and verifies a machine.</Empty>
       ) : (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {rows.map((a: any) => {
@@ -654,7 +654,7 @@ function ProfileBank({ me }: { me: Me }) {
   });
   return (
     <div className="mx-auto max-w-2xl p-6">
-      <SectionTitle sub="Your company details and the bank account Nguzo pays into on settlement. Keep this accurate — the Key Account Manager uses it at payout.">Profile & Bank Details</SectionTitle>
+      <SectionTitle sub="Your company details and the bank account AFRIGEN Link pays into on settlement. Keep this accurate — the Key Account Manager uses it at payout.">Profile & Bank Details</SectionTitle>
       <Card className="mb-4 p-5">
         <div className="mb-2 text-sm text-slate-400">User ID: <span className="font-mono text-amber-500">{me.profile.userCode || "—"}</span></div>
         <div className="grid gap-3 sm:grid-cols-2">

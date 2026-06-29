@@ -55,7 +55,7 @@ function Jobs() {
 
   return (
     <div className="p-6">
-      <SectionTitle sub="Every job across the corridor. Action the steps Nguzo controls — verify permits, confirm payment, approve execution.">Jobs</SectionTitle>
+      <SectionTitle sub="Every job across the corridor. Action the steps AFRIGEN Link controls — verify permits, confirm payment, approve execution.">Jobs</SectionTitle>
       {needsAdmin.length > 0 && (
         <div className="mb-5 rounded-md border border-amber-600 bg-amber-bg p-3 text-sm text-amber-500">
           {needsAdmin.length} job{needsAdmin.length > 1 ? "s" : ""} awaiting your action.
@@ -128,7 +128,7 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
 
   const adminAction =
     stage === "PermitsUploaded" ? { step: "permits-verified", label: "Verify permits & release", hint: "Confirm the uploaded permits are valid." }
-    : stage === "TTUploaded" ? { step: "tt-confirmed", label: "Confirm payment received", hint: "Confirm the TT proof — escrow is recorded as held by Nguzo." }
+    : stage === "TTUploaded" ? { step: "tt-confirmed", label: "Confirm payment received", hint: "Confirm the TT proof — escrow is recorded as held by AFRIGEN Link." }
     : stage === "TTConfirmed" ? { step: "execute", label: "Approve to execute", hint: "Authorise the supplier and field force to begin execution." }
     : null;
 
@@ -156,7 +156,7 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
               <SectionTitle sub={adminAction.hint}>Action required</SectionTitle>
               {stage === "TTUploaded" && (
                 <div className="mb-3 flex items-center justify-between rounded-md border border-navy-600 bg-navy-900 p-3 text-sm">
-                  <span className="text-slate-400">Escrow to confirm (held by Nguzo)</span>
+                  <span className="text-slate-400">Escrow to confirm (held by AFRIGEN Link)</span>
                   <span className="tnum font-display font-semibold text-amber-500">{tzs(escrowAmt)}</span>
                 </div>
               )}
@@ -239,11 +239,11 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
           <Card className="p-5">
             <div className="mb-2 text-[11px] uppercase tracking-wider text-slate-500">Escrow</div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-400">{["TTConfirmed", "Executing"].includes(stage) ? "Held by Nguzo" : "Pending payment"}</span>
+              <span className="text-sm text-slate-400">{["TTConfirmed", "Executing"].includes(stage) ? "Held by AFRIGEN Link" : "Pending payment"}</span>
               <span className="tnum font-display text-lg font-semibold text-amber-500">{tzs(escrowAmt)}</span>
             </div>
             <div className="mt-2 flex items-center justify-between border-t border-navy-700 pt-2 text-xs">
-              <span className="text-slate-500">Nguzo revenue (10%)</span>
+              <span className="text-slate-500">AFRIGEN Link revenue (10%)</span>
               <span className="tnum text-good">{tzs(nguzoRevenue)}</span>
             </div>
             <p className="mt-1 text-[10px] text-slate-600">Contract value {tzs(baseValue)} · client funds value + 5% · supplier nets value − 5%.</p>
@@ -343,7 +343,7 @@ const STAFF_ROLES = [
   { v: "key_account", label: "Key Account Manager" },
   { v: "field", label: "Field Force" },
   { v: "parts_supplier", label: "Parts Supplier" },
-  { v: "admin", label: "Nguzo Admin" },
+  { v: "admin", label: "AFRIGEN Link Admin" },
 ];
 
 function statusLabel(s?: string) {
@@ -623,7 +623,7 @@ function Verify() {
 
   return (
     <div className="p-6">
-      <SectionTitle sub="Every Nguzo partner is verified before going live. Clients are reviewed remotely; suppliers require a physical site visit.">Verification Queue</SectionTitle>
+      <SectionTitle sub="Every AFRIGEN Link partner is verified before going live. Clients are reviewed remotely; suppliers require a physical site visit.">Verification Queue</SectionTitle>
 
       <div className="mb-5 inline-flex gap-1 rounded-lg border border-navy-600 bg-navy-800 p-1">
         {([["remote", `Remote review — Clients (${remote.length})`], ["siteVisit", `Site visit — Suppliers (${siteVisit.length})`], ["staff", `Staff on queue (${staff.length})`]] as const).map(([k, label]) => (
@@ -733,7 +733,7 @@ function MyKyc({ me }: { me: Me }) {
   });
   return (
     <div className="p-6 max-w-xl">
-      <SectionTitle sub="Your identity record, kept for compliance. Same standard every Nguzo partner meets.">My KYC</SectionTitle>
+      <SectionTitle sub="Your identity record, kept for compliance. Same standard every AFRIGEN Link partner meets.">My KYC</SectionTitle>
       <Card className="space-y-3 p-5">
         <Field label="Your phone"><Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+255…" /></Field>
         <Field label="National ID number"><Input value={nationalId} onChange={(e) => setNationalId(e.target.value)} /></Field>
@@ -854,7 +854,7 @@ function Reversals({ me }: { me: Me }) {
                 <tr className="border-b border-navy-600 text-left text-[11px] uppercase tracking-wider text-slate-500">
                   <th className="px-4 py-3">Contract</th><th className="px-4 py-3">Type</th>
                   <th className="px-4 py-3 text-right">Client refund</th><th className="px-4 py-3 text-right">Supplier kept</th>
-                  <th className="px-4 py-3 text-right">Nguzo fee kept</th><th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3 text-right">AFRIGEN Link fee kept</th><th className="px-4 py-3">Status</th>
                 </tr>
               </thead>
               <tbody>

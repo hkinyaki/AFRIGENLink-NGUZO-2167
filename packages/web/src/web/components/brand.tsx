@@ -11,7 +11,7 @@ export function Logo({ size = 22, tone = "dark" }: { size?: number; tone?: "ligh
     <div className="flex items-center gap-2.5">
       <LogoIcon size={size + 10} />
       <span className={`font-display text-[15px] font-extrabold tracking-tight ${word}`}>
-        NGUZO <span className="text-amber-600">AFRICA</span>
+        AFRIGEN <span className="text-amber-600">Link</span>
       </span>
     </div>
   );

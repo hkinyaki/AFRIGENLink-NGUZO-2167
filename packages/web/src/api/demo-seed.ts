@@ -46,18 +46,18 @@ function endFrom(startIso: string, jobDays: number): string {
 }
 
 const DEMO = [
-  { email: "client@nguzo.africa", name: "Amani Mwakalebela", role: "client", company: "Geita Gold Construction Ltd", phone: "+255 754 110 220" },
-  { email: "supplier@nguzo.africa", name: "Rashid Juma", role: "supplier", company: "Tanzanite Heavy Fleet Co.", phone: "+255 765 330 440" },
-  { email: "supplier2@nguzo.africa", name: "Grace Mollel", role: "supplier", company: "Kilimanjaro Plant Hire", phone: "+255 786 220 330" },
-  { email: "field@nguzo.africa", name: "Neema Kileo", role: "field", company: "Nguzo Ground Force", phone: "+255 712 550 660" },
-  { email: "kam@nguzo.africa", name: "Baraka Lyimo", role: "key_account", company: "Nguzo Key Accounts", phone: "+255 713 480 110" },
-  { email: "parts@nguzo.africa", name: "Zawadi Spares Ltd", role: "parts_supplier", company: "Zawadi Spares (Vingunguti)", phone: "+255 714 905 220" },
-  { email: "admin@nguzo.africa", name: "Operations Desk", role: "admin", company: "Nguzo HQ", phone: "+255 700 000 000" },
+  { email: "client@afrigen.link", name: "Amani Mwakalebela", role: "client", company: "Geita Gold Construction Ltd", phone: "+255 754 110 220" },
+  { email: "supplier@afrigen.link", name: "Rashid Juma", role: "supplier", company: "Tanzanite Heavy Fleet Co.", phone: "+255 765 330 440" },
+  { email: "supplier2@afrigen.link", name: "Grace Mollel", role: "supplier", company: "Kilimanjaro Plant Hire", phone: "+255 786 220 330" },
+  { email: "field@afrigen.link", name: "Neema Kileo", role: "field", company: "AFRIGEN Link Ground Force", phone: "+255 712 550 660" },
+  { email: "kam@afrigen.link", name: "Baraka Lyimo", role: "key_account", company: "AFRIGEN Link Key Accounts", phone: "+255 713 480 110" },
+  { email: "parts@afrigen.link", name: "Zawadi Spares Ltd", role: "parts_supplier", company: "Zawadi Spares (Vingunguti)", phone: "+255 714 905 220" },
+  { email: "admin@afrigen.link", name: "Operations Desk", role: "admin", company: "AFRIGEN Link HQ", phone: "+255 700 000 000" },
   // pending accounts to populate the verification queue
-  { email: "newclient@nguzo.africa", name: "Joseph Mteme", role: "client", company: "Mwanza Roadworks Ltd", phone: "+255 755 121 314", pending: true },
-  { email: "newsupplier@nguzo.africa", name: "Halima Said", role: "supplier", company: "Lake Zone Plant Hire", phone: "+255 766 818 282", pending: true },
+  { email: "newclient@afrigen.link", name: "Joseph Mteme", role: "client", company: "Mwanza Roadworks Ltd", phone: "+255 755 121 314", pending: true },
+  { email: "newsupplier@afrigen.link", name: "Halima Said", role: "supplier", company: "Lake Zone Plant Hire", phone: "+255 766 818 282", pending: true },
 ];
-const PASSWORD = "nguzo2026";
+const PASSWORD = "afrigen2026";
 
 async function ensureUser(d: (typeof DEMO)[number]) {
   const existing = await db.select().from(userTable).where(eq(userTable.email, d.email)).limit(1);
@@ -104,13 +104,13 @@ async function main() {
   const ids: Record<string, { userId: string; profileId: string }> = {};
   for (const d of DEMO) ids[d.email] = await ensureUser(d);
 
-  const clientId = ids["client@nguzo.africa"].profileId;
-  const supplierId = ids["supplier@nguzo.africa"].profileId;
-  const supplier2Id = ids["supplier2@nguzo.africa"].profileId;
-  const fieldId = ids["field@nguzo.africa"].profileId;
-  const kamId = ids["kam@nguzo.africa"].profileId;
-  const partsId = ids["parts@nguzo.africa"].profileId;
-  const adminId = ids["admin@nguzo.africa"].profileId;
+  const clientId = ids["client@afrigen.link"].profileId;
+  const supplierId = ids["supplier@afrigen.link"].profileId;
+  const supplier2Id = ids["supplier2@afrigen.link"].profileId;
+  const fieldId = ids["field@afrigen.link"].profileId;
+  const kamId = ids["kam@afrigen.link"].profileId;
+  const partsId = ids["parts@afrigen.link"].profileId;
+  const adminId = ids["admin@afrigen.link"].profileId;
 
   // field agent personal profile + reports to the KAM + yard station;
   // suppliers + parts supplier are assigned to the KAM and get bank details.
@@ -123,8 +123,8 @@ async function main() {
   await db.update(profile).set({ bankName: "NMB Bank", bankAccountName: "Kilimanjaro Plant Hire", bankAccountNo: "2010-998877-00", bankSwift: "NMIBTZTZ", bankBranch: "Arusha" }).where(eq(profile.id, supplier2Id));
 
   // pending accounts: assign KAM to the pending supplier + seed sample KYB docs
-  const newClientId = ids["newclient@nguzo.africa"].profileId;
-  const newSupplierId = ids["newsupplier@nguzo.africa"].profileId;
+  const newClientId = ids["newclient@afrigen.link"].profileId;
+  const newSupplierId = ids["newsupplier@afrigen.link"].profileId;
   await db.update(profile).set({ managerId: kamId }).where(eq(profile.id, newSupplierId));
   await db.update(profile).set({ managerId: kamId }).where(eq(profile.id, newClientId));
   await db.delete(kybDocuments).where(inArray(kybDocuments.profileId, [newClientId, newSupplierId]));
@@ -295,7 +295,7 @@ async function main() {
     { id: id("evt"), tenderId: t2, actorProfileId: clientId, type: "tender.awarded", summary: "Award confirmed: 1 supplier, 2/2 units at flat fair TZS 1,300,000/unit." },
     { id: id("evt"), tenderId: t2, actorProfileId: supplierId, type: "stage.advance", summary: "Tanzanite Heavy Fleet Co. → Agreements signed." },
     { id: id("evt"), tenderId: t2, actorProfileId: supplierId, type: "stage.advance", summary: "Tanzanite Heavy Fleet Co. → Machine docs uploaded." },
-    { id: id("evt"), tenderId: t2, actorProfileId: fieldId, type: "stage.advance", summary: "Nguzo Ground Force → Field inspection verified." },
+    { id: id("evt"), tenderId: t2, actorProfileId: fieldId, type: "stage.advance", summary: "AFRIGEN Link Ground Force → Field inspection verified." },
     { id: id("evt"), tenderId: t2, actorProfileId: clientId, type: "stage.advance", summary: "Geita Gold Construction Ltd → Permits uploaded." },
   ]);
   await db.insert(notifications).values([
@@ -325,8 +325,8 @@ async function main() {
   ]);
   await db.insert(activityEvents).values([
     { id: id("evt"), tenderId: t3, actorProfileId: clientId, type: "tender.awarded", summary: "Award confirmed: 2 suppliers, 6/6 units at flat fair TZS 880,000/unit." },
-    { id: id("evt"), tenderId: t3, actorProfileId: adminId, type: "stage.advance", summary: "Nguzo HQ → Escrow confirmed." },
-    { id: id("evt"), tenderId: t3, actorProfileId: adminId, type: "stage.advance", summary: "Nguzo HQ → Approved — executing." },
+    { id: id("evt"), tenderId: t3, actorProfileId: adminId, type: "stage.advance", summary: "AFRIGEN Link HQ → Escrow confirmed." },
+    { id: id("evt"), tenderId: t3, actorProfileId: adminId, type: "stage.advance", summary: "AFRIGEN Link HQ → Approved — executing." },
   ]);
   await db.insert(notifications).values([
     { id: id("ntf"), recipientProfileId: supplierId, tenderId: t3, channel: "email", subject: "Job update: Approved — executing", body: "\"Flatbeds ×6\" is approved and executing.", status: "Logged" },
@@ -364,7 +364,7 @@ async function main() {
   ]);
   await db.insert(activityEvents).values([
     { id: id("evt"), tenderId: t4, actorProfileId: clientId, type: "tender.awarded", summary: "Award confirmed: 1 supplier, 1/1 unit at flat fair TZS 1,750,000/unit." },
-    { id: id("evt"), tenderId: t4, actorProfileId: adminId, type: "stage.advance", summary: "Nguzo HQ → Approved — executing." },
+    { id: id("evt"), tenderId: t4, actorProfileId: adminId, type: "stage.advance", summary: "AFRIGEN Link HQ → Approved — executing." },
   ]);
 
   // ============================================================

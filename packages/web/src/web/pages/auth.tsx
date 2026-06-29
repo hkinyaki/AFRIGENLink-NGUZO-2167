@@ -23,7 +23,7 @@ export default function Auth() {
   // Staff log in with a username; map it to the internal synth email used by auth.
   function resolveEmail(idval: string): string {
     const v = idval.trim();
-    return v.includes("@") ? v : `${v.toLowerCase()}@staff.nguzo.local`;
+    return v.includes("@") ? v : `${v.toLowerCase()}@staff.afrigen.local`;
   }
 
   async function submit(e: React.FormEvent) {
@@ -80,7 +80,7 @@ export default function Auth() {
             Northern corridors, Dar to Geita — one accountable ledger.
           </p>
           <a href="/" className="mt-5 inline-flex items-center gap-1.5 font-mono text-xs text-amber-500 hover:text-amber-400">
-            ← Back to nguzo.africa
+            ← Back to afrigen.link
           </a>
         </div>
         <div className="relative flex gap-6 text-xs text-slate-500">

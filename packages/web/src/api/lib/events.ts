@@ -14,7 +14,7 @@ import { user as authUser } from "../database/auth-schema";
 import { id } from "./ids";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "";
-const RESEND_FROM = process.env.RESEND_FROM ?? "Nguzo Africa <notifications@nguzo.africa>";
+const RESEND_FROM = process.env.RESEND_FROM ?? "AFRIGEN Link <notifications@afrigen.link>";
 
 let resendClient: { emails: { send: (a: unknown) => Promise<unknown> } } | null = null;
 async function getResend() {
@@ -37,7 +37,7 @@ function emailHtml(subject: string, body: string) {
   return `<!doctype html><html><body style="margin:0;background:#F7F6F3;font-family:Arial,Helvetica,sans-serif;color:#141B2E">
   <div style="max-width:560px;margin:0 auto;padding:32px 20px">
     <div style="background:#141B2E;border-radius:12px 12px 0 0;padding:20px 24px">
-      <span style="color:#D99A2B;font-weight:700;font-size:18px;letter-spacing:.5px">NGUZO AFRICA</span>
+      <span style="color:#D99A2B;font-weight:700;font-size:18px;letter-spacing:.5px">AFRIGEN LINK</span>
     </div>
     <div style="background:#fff;border:1px solid #e7e4dd;border-top:none;border-radius:0 0 12px 12px;padding:28px 24px">
       <h2 style="margin:0 0 12px;font-size:18px;color:#141B2E">${subject}</h2>
@@ -87,7 +87,7 @@ export async function logNotification(opts: {
           await client.emails.send({
             from: RESEND_FROM,
             to,
-            subject: `Nguzo Africa — ${opts.subject}`,
+            subject: `AFRIGEN Link — ${opts.subject}`,
             html: emailHtml(opts.subject, opts.body),
           });
           status = "Sent";

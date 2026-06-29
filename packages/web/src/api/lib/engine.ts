@@ -293,7 +293,7 @@ export function computeReversal(input: ReversalInput, todayIso?: string): Revers
   const clientLineItems = [
     { label: "Amount originally funded", amountTzs: amountFunded },
     { label: "Work done / non-refundable", amountTzs: -workDoneValueTzs },
-    { label: "Nguzo fee kept (on work done)", amountTzs: -nguzoFeeKeptTzs },
+    { label: "AFRIGEN Link fee kept (on work done)", amountTzs: -nguzoFeeKeptTzs },
     ...(supplierPenaltyTzs ? [{ label: "Supplier cancellation penalty", amountTzs: -supplierPenaltyTzs }] : []),
     ...(transferFeeKeptTzs ? [{ label: "Transfer / mobilisation fee kept", amountTzs: -transferFeeKeptTzs }] : []),
     ...(partsDeductedTzs ? [{ label: "Emergency parts already drawn", amountTzs: -partsDeductedTzs }] : []),
@@ -351,13 +351,13 @@ export function runSettlement(
 
   const clientLineItems = [
     { label: "Contract Value", amountTzs: contractValueTzs },
-    { label: "Nguzo Service Fee (5%)", amountTzs: clientFeeTzs },
+    { label: "AFRIGEN Link Service Fee (5%)", amountTzs: clientFeeTzs },
     { label: "Total Funded into Escrow", amountTzs: amountFundedTzs },
   ];
 
   const supplierLineItems = [
     { label: "Contract Value", amountTzs: contractValueTzs },
-    { label: "Nguzo Service Fee (5%)", amountTzs: -supplierFeeTzs },
+    { label: "AFRIGEN Link Service Fee (5%)", amountTzs: -supplierFeeTzs },
     { label: "Emergency Parts Credit Deducted", amountTzs: -emergencyCreditDeductedTzs },
     { label: "Final Supplier Payout", amountTzs: supplierPayoutTzs },
   ];

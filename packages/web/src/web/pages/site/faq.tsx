@@ -7,8 +7,8 @@ const FAQS: { q: string; a: string }[] = [
     a: "Right now, funds are tracked, not held — we ledger every transaction transparently and show both parties exactly where the money stands, but we're still onboarding a licensed escrow partner before we hold client funds directly. We'd rather tell you that plainly than overstate it.",
   },
   {
-    q: "What does Nguzo charge?",
-    a: "A flat 7% on every completed deal — the same for cargo transport and machinery rental. No hidden markups, no per-side games. We only earn it when the job is signed off.",
+    q: "What does AFRIGEN Link charge?",
+    a: "A flat 10% on every completed deal — split 5% client (added on top) and 5% supplier (deducted at settlement) — the same for cargo transport and machinery rental. No hidden markups, no per-side games. We only earn it when the job is signed off.",
   },
   {
     q: "Do you own the trucks or machinery?",
@@ -28,7 +28,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "When does the owner get paid?",
-    a: "On client sign-off. Escrow splits automatically — the supplier payout, our 7%, and any emergency-parts credit — with itemized invoices to both parties. No 30-to-90-day wait.",
+    a: "On client sign-off. Escrow splits automatically — the supplier payout, our 10%, and any emergency-parts credit — with itemized invoices to both parties. No 30-to-90-day wait.",
   },
   {
     q: "Where do you operate?",

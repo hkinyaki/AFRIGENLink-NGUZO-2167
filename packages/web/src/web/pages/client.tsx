@@ -3,7 +3,7 @@ import { Route, Switch, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { tzs } from "../lib/format";
 import type { Me } from "../lib/use-me";
-import { TenderAPI, generateAgreementPDF, generateInvoicePDF, generateNguzoBankPDF } from "../lib/tenders";
+import { TenderAPI, generateAgreementPDF, generateInvoicePDF, generateBankPDF } from "../lib/tenders";
 import { api } from "../lib/api";
 import { DEMAND_TYPES, typeOptions, ROUTE_OPTIONS, type DemandType } from "../constants/asset-types";
 import { AppShell, Icons, type NavItem } from "../components/shell";
@@ -383,10 +383,10 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
           {/* Client action: TT payment proof = escrow funding */}
           {stage === "PermitsVerified" && (
             <Card className="border-amber-600 p-5">
-              <SectionTitle sub="Permits verified. Upload your TT payment proof — this funds the escrow monitored by Nguzo.">Your step — Payment proof</SectionTitle>
+              <SectionTitle sub="Permits verified. Upload your TT payment proof — this funds the escrow monitored by AFRIGEN Link.">Your step — Payment proof</SectionTitle>
               <div className="mb-3">
-                <Button variant="ghost" onClick={() => generateNguzoBankPDF({ contractTitle: t.title, amountToFundTzs: escrowAmt, reference: t.id })}>
-                  Download Nguzo bank details (PDF)
+                <Button variant="ghost" onClick={() => generateBankPDF({ contractTitle: t.title, amountToFundTzs: escrowAmt, reference: t.id })}>
+                  Download AFRIGEN Link bank details (PDF)
                 </Button>
               </div>
               <div className="mb-3 space-y-1.5 rounded-md border border-navy-600 bg-navy-900 p-3 text-sm">
@@ -394,7 +394,7 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
                   <span>Contract value</span><span className="tnum">{tzs(baseValue)}</span>
                 </div>
                 <div className="flex items-center justify-between text-slate-400">
-                  <span>Nguzo service fee (5%)</span><span className="tnum">+ {tzs(clientFee)}</span>
+                  <span>AFRIGEN Link service fee (5%)</span><span className="tnum">+ {tzs(clientFee)}</span>
                 </div>
                 <div className="flex items-center justify-between border-t border-navy-700 pt-1.5 font-medium text-slate-100">
                   <span>Total to fund (escrow preview)</span>
@@ -417,7 +417,7 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
             <Card className="p-5">
               <div className="mb-2 text-[11px] uppercase tracking-wider text-slate-500">Escrow</div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">{stage === "TTUploaded" ? "Awaiting Nguzo confirmation" : "Monitored in escrow by Nguzo"}</span>
+                <span className="text-sm text-slate-400">{stage === "TTUploaded" ? "Awaiting AFRIGEN Link confirmation" : "Monitored in escrow by AFRIGEN Link"}</span>
                 <span className="tnum font-display text-lg font-semibold text-amber-500">{tzs(escrowAmt)}</span>
               </div>
               <p className="mt-2 text-[11px] text-slate-500">Funds are tracked end-to-end (includes 5% client fee) and released to suppliers on completion, less their 5% supplier fee.</p>

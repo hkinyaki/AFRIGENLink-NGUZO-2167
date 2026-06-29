@@ -8,7 +8,7 @@ const CLIENT_FEE_RATE = 0.05;
 const SUPPLIER_FEE_RATE = 0.05;
 
 export type PayoutLeg = {
-  party: "Supplier" | "Nguzo" | "PartsMerchant";
+  party: "Supplier" | "AFRIGEN" | "PartsMerchant";
   label: string;
   destination: string; // resolved from locked DB profile server-side in production
   amountTzs: number;
@@ -55,9 +55,9 @@ export function buildPayoutPayload(opts: {
       amountTzs: supplierNetTzs,
     },
     {
-      party: "Nguzo",
-      label: "Nguzo Africa — service revenue (10%)",
-      destination: "Nguzo Africa operating account",
+      party: "AFRIGEN",
+      label: "AFRIGEN Link — service revenue (10%)",
+      destination: "AFRIGEN Link operating account",
       amountTzs: nguzoRevenueTzs,
     },
   ];
@@ -76,12 +76,12 @@ export function buildPayoutPayload(opts: {
     reference: ref(contract.id),
     rail: "NMB Open Banking (simulated)",
     backupRail: "Selcom",
-    sourceAccount: "Nguzo Escrow Holding Room · NMB",
+    sourceAccount: "AFRIGEN Link Escrow Holding Room · NMB",
     governance: { maker: makerName, checker: checkerName },
     currency: "TZS",
     escrowFundedTzs,
     legs,
-    note: "Funds tracked / Monitored, not held — settlement instructed by Nguzo, executed by the licensed aggregator.",
+    note: "Funds tracked / Monitored, not held — settlement instructed by AFRIGEN Link, executed by the licensed aggregator.",
   };
 }
 

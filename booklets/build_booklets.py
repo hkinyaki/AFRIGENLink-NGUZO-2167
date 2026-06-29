@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Generate all Nguzo Africa PDF booklets (HTML -> Chrome -> PDF)."""
+"""Generate all AFRIGEN Link PDF booklets (HTML -> Chrome -> PDF)."""
 import os
 from components import *
 
 OUT = "build"
 os.makedirs(OUT, exist_ok=True)
 
-FOOT = "nguzo.africa · Confidential"
+FOOT = "afrigen.link · Confidential"
 
 # Canonical 11-stage gate (from src/api/lib/stages.ts)
 GATE = [
@@ -38,21 +38,21 @@ def client_booklet():
     p.append(content_page("Client Handbook", FOOT, "02", f'''
       {sec_head("Contents", "What's inside")}
       {toc([
-        ("01","Why Nguzo exists","The trust gap we close for buyers"),
+        ("01","Why AFRIGEN Link exists","The trust gap we close for buyers"),
         ("02","Getting started","Account, verification, your dashboard"),
         ("03","Post a job","Demand, quantity & description"),
         ("04","Compare &amp; award","Auto-fill the cheapest bids"),
         ("05","The staged gate","How your contract is protected"),
         ("06","Fund &amp; track","Escrow, permits, sign-off"),
-        ("07","Costs &amp; support","Our 7% fee and how to reach us"),
+        ("07","Costs &amp; support","Our 10% fee and how to reach us"),
       ])}
       {callout("THE PROMISE", "You never wire money to a stranger. Every supplier is verified, every shipment is inspected on the ground, and your capital sits in a protected escrow that only releases when <strong>you</strong> sign off the work.")}
     '''))
 
     # Why
     p.append(content_page("Client Handbook", FOOT, "03", f'''
-      {sec_head("01 · Why Nguzo exists", "Africa has a trust problem, not a payment problem")}
-      <p class="intro">Most freight and equipment marketplaces are passive — they list a supplier, take a cut, and disappear. When a truck breaks down at a border or a machine arrives in the wrong condition, you are on your own. Nguzo is built the opposite way: we sit <strong>inside</strong> every deal.</p>
+      {sec_head("01 · Why AFRIGEN Link exists", "Africa has a trust problem, not a payment problem")}
+      <p class="intro">Most freight and equipment marketplaces are passive — they list a supplier, take a cut, and disappear. When a truck breaks down at a border or a machine arrives in the wrong condition, you are on your own. AFRIGEN Link is built the opposite way: we sit <strong>inside</strong> every deal.</p>
       {cards(
         card("🛡️","Protected escrow","Your money is tracked in a dedicated facility and released only against signed-off milestones."),
         card("👷","Boots on the ground","Field inspectors physically verify every machine and yard before you commit."),
@@ -116,10 +116,10 @@ def client_booklet():
       <h3 class="sub-sec">Permits</h3>
       <p>Depending on your route, the system seeds the right checklist. <strong>Domestic</strong>: TARURA Heavy Load Permit + Municipal Clearance. <strong>Cross-border</strong>: TRA TANSAD, TBS Clearance, Phytosanitary Certificate, plus origin and destination OSBP entries. Upload them in your dashboard; our admin verifies before money moves.</p>
       <h3 class="sub-sec">Funding the escrow</h3>
-      <p>You pay into Nguzo's facility and upload your <strong>TT payment proof</strong>. The platform previews this as a protected escrow — <strong>funds tracked, not held loosely</strong>. Nothing is disbursed to suppliers until you've approved the completed work.</p>
+      <p>You pay into AFRIGEN Link's facility and upload your <strong>TT payment proof</strong>. The platform previews this as a protected escrow — <strong>funds tracked, not held loosely</strong>. Nothing is disbursed to suppliers until you've approved the completed work.</p>
       {kpis([("7<small>%</small>","Flat service fee"),("11","Locked gate steps"),("100<small>%</small>","Escrow-backed")])}
       <h3 class="sub-sec">Tracking &amp; settlement</h3>
-      <p>Your job's <strong>activity timeline</strong> logs every action with a timestamp. On sign-off, the system auto-generates an itemized invoice and runs settlement: supplier payout = escrow − our 7% fee − any emergency parts credit used.</p>
+      <p>Your job's <strong>activity timeline</strong> logs every action with a timestamp. On sign-off, the system auto-generates an itemized invoice and runs settlement: supplier payout = escrow − our 10% fee − any emergency parts credit used.</p>
     '''))
 
     # Costs & support
@@ -127,13 +127,13 @@ def client_booklet():
       {sec_head("07 · Costs &amp; support", "Simple, flat, transparent")}
       <p class="intro">There are no hidden margins buried in supplier quotes. We charge one flat fee, shown clearly on every invoice.</p>
       {cards(
-        card("7%","Our service fee","A flat 7% of the contract value — that's it. It funds the escrow, inspections and border support that protect you."),
+        card("10%","Our service fee","A flat 10% of the contract value — that's it. It funds the escrow, inspections and border support that protect you."),
         card("📄","Itemized invoices","Every contract produces a clear breakdown: escrow funded, fee, any parts credit, net to supplier."),
         card("💬","Reach a human","Notifications are logged to your registered email and phone on every key step."),
         card("🔒","Your data","KYB/KYC details are used only to verify and protect deals on the platform."))}
-      {callout("NEED HELP?", "Use the <strong>Contact</strong> page on nguzo.africa or reply to any notification. A real coordinator — not a bot — handles escalations.")}
+      {callout("NEED HELP?", "Use the <strong>Contact</strong> page on afrigen.link or reply to any notification. A real coordinator — not a bot — handles escalations.")}
     '''))
-    return doc("Nguzo Africa — Client Handbook", *p)
+    return doc("AFRIGEN Link — Client Handbook", *p)
 
 
 # ============================================================ SUPPLIER BOOKLET
@@ -150,20 +150,20 @@ def supplier_booklet():
     p.append(content_page("Supplier Handbook", FOOT, "02", f'''
       {sec_head("Contents", "What's inside")}
       {toc([
-        ("01","Why bid with Nguzo","Protection from delayed &amp; predatory terms"),
+        ("01","Why bid with AFRIGEN Link","Protection from delayed &amp; predatory terms"),
         ("02","Set up &amp; verify","Account, KYB, your asset vault"),
         ("03","List your fleet","Add trucks &amp; machinery"),
         ("04","Bid on tenders","Partial or full quantity"),
         ("05","Win an award","Agreements &amp; fleet documents"),
         ("06","Inspection &amp; execution","The field check and going live"),
-        ("07","Get paid","Settlement, the 7% fee, emergency parts"),
+        ("07","Get paid","Settlement, the 10% fee, emergency parts"),
       ])}
       {callout("THE PROMISE", "You don't chase clients for money. The full contract value is funded into escrow <strong>before</strong> you're released to work — and your payout is calculated automatically the moment the client signs off.")}
     '''))
 
     p.append(content_page("Supplier Handbook", FOOT, "03", f'''
-      {sec_head("01 · Why bid with Nguzo", "An end to delayed &amp; predatory terms")}
-      <p class="intro">If you own trucks or machinery, you know the pain: brokers who pay 90 days late, clients who vanish, jobs that turn out to be nothing like described. Nguzo removes that risk by funding the deal up front and protecting both sides.</p>
+      {sec_head("01 · Why bid with AFRIGEN Link", "An end to delayed &amp; predatory terms")}
+      <p class="intro">If you own trucks or machinery, you know the pain: brokers who pay 90 days late, clients who vanish, jobs that turn out to be nothing like described. AFRIGEN Link removes that risk by funding the deal up front and protecting both sides.</p>
       {cards(
         card("💰","Funded before you move","Escrow is filled and confirmed before execution — your payment is secured."),
         card("⚖️","Fair, single price","When several suppliers fill one job, everyone settles at the same fair rate."),
@@ -220,12 +220,12 @@ def supplier_booklet():
       {sec_head("07 · Get paid", "Settlement, fee &amp; emergency parts")}
       <h3 class="sub-sec">Automated settlement</h3>
       <p>When the client signs off, the system runs settlement instantly. Your payout is calculated as:</p>
-      {callout("YOUR PAYOUT", "<strong>Gross escrow</strong> on your contract <strong>−</strong> Nguzo's 7% service fee <strong>−</strong> any emergency parts credit you used <strong>=</strong> Final supplier payout.")}
+      {callout("YOUR PAYOUT", "<strong>Gross escrow</strong> on your contract <strong>−</strong> AFRIGEN Link's 10% service fee <strong>−</strong> any emergency parts credit you used <strong>=</strong> Final supplier payout.")}
       <h3 class="sub-sec">Emergency parts facility</h3>
       <p>Break down mid-job? Raise it under <strong>Report Breakdown</strong>. If the locked escrow covers the part plus shipping, the system approves the purchase from our Dar wholesale network and dispatches it upcountry by express courier — typically 12–18 hours. The cost is simply deducted at settlement.</p>
       {kpis([("7<small>%</small>","Flat fee"),("12–18<small>h</small>","Parts delivery"),("0","Chasing clients")])}
     '''))
-    return doc("Nguzo Africa — Supplier Handbook", *p)
+    return doc("AFRIGEN Link — Supplier Handbook", *p)
 
 
 # ============================================================ FIELD AGENT MANUAL
@@ -234,7 +234,7 @@ def field_booklet():
     p.append(cover(
         "Field Manual · Ground Force",
         "You are the moat.",
-        "The operating manual for Nguzo field inspectors and border liaison agents — the physical layer of trust that no software competitor can copy.",
+        "The operating manual for AFRIGEN Link field inspectors and border liaison agents — the physical layer of trust that no software competitor can copy.",
         "Field agent field manual", "Edition 2026.1",
         hero="assets/inspection.webp",
         badge="Internal · Ground Force only"))
@@ -259,7 +259,7 @@ def field_booklet():
       {cards(
         card("👷","Field Inspector","On-site mechanical and legal yard audits. You confirm the asset is real, sound, and matches its documents before escrow is funded."),
         card("🚏","Border Liaison","Stationed at corridor OSBPs (Tunduma, Namanga, Rusumo). You manually resolve portal failures and bureaucratic stalls that software can't."))}
-      {note("THE PRINCIPLE", "Nguzo never lets a deal advance on trust alone. Your physical sign-off is a hard gate — the contract cannot move to funding without it.")}
+      {note("THE PRINCIPLE", "AFRIGEN Link never lets a deal advance on trust alone. Your physical sign-off is a hard gate — the contract cannot move to funding without it.")}
     '''))
 
     p.append(content_page("Field Manual", FOOT, "04", f'''
@@ -323,12 +323,12 @@ def field_booklet():
         "<strong>Verify in person, always.</strong> Never sign off remotely or on a supplier's word.",
         "<strong>Document the truth.</strong> Your notes are a legal-grade record — accurate, specific, dated.",
         "<strong>No incentive to pass.</strong> You are paid to be right, not to be fast. A fail protects the platform.",
-        "<strong>Independence.</strong> You work for Nguzo and the integrity of the deal — never for the supplier.",
+        "<strong>Independence.</strong> You work for AFRIGEN Link and the integrity of the deal — never for the supplier.",
         "<strong>Escalate doubt.</strong> If something feels wrong, leave the gate closed and tell admin.",
       ])}
       {callout("THE GROUND FORCE CREED", "We are the reason a buyer three countries away can wire money with confidence. The platform is the promise — <strong>we are the proof</strong>.")}
     '''))
-    return doc("Nguzo Africa — Field Manual", *p)
+    return doc("AFRIGEN Link — Field Manual", *p)
 
 
 # ============================================================ ADMIN / OPS MANUAL
@@ -337,7 +337,7 @@ def admin_booklet():
     p.append(cover(
         "Operations Manual · HQ Admin",
         "Running the platform.",
-        "The control manual for Nguzo administrators — overseeing jobs, verifying permits, confirming escrow, approving execution, managing the Ground Force, and reconciling the ledger.",
+        "The control manual for AFRIGEN Link administrators — overseeing jobs, verifying permits, confirming escrow, approving execution, managing the Ground Force, and reconciling the ledger.",
         "Admin / operations manual", "Edition 2026.1",
         hero="assets/security.webp",
         badge="Internal · HQ administrators only"))
@@ -405,9 +405,9 @@ def admin_booklet():
     p.append(content_page("Operations Manual", FOOT, "07", f'''
       {sec_head("05 · Confirm payment", "Escrow funding &amp; release")}
       {step(1,"Review the TT proof","The client uploads a telegraphic-transfer proof for the contract value. Match the amount and reference.","Stage: Payment uploaded")}
-      {step(2,"Confirm the escrow","Confirming marks the funds as secured in Nguzo's facility. The UI previews this as a protected escrow — <strong>funds tracked, not held loosely</strong>.","Stage: Escrow confirmed")}
+      {step(2,"Confirm the escrow","Confirming marks the funds as secured in AFRIGEN Link's facility. The UI previews this as a protected escrow — <strong>funds tracked, not held loosely</strong>.","Stage: Escrow confirmed")}
       {step(3,"Approve to execute","With escrow confirmed, give the final approval. The supplier and field agent are notified and work begins.","Stage: Executing")}
-      {callout("MONEY FRAMING", "Until a licensed escrow partner is integrated, funds are tracked in Nguzo's own account and presented as escrow. Keep the &ldquo;tracked, not held&rdquo; language consistent everywhere.")}
+      {callout("MONEY FRAMING", "Until a licensed escrow partner is integrated, funds are tracked in AFRIGEN Link's own account and presented as escrow. Keep the &ldquo;tracked, not held&rdquo; language consistent everywhere.")}
     '''))
 
     p.append(content_page("Operations Manual", FOOT, "08", f'''
@@ -428,17 +428,17 @@ def admin_booklet():
     p.append(content_page("Operations Manual", FOOT, "09", f'''
       {sec_head("07 · Ledger &amp; settlement", "Money, fees &amp; invoices")}
       <p class="intro">On client sign-off, the settlement engine runs automatically. Your job is to reconcile and disburse against its output.</p>
-      {callout("SETTLEMENT FORMULA", "Supplier payout = <strong>Gross escrow</strong> − <strong>Nguzo 7% service fee</strong> − <strong>emergency parts credit used</strong>. Itemized invoices are auto-generated for both client and supplier.")}
+      {callout("SETTLEMENT FORMULA", "Supplier payout = <strong>Gross escrow</strong> − <strong>AFRIGEN Link 10% service fee</strong> − <strong>emergency parts credit used</strong>. Itemized invoices are auto-generated for both client and supplier.")}
       {table(["Ledger line","Client view","Supplier view"],[
         ["Escrow funded","Total in","Gross on contract"],
-        ["Service fee (7%)","−","−"],
+        ["Service fee (10%)","−","−"],
         ["Parts credit used","−","−"],
         ["Net to supplier","disbursed","final payout"],
       ])}
       {step(1,"Reconcile","Confirm the engine's figures against the funded escrow and any parts credit drawn.")}
       {step(2,"Disburse &amp; close","Release the net payout to the supplier and mark the contract completed. Notifications log to both parties.","Stage: Completed")}
     '''))
-    return doc("Nguzo Africa — Operations Manual", *p)
+    return doc("AFRIGEN Link — Operations Manual", *p)
 
 
 # ============================================================ COMPANY / PITCH BOOKLET
@@ -447,7 +447,7 @@ def company_booklet():
     p.append(cover(
         "Company Overview · Investors &amp; Partners",
         "The pillar behind every deal.",
-        "Nguzo Africa is embedded operating infrastructure for heavy machinery and cargo coordination across East Africa — solving the trust problem that defeated every marketplace before us.",
+        "AFRIGEN Link is embedded operating infrastructure for heavy machinery and cargo coordination across East Africa — solving the trust problem that defeated every marketplace before us.",
         "Confidential overview", "Edition 2026.1",
         hero="assets/hero.webp",
         badge="Cargo &amp; Machinery Coordination — Secured"))
@@ -465,9 +465,9 @@ def company_booklet():
 
     p.append(content_page("Company Overview", FOOT, "03", f'''
       {sec_head("The solution", "Embedded operating infrastructure")}
-      <p class="intro">Nguzo sits inside every transaction with three moats that no software-only competitor can replicate quickly. Money stays simulated — <strong>tracked, not held</strong> — until a licensed escrow partner is integrated.</p>
+      <p class="intro">AFRIGEN Link sits inside every transaction with three moats that no software-only competitor can replicate quickly. Money stays simulated — <strong>tracked, not held</strong> — until a licensed escrow partner is integrated.</p>
       {cards(
-        card("🛡️","Collateralized escrow","Full contract value funded before execution; auto split-settlement with a flat 7% fee on sign-off."),
+        card("🛡️","Collateralized escrow","Full contract value funded before execution; auto split-settlement with a flat 10% fee on sign-off."),
         card("👷","Ground Force","Field inspectors verify every asset on-site; border liaison agents resolve OSBP stalls in person."),
         card("🔧","Escrow-as-credit parts","Mid-job breakdowns are kept moving by collateralizing emergency spares against the locked escrow."),
         card("🧭","Three corridors","Southern (Tunduma/Zambia), Central (Rwanda/Burundi), Northern (Namanga/Kenya)."))}
@@ -496,14 +496,14 @@ def company_booklet():
       {sec_head("Business model", "Flat, aligned, scalable")}
       <p class="intro">One transparent revenue line, charged on value delivered — not buried in supplier quotes.</p>
       {table(["Revenue","Mechanism"],[
-        ["Service fee","Flat <strong>7%</strong> of contract value on every deal, both cargo and machinery"],
-        ["Settlement","Auto-calculated: supplier payout = escrow − 7% fee − parts credit used"],
+        ["Service fee","Flat <strong>10%</strong> of contract value on every deal, both cargo and machinery"],
+        ["Settlement","Auto-calculated: supplier payout = escrow − 10% fee − parts credit used"],
         ["Parts facility","Emergency spares collateralized against escrow — sticky, defensible, value-add"],
       ])}
       {cards(
         card("📈","Aligned incentives","We earn only when a deal completes and the client signs off — fully aligned with both sides."),
         card("🔒","Defensible","The moats — ground force, escrow, parts credit — compound with every corridor and every verified supplier."))}
-      {callout("THE NAME", "<strong>Nguzo</strong> is Swahili for <em>pillar</em> — the foundation that holds everything up. That's the role we play in every deal: the pillar behind it.")}
+      {callout("THE NAME", "<strong>AFRIGEN Link</strong> is Swahili for <em>pillar</em> — the foundation that holds everything up. That's the role we play in every deal: the pillar behind it.")}
     '''))
 
     p.append(content_page("Company Overview", FOOT, "07", f'''
@@ -524,9 +524,9 @@ def company_booklet():
         "Automated permit assembly (TANSAD) and AI coordination copilot.",
         "Mobile app for field and supplier on phone browsers.",
       ])}
-      {callout("CONTACT", "Nguzo Africa · Dar es Salaam, Tanzania · nguzo.africa — partnership and investment enquiries via the Contact page.")}
+      {callout("CONTACT", "AFRIGEN Link · Dar es Salaam, Tanzania · afrigen.link — partnership and investment enquiries via the Contact page.")}
     '''))
-    return doc("Nguzo Africa — Company Overview", *p)
+    return doc("AFRIGEN Link — Company Overview", *p)
 
 
 # ============================================================ COMBINED PLATFORM GUIDE
@@ -535,7 +535,7 @@ def combined_booklet():
     p.append(cover(
         "Platform Guide · All Roles",
         "One platform. Four roles. Every step.",
-        "The complete operating guide to Nguzo Africa — for clients, suppliers, field agents and administrators. The single reference for how the whole system works together.",
+        "The complete operating guide to AFRIGEN Link — for clients, suppliers, field agents and administrators. The single reference for how the whole system works together.",
         "Master platform guide", "Edition 2026.1",
         hero="assets/hero.webp",
         badge="Cargo &amp; Machinery Coordination — Secured"))
@@ -543,7 +543,7 @@ def combined_booklet():
     p.append(content_page("Platform Guide", FOOT, "02", f'''
       {sec_head("Contents", "The whole system, end to end")}
       {toc([
-        ("01","The big picture","What Nguzo is and why it works"),
+        ("01","The big picture","What AFRIGEN Link is and why it works"),
         ("02","The four roles","Who does what"),
         ("03","The staged gate","Eleven steps, end to end"),
         ("04","Clients","Post, award, fund, track"),
@@ -551,7 +551,7 @@ def combined_booklet():
         ("06","Field &amp; Admin","Verify, confirm, settle"),
         ("07","Money &amp; trust","Escrow, fee, parts, settlement"),
       ])}
-      {callout("READ THIS FIRST", "Nguzo is not a marketplace — it's embedded coordination infrastructure. Every deal runs through a locked, role-by-role gate with money in protected escrow. This guide explains each piece and how they connect.")}
+      {callout("READ THIS FIRST", "AFRIGEN Link is not a marketplace — it's embedded coordination infrastructure. Every deal runs through a locked, role-by-role gate with money in protected escrow. This guide explains each piece and how they connect.")}
     '''))
 
     p.append(content_page("Platform Guide", FOOT, "03", f'''
@@ -605,7 +605,7 @@ def combined_booklet():
       {step(1,"List your fleet","Add trucks &amp; machinery to your Fleet with honest specs.","Fleet → Add Asset")}
       {step(2,"Bid","Offer per-unit price &amp; quantity on open tenders — partial or full.","Open Tenders")}
       {step(3,"Win &amp; deliver","Sign the agreement, upload fleet docs, pass inspection, then execute once escrow is confirmed.","My Awards")}
-      {step(4,"Get paid","Auto-settlement: gross escrow − 7% fee − any parts credit = your payout.","Escrow Vault")}
+      {step(4,"Get paid","Auto-settlement: gross escrow − 10% fee − any parts credit = your payout.","Escrow Vault")}
     '''))
 
     p.append(content_page("Platform Guide", FOOT, "07", f'''
@@ -631,22 +631,22 @@ def combined_booklet():
       <h3 class="sub-sec">Escrow</h3>
       <p>The full contract value is funded before execution. The platform previews it as protected escrow — <strong>funds tracked, not held</strong> — until a licensed escrow partner is integrated. Money moves only on the client's sign-off.</p>
       <h3 class="sub-sec">Fee &amp; settlement</h3>
-      {callout("THE FORMULA", "Supplier payout = <strong>Gross escrow</strong> − <strong>Nguzo 7% service fee</strong> − <strong>emergency parts credit used</strong>. Itemized invoices are generated automatically for both parties.")}
+      {callout("THE FORMULA", "Supplier payout = <strong>Gross escrow</strong> − <strong>AFRIGEN Link 10% service fee</strong> − <strong>emergency parts credit used</strong>. Itemized invoices are generated automatically for both parties.")}
       <h3 class="sub-sec">Emergency parts facility</h3>
       <p>If a supplier breaks down mid-job, the spare can be collateralized against the locked escrow. The system checks coverage, approves the purchase from the Dar wholesale network, and dispatches upcountry by express courier in 12–18 hours. The cost is deducted at settlement.</p>
       {kpis([("7<small>%</small>","Flat fee"),("100<small>%</small>","Escrow-backed"),("11","Gate steps"),("3","Corridors")])}
-      {callout("NGUZO", "Swahili for <em>pillar</em> — the foundation behind every deal. <strong>Cargo &amp; Machinery Coordination — Secured.</strong>")}
+      {callout("AFRIGEN LINK", "The coordination layer behind every deal — a brand of AFRIGEN Holdings Ltd. <strong>Cargo &amp; Machinery Coordination — Secured.</strong>")}
     '''))
-    return doc("Nguzo Africa — Platform Guide", *p)
+    return doc("AFRIGEN Link — Platform Guide", *p)
 
 
 BOOKLETS = {
-    "01_Nguzo_Client_Handbook": client_booklet,
-    "02_Nguzo_Supplier_Handbook": supplier_booklet,
-    "03_Nguzo_Field_Manual": field_booklet,
-    "04_Nguzo_Operations_Manual": admin_booklet,
-    "05_Nguzo_Company_Overview": company_booklet,
-    "06_Nguzo_Platform_Guide": combined_booklet,
+    "01_AFRIGEN-Link_Client_Handbook": client_booklet,
+    "02_AFRIGEN-Link_Supplier_Handbook": supplier_booklet,
+    "03_AFRIGEN-Link_Field_Manual": field_booklet,
+    "04_AFRIGEN-Link_Operations_Manual": admin_booklet,
+    "05_AFRIGEN-Link_Company_Overview": company_booklet,
+    "06_AFRIGEN-Link_Platform_Guide": combined_booklet,
 }
 
 if __name__ == "__main__":

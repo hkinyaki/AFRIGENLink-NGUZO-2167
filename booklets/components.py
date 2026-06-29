@@ -1,4 +1,4 @@
-"""Reusable HTML components for Nguzo Africa booklets."""
+"""Reusable HTML components for AFRIGEN Link booklets."""
 
 LOGO = "assets/logo.png"
 LOGO_ICON = "assets/logo-icon.png"
@@ -14,7 +14,7 @@ def cover(kicker, title, sub, footer_left, footer_right, hero="assets/hero.webp"
       <div class="cover-inner">
         <div class="cover-top">
           <img src="{LOGO_ICON}">
-          <div class="wm">NGUZO <b>AFRICA</b></div>
+          <div class="wm">AFRIGEN <b>Link</b></div>
         </div>
         <div class="cover-mid">
           <div class="kicker">{kicker}</div>
@@ -31,7 +31,7 @@ def cover(kicker, title, sub, footer_left, footer_right, hero="assets/hero.webp"
 
 def rhead(doc_label):
     return f'''<div class="rhead">
-      <div class="l"><img src="{LOGO_ICON}"><span>Nguzo Africa</span></div>
+      <div class="l"><img src="{LOGO_ICON}"><span>AFRIGEN Link</span></div>
       <div class="r">{doc_label}</div>
     </div>'''
 

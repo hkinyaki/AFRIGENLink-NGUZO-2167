@@ -12,8 +12,8 @@ ROLES = {
 
 async def login(page, email):
     await page.goto("http://localhost:4200/app", wait_until="networkidle")
-    await page.fill("input[placeholder*='username']", f"{email}@nguzo.africa")
-    await page.fill("input[type=password]", "nguzo2026")
+    await page.fill("input[placeholder*='username']", f"{email}@afrigen.link")
+    await page.fill("input[type=password]", "afrigen2026")
     await page.click("button[type=submit]")
     await page.wait_for_timeout(2800)
 

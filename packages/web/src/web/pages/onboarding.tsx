@@ -110,8 +110,8 @@ export function OnboardingWizard({ me }: { me: Me }) {
 
   const sub = external
     ? needsSiteVisit(role)
-      ? "Every Nguzo partner is verified before going live. Tell us who you are and what you can supply — then we'll arrange a site visit to confirm and activate your account."
-      : "Every Nguzo partner is verified before going live. Share your company details and documents — we'll review them remotely and verify you, usually within a working day."
+      ? "Every AFRIGEN Link partner is verified before going live. Tell us who you are and what you can supply — then we'll arrange a site visit to confirm and activate your account."
+      : "Every AFRIGEN Link partner is verified before going live. Share your company details and documents — we'll review them remotely and verify you, usually within a working day."
     : "Before you take live jobs, we need to confirm your identity. This takes two minutes.";
 
   return (
@@ -175,7 +175,7 @@ export function OnboardingWizard({ me }: { me: Me }) {
         )}
         {external && step === 2 && (
           <div className="space-y-4">
-            <p className="text-xs text-slate-400">Upload your company documents. All files are stored securely and only viewable by Nguzo staff on your verified profile.</p>
+            <p className="text-xs text-slate-400">Upload your company documents. All files are stored securely and only viewable by AFRIGEN Link staff on your verified profile.</p>
             <KycFileUpload label="Certificate of incorporation / registration" scope="kyb" onUploaded={(k, n) => addDoc("Registration", k, n)} />
             <KycFileUpload label="TIN certificate" scope="kyb" onUploaded={(k, n) => addDoc("TIN", k, n)} />
             <KycFileUpload label="Business licence" scope="kyb" onUploaded={(k, n) => addDoc("Licence", k, n)} />

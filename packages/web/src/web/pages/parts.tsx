@@ -238,7 +238,7 @@ function PartsLedger() {
   const sorted = [...orders].sort((a: any, b: any) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
   return (
     <div className="p-6">
-      <SectionTitle sub="Every spare order routed to you, sorted by date. Earnings are tracked through Nguzo, not held here.">Ledger</SectionTitle>
+      <SectionTitle sub="Every spare order routed to you, sorted by date. Earnings are tracked through AFRIGEN Link, not held here.">Ledger</SectionTitle>
       <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-3">
         <KPIStat label="Fulfilled value" value={tzs(earned)} accent="good" />
         <KPIStat label="In dispatch queue" value={tzs(pending)} accent={pending ? "amber" : undefined} />

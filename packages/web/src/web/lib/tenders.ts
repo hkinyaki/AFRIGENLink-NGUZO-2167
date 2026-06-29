@@ -207,7 +207,7 @@ function header(doc: jsPDF, title: string) {
   doc.setTextColor(AMBER);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
-  doc.text("NGUZO AFRICA", 14, 13);
+  doc.text("AFRIGEN LINK", 14, 13);
   doc.setTextColor("#FFFFFF");
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
@@ -308,10 +308,10 @@ export function generateAgreementPDF(opts: {
   doc.setTextColor("#555555");
   const terms = [
     "1. The supplier agrees to provide the awarded units at the flat fair price stated above.",
-    "2. Funds are coordinated through Nguzo Africa and tracked end-to-end (held, not disbursed, until sign-off).",
+    "2. Funds are coordinated through AFRIGEN Link and tracked end-to-end (held, not disbursed, until sign-off).",
     "3. The supplier shall submit machine/fleet documents for field inspection before mobilisation.",
-    "4. Permits and payment proof are verified by Nguzo Africa before execution is authorised.",
-    "5. Nguzo charges a flat 10% service fee (5% client, added on top; 5% supplier, deducted at settlement) plus any emergency-parts credit used.",
+    "4. Permits and payment proof are verified by AFRIGEN Link before execution is authorised.",
+    "5. AFRIGEN Link charges a flat 10% service fee (5% client, added on top; 5% supplier, deducted at settlement) plus any emergency-parts credit used.",
     ...(isMachinery
       ? [
           "6. Machinery hire is billed from transfer/departure through the last working day; the return-to-yard day is not charged.",
@@ -332,7 +332,7 @@ export function generateAgreementPDF(opts: {
   y += 16;
   doc.text("Client signature: ______________________", 14, y);
   doc.text("Date: ____________", 140, y);
-  doc.save(`Nguzo-Agreement-${opts.contractId}.pdf`);
+  doc.save(`AFRIGEN-Link-Agreement-${opts.contractId}.pdf`);
 }
 
 /** Settlement invoice PDF (replaces the old window.print popup). */
@@ -363,8 +363,8 @@ export function generateInvoicePDF(inv: { party: string; lineItems: { label: str
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor("#888888");
-  doc.text("Simulated settlement · Nguzo service fee 10% (5% client + 5% supplier) · funds tracked, not held · figures illustrative.", 14, y);
-  doc.save(`Nguzo-Invoice-${inv.party}.pdf`);
+  doc.text("Simulated settlement · AFRIGEN Link service fee 10% (5% client + 5% supplier) · funds tracked, not held · figures illustrative.", 14, y);
+  doc.save(`AFRIGEN-Link-Invoice-${inv.party}.pdf`);
 }
 
 /**
@@ -406,14 +406,14 @@ export function generateEfdReceiptPDF(o: {
   doc.text("Total (VAT incl.)", 14, y); doc.text(fmt(total), 196, y, { align: "right" }); y += 14;
   doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor("#888888");
   doc.text("Simulated EFD fiscal receipt for demonstration · figures illustrative · no real TRA transmission.", 14, y);
-  doc.save(`Nguzo-EFD-${o.efdNumber}.pdf`);
+  doc.save(`AFRIGEN-Link-EFD-${o.efdNumber}.pdf`);
 }
 
 /**
- * Nguzo escrow funding bank-details sheet (PLACEHOLDER details for now).
+ * AFRIGEN Link escrow funding bank-details sheet (PLACEHOLDER details for now).
  * Downloadable at the TT-upload stage so the client knows where to wire funds.
  */
-export function generateNguzoBankPDF(opts: { contractTitle: string; amountToFundTzs?: number; reference?: string }) {
+export function generateBankPDF(opts: { contractTitle: string; amountToFundTzs?: number; reference?: string }) {
   const doc = new jsPDF();
   header(doc, "Escrow Funding — Bank Details");
   let y = 50;
@@ -433,7 +433,7 @@ export function generateNguzoBankPDF(opts: { contractTitle: string; amountToFund
   y += 9;
   doc.setFont("helvetica", "bold");
   doc.setTextColor(NAVY);
-  doc.text("Pay into the Nguzo coordination account", 14, y);
+  doc.text("Pay into the AFRIGEN Link coordination account", 14, y);
   y += 8;
   const row = (k: string, v: string) => {
     doc.setFont("helvetica", "bold");
@@ -443,7 +443,7 @@ export function generateNguzoBankPDF(opts: { contractTitle: string; amountToFund
     doc.text(v, 78, y);
     y += 7;
   };
-  row("Account name", "Nguzo Africa Ltd — Coordination Trust");
+  row("Account name", "AFRIGEN Link Ltd — Coordination Trust");
   row("Bank", "[Placeholder Bank — to be confirmed]");
   row("Branch", "Dar es Salaam Main");
   row("Account no. (TZS)", "0000 0000 0000");
@@ -456,11 +456,11 @@ export function generateNguzoBankPDF(opts: { contractTitle: string; amountToFund
   doc.setFontSize(8.5);
   doc.setTextColor("#888888");
   const note = doc.splitTextToSize(
-    "Funds are coordinated through Nguzo Africa and tracked end-to-end. Upload your TT payment proof in the dashboard once the transfer is made; execution is authorised only after the proof is verified. Bank details shown here are placeholders pending the licensed escrow/aggregator binding.",
+    "Funds are coordinated through AFRIGEN Link and tracked end-to-end. Upload your TT payment proof in the dashboard once the transfer is made; execution is authorised only after the proof is verified. Bank details shown here are placeholders pending the licensed escrow/aggregator binding.",
     182
   );
   doc.text(note, 14, y);
-  doc.save(`Nguzo-Bank-Details-${(opts.reference || "funding").replace(/[^a-z0-9]/gi, "-")}.pdf`);
+  doc.save(`AFRIGEN-Link-Bank-Details-${(opts.reference || "funding").replace(/[^a-z0-9]/gi, "-")}.pdf`);
 }
 
 /** Reversal advice note — cancellation / refund / shortened-hire line items. */
@@ -523,7 +523,7 @@ export function generateReversalPDF(opts: {
   };
   section("Client", opts.lineItems.client);
   section("Supplier", opts.lineItems.supplier);
-  section("Nguzo Africa", opts.lineItems.nguzo);
+  section("AFRIGEN Link", opts.lineItems.nguzo);
 
   if (typeof opts.clientRefundTzs === "number") {
     doc.setDrawColor("#DDDDDD");
@@ -540,9 +540,9 @@ export function generateReversalPDF(opts: {
   doc.setFontSize(8.5);
   doc.setTextColor("#888888");
   const note = doc.splitTextToSize(
-    "Reversal figures are computed by Nguzo Africa's settlement engine and recomputed at approval. Refunds are instructed to the client's registered bank account; funds are tracked end-to-end (not held by Nguzo). Emergency-parts already drawn are deducted before any refund. This advice is for record only pending the licensed escrow/aggregator binding.",
+    "Reversal figures are computed by AFRIGEN Link's settlement engine and recomputed at approval. Refunds are instructed to the client's registered bank account; funds are tracked end-to-end (not held by AFRIGEN Link). Emergency-parts already drawn are deducted before any refund. This advice is for record only pending the licensed escrow/aggregator binding.",
     182
   );
   doc.text(note, 14, y);
-  doc.save(`Nguzo-Reversal-${(opts.reference || "advice").replace(/[^a-z0-9]/gi, "-")}.pdf`);
+  doc.save(`AFRIGEN-Link-Reversal-${(opts.reference || "advice").replace(/[^a-z0-9]/gi, "-")}.pdf`);
 }

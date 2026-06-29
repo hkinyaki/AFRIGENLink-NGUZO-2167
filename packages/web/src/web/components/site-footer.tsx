@@ -43,7 +43,7 @@ export function SiteFooter() {
             <Link href="/" className="flex items-center gap-2.5">
               <img src="/logo-icon.png" alt="" className="h-9 w-auto" />
               <span className="font-display text-sm font-extrabold tracking-tight text-slate-100">
-                NGUZO <span className="text-amber-400">AFRICA</span>
+                AFRIGEN <span className="text-amber-400">Link</span>
               </span>
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-slate-400">
@@ -51,10 +51,10 @@ export function SiteFooter() {
               and a person on the ground when it matters.
             </p>
             <a
-              href="mailto:hello@nguzo.africa"
+              href="mailto:hello@afrigen.link"
               className="mt-4 inline-block font-mono text-sm text-amber-400 hover:text-amber-500"
             >
-              hello@nguzo.africa
+              hello@afrigen.link
             </a>
           </div>
           {COLS.map((c) => (
@@ -72,7 +72,7 @@ export function SiteFooter() {
         </div>
         <div className="mt-12 flex flex-col gap-3 border-t border-navy-600 pt-6 text-xs text-slate-500 md:flex-row md:items-center md:justify-between">
           <p className="font-mono">Dar es Salaam, Tanzania · Central &amp; Southern corridors</p>
-          <p className="font-mono">© {new Date().getFullYear()} Nguzo Africa Ltd</p>
+          <p className="font-mono">© {new Date().getFullYear()} AFRIGEN Link — a brand of AFRIGEN Holdings Ltd</p>
         </div>
       </div>
     </footer>

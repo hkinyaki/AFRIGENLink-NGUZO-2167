@@ -1,4 +1,4 @@
-"""Line-level VO for Nguzo role training videos (narration-driven cursor).
+"""Line-level VO for AFRIGEN Link role training videos (narration-driven cursor).
 
 Each SEGMENT is broken into ordered LINES. Each line is one sentence-worth of
 narration paired with ONE cursor action. We TTS every line separately so we know
@@ -39,7 +39,7 @@ LINE = f"{ROOT}/vo_lines"     # per-line timeline json + raw line mp3s
 # ----------------------------------------------------------------------
 SUPPLIER = [
  ("intro", "SUPPLIER", "Your supplier dashboard", "Where your work lives", [
-   ("Welcome to Nguzo Africa.", "hold", None),
+   ("Welcome to AFRIGEN Link.", "hold", None),
    ("If you own trucks or machinery, this is the dashboard that turns your idle assets into paid work, with your money protected.", "nav", "Jobs"),
    ("Start on the Jobs page.", "nav", "Jobs"),
    ("This first counter, Open to bid, shows live jobs you can compete for right now.", "hover", "Open to bid"),
@@ -65,7 +65,7 @@ SUPPLIER = [
    ("Open a job and you will see the Place your bid card.", "hover", "Place your bid"),
    ("First, set how many units you can supply.", "type", ("input[type=\"number\"]", "2", 0)),
    ("Then set your price per unit.", "type", ("input[type=\"number\"]", "910000", 1)),
-   ("Here is what makes Nguzo fair, you can bid for the full quantity or just part of it.", "hover", "Place your bid"),
+   ("Here is what makes AFRIGEN Link fair, you can bid for the full quantity or just part of it.", "hover", "Place your bid"),
    ("If a client needs five trucks and you only have two, you simply bid for two.", "hold", None),
    ("Our system auto-fills the cheapest bids until the quantity is met, then settles everyone onto one flat fair price.", "hold", None),
    ("So you compete on honest pricing, not on who refreshed the page first.", "hoverbtn", "Submit bid"),
@@ -95,7 +95,7 @@ SUPPLIER = [
    ("Upload your registration, inspection certificates, and insurance for the asset on this job.", "hover", "registration"),
    ("This is what our field inspector will check against the real machine on the ground, so it has to match.", "upload", "MACH"),
    ("Attach the documents and submit them for inspection.", "hoverbtn", "Submit documents for inspection"),
-   ("This step is exactly why a client trusts Nguzo over a faceless marketplace.", "hold", None),
+   ("This step is exactly why a client trusts AFRIGEN Link over a faceless marketplace.", "hold", None),
    ("Every asset is verified by a real person before a shilling moves.", "scroll", 120),
    ("Get it uploaded, and the job heads to field verification.", "scroll", -120),
  ]),
@@ -125,7 +125,7 @@ SUPPLIER = [
  ("vault", "SUPPLIER", "Step 7 — Escrow Vault", "See your money before it lands", [
    ("Here is the part suppliers love most, the Escrow Vault.", "hover", "Escrow Vault"),
    ("For every job you win, the client's payment is locked in escrow before the wheels even turn.", "hover", "Escrow Vault"),
-   ("So the money is already secured by Nguzo before you commit your asset.", "scroll", 150),
+   ("So the money is already secured by AFRIGEN Link before you commit your asset.", "scroll", 150),
    ("This table shows, per contract, exactly what is locked.", "hold", None),
    ("It shows any emergency parts credit drawn against it, and your clean net payout once the job is signed off.", "scroll", 150),
    ("You are never chasing an invoice and never wondering if you will be paid.", "scroll", -150),
@@ -142,19 +142,19 @@ SUPPLIER = [
    ("Pick the part that's failed, here, the Hydraulic Pump Assembly.", "hold", None),
    ("The instant you choose it, this cost panel appears, retail price, logistics handling, and the total draw.", "hover", "Total draw"),
    ("It even names the Dar wholesale supplier the part ships from, so nothing is hidden.", "hover", "Source"),
-   ("Now Nguzo checks the locked escrow on that job covers the part and its delivery.", "hold", None),
+   ("Now AFRIGEN Link checks the locked escrow on that job covers the part and its delivery.", "hold", None),
    ("If it does, you hit Report breakdown and request dispatch, and it's auto-approved.", "hoverbtn", "Report breakdown & request dispatch"),
    ("The part ships up-country by express courier, drawn against the escrow, never your own pocket.", "scroll", 120),
    ("A breakdown that used to cost you days of downtime now costs you minutes.", "scroll", -120),
  ]),
 
  ("close", "SUPPLIER", "You're set up to win work", "From bid to payout", [
-   ("And that is your whole world as a Nguzo supplier.", "hover", "Open to bid"),
+   ("And that is your whole world as a AFRIGEN Link supplier.", "hover", "Open to bid"),
    ("Find the right jobs, bid an honest price, win the work.", "hover", "My awards"),
    ("Sign and verify, then watch your secured payout sit waiting in the vault.", "hover", "Executing"),
    ("With a real safety net if a machine ever falters.", "hover", "Bids placed"),
    ("You compete fairly, you are paid reliably, and you are never left stranded.", "scroll", 150),
-   ("Keep your fleet current, bid with confidence, and let Nguzo handle the trust.", "scroll", -150),
+   ("Keep your fleet current, bid with confidence, and let AFRIGEN Link handle the trust.", "scroll", -150),
    ("Welcome to the network, let's get your assets earning.", "hold", None),
  ]),
 ]
@@ -164,7 +164,7 @@ SUPPLIER = [
 # ----------------------------------------------------------------------
 FIELD = [
  ("intro", "FIELD", "Your inspector dashboard", "Where on-site work lives", [
-   ("Welcome. You are Nguzo's eyes and hands on the ground, the inspector who makes the whole network trustworthy.", "hold", None),
+   ("Welcome. You are AFRIGEN Link's eyes and hands on the ground, the inspector who makes the whole network trustworthy.", "hold", None),
    ("This is your dashboard, and it has three sections in the left rail.", "hold", None),
    ("Inspections, where jobs wait for you to physically verify a supplier's machine before it can move.", "nav", "Inspections"),
    ("Yard Audits, where you record a full mechanical and legal check of any asset in a supplier's yard.", "nav", "Yard Audits"),
@@ -213,7 +213,7 @@ FIELD = [
  ("verify-notes", "FIELD", "Step 5 — Mechanical & legal notes", "Write what you found", [
    ("In the notes field you write your honest on-site assessment.", "hover", "Mechanical & legal notes"),
    ("Engine hours, hydraulics, undercarriage wear, leaks, and whether the documents match the machine.", "typeph", ("Hours, hydraulics", "Hydraulics within tolerance. Undercarriage 78% life. Engine hours 4,210. Registration and insurance match the chassis. Legitimacy confirmed.")),
-   ("Be specific and be truthful, this note is the record both the client and Nguzo rely on.", "hold", None),
+   ("Be specific and be truthful, this note is the record both the client and AFRIGEN Link rely on.", "hold", None),
    ("A good inspector writes what they actually saw, not what's convenient.", "hold", None),
    ("This single note is the difference between a real verification and a rubber stamp.", "scroll", 120),
    ("Once your findings are recorded, you make the final call.", "scroll", -120),
@@ -256,7 +256,7 @@ FIELD = [
 
  ("border-history", "FIELD", "Step 10 — Border history & close", "Why your work matters", [
    ("Below, every border entry you've logged is recorded with its wait time and resolution.", "scroll", 160),
-   ("This data is gold, it tells Nguzo which corridors are slow and where to station liaison agents.", "scroll", -160),
+   ("This data is gold, it tells AFRIGEN Link which corridors are slow and where to station liaison agents.", "scroll", -160),
    ("And that is your whole role, three sections, one mission.", "nav", "Inspections"),
    ("Verify machines on site, audit yards in depth, and keep the borders moving.", "nav", "Yard Audits"),
    ("You are the reason a client can trust a machine they've never seen, and a supplier can trust they'll be paid.", "nav", "Border Log"),
@@ -267,21 +267,21 @@ FIELD = [
 
 CLIENT = [
  ("intro", "CLIENT", "Your client dashboard", "Where your jobs live", [
-   ("Welcome to Nguzo. You're the client, the one who needs trucks or machinery and wants it done without the usual risk.", "hold", None),
+   ("Welcome to AFRIGEN Link. You're the client, the one who needs trucks or machinery and wants it done without the usual risk.", "hold", None),
    ("This is your dashboard. It's deliberately simple, just two sections in the left rail.", "hold", None),
    ("My Jobs, where every demand you've posted lives and where you track its progress.", "nav", "My Jobs"),
    ("And Post a Job, where you tell us what you need and let suppliers compete for it.", "nav", "Post a Job"),
    ("Everything you do flows through these two screens, so let's start by understanding what a job actually is.", "nav", "My Jobs"),
-   ("Think of Nguzo as the trusted middle. You post once, we coordinate the rest.", "hold", None),
+   ("Think of AFRIGEN Link as the trusted middle. You post once, we coordinate the rest.", "hold", None),
  ]),
 
  ("read-stage", "CLIENT", "Reading your jobs", "The staged gate", [
    ("Here on My Jobs you'll see every demand you've posted, each as its own card.", "hover", "My Jobs"),
    ("A card shows the job title, what you need, how many units, and the route.", "hold", None),
-   ("And this bar across the card is the staged gate, the heart of how Nguzo protects you.", "hover", "Bidding"),
+   ("And this bar across the card is the staged gate, the heart of how AFRIGEN Link protects you.", "hover", "Bidding"),
    ("Every job moves through fixed stages in order, bidding, award, agreements, inspection, permits, payment, and execution.", "hold", None),
    ("Nothing skips ahead. A machine cannot move until it has been inspected, and money is only released when work is signed off.", "scroll", 150),
-   ("This is the difference between Nguzo and a simple marketplace, the gate enforces trust, it doesn't just connect you.", "hold", None),
+   ("This is the difference between AFRIGEN Link and a simple marketplace, the gate enforces trust, it doesn't just connect you.", "hold", None),
    ("So at a glance you always know exactly where your job stands. Now let's post one.", "scroll", -150),
  ]),
 
@@ -307,7 +307,7 @@ CLIENT = [
  ("post-submit", "CLIENT", "Step 3 — Open for bids", "Suppliers compete", [
    ("When you're ready, you post the job and open it for bids.", "hoverbtn", "Post job & open for bids"),
    ("This is the moment your single demand goes out to every qualified supplier on the network.", "hold", None),
-   ("Here's what makes Nguzo different, you don't chase suppliers, they come to you and compete on price.", "hold", None),
+   ("Here's what makes AFRIGEN Link different, you don't chase suppliers, they come to you and compete on price.", "hold", None),
    ("Suppliers can bid for your full quantity, or just part of it, and we auto-fill the cheapest combination.", "hold", None),
    ("Then we set one flat fair price that every awarded supplier agrees to, so you never overpay.", "hold", None),
    ("Once posted, the job appears back on My Jobs in the bidding stage, waiting for offers.", "nav", "My Jobs"),
@@ -316,7 +316,7 @@ CLIENT = [
  ("bids-award", "CLIENT", "Step 4 — Review bids & award", "Auto-fill the best price", [
    ("Open a job that's received bids, and you'll see them listed here.", "hover", "Bids ("),
    ("Each row shows a supplier, how many units they'll provide, and their price per unit.", "hover", "Price / unit"),
-   ("You don't have to negotiate. Nguzo auto-fills the cheapest bids until your quantity is met.", "hover", "Supplier"),
+   ("You don't have to negotiate. AFRIGEN Link auto-fills the cheapest bids until your quantity is met.", "hover", "Supplier"),
    ("It combines bids until your full quantity is covered, then settles on one flat fair rate every awarded supplier accepts.", "hover", "auto-fill cheapest"),
    ("All you do is confirm the award. That single click locks in your suppliers and your price.", "hoverbtn", "Confirm award"),
    ("Because suppliers compete, you get a genuinely fair market price, not whatever one operator decides to charge you.", "hover", "Activity"),
@@ -328,7 +328,7 @@ CLIENT = [
    ("And this is the flat fair price per unit that every awarded supplier agreed to.", "hover", "Flat fair price"),
    ("Each awarded supplier signs their own agreement for their share of your demand.", "hover", "Status"),
    ("Then they upload their fleet documents, which you can track in the documents panel.", "hover", "Documents"),
-   ("A Nguzo field inspector then physically verifies the machine on site, and you watch it advance in the activity log.", "hover", "Activity"),
+   ("A AFRIGEN Link field inspector then physically verifies the machine on site, and you watch it advance in the activity log.", "hover", "Activity"),
    ("That inspection is your protection, you're never paying for a machine nobody has seen.", "hover", "Status"),
    ("Splitting your demand across several suppliers also protects you, if one falls short, the others still carry the job.", "hover", "Awarded Suppliers"),
    ("When the field inspection clears, the next action is yours, the permits.", "scroll", 130),
@@ -340,15 +340,15 @@ CLIENT = [
    ("You attach the permit document right here, simply and securely.", "hover", "Transit permits"),
    ("Then you submit it for verification, where our admin team checks it before anything proceeds.", "hoverbtn", "Submit permits for verification"),
    ("This keeps you compliant, no convoy moves on paperwork that hasn't been checked.", "hover", "Documents"),
-   ("Why does Nguzo gate this? Because an uncleared load can be turned back at a checkpoint, costing you days and money.", "hover", "Activity"),
+   ("Why does AFRIGEN Link gate this? Because an uncleared load can be turned back at a checkpoint, costing you days and money.", "hover", "Activity"),
    ("By checking permits before the machine moves, we stop those problems before they ever start.", "hover", "Your step — Upload permits"),
    ("Once permits are verified, the final step is yours, the payment.", "hover", "Status"),
  ]),
 
  ("payment", "CLIENT", "Step 7 — Payment & escrow", "Funds tracked, not held", [
    ("With permits verified, you reach the payment step.", "hover", "Your step — Payment proof"),
-   ("Here you see the escrow preview, the total amount for your job, held by Nguzo.", "hover", "Escrow preview"),
-   ("This is the trust layer. Your money sits with Nguzo as escrow, it is tracked, not released, until work is signed off.", "hover", "Escrow preview"),
+   ("Here you see the escrow preview, the total amount for your job, held by AFRIGEN Link.", "hover", "Escrow preview"),
+   ("This is the trust layer. Your money sits with AFRIGEN Link as escrow, it is tracked, not released, until work is signed off.", "hover", "Escrow preview"),
    ("You upload your T.T payment proof, the bank transfer confirmation, right here.", "hover", "Your step — Payment proof"),
    ("Then submit it. Our admin confirms the funds, and only then does the job move to execution.", "hoverbtn", "Submit payment proof"),
    ("This solves the oldest problem in this business, suppliers fear they won't be paid, clients fear they'll pay and get nothing.", "hover", "Activity"),
@@ -360,31 +360,31 @@ CLIENT = [
    ("Back on My Jobs, you simply watch the staged gate march to completion.", "nav", "My Jobs"),
    ("Award, agreements, inspection, permits, payment, and finally execution, every stage visible.", "hover", "My Jobs"),
    ("You never have to phone around or wonder where things stand, the dashboard always tells you.", "hold", None),
-   ("When the work is signed off, Nguzo settles the suppliers and the job closes, cleanly.", "hold", None),
+   ("When the work is signed off, AFRIGEN Link settles the suppliers and the job closes, cleanly.", "hold", None),
    ("And if something ever goes wrong on the ground, our field and admin teams act, you're never left chasing a supplier alone.", "hold", None),
    ("That's the whole point, you post once, and a verified, escrow-protected job runs itself.", "scroll", 140),
  ]),
 
- ("close", "CLIENT", "You're in control", "Welcome to Nguzo", [
+ ("close", "CLIENT", "You're in control", "Welcome to AFRIGEN Link", [
    ("So that's your dashboard, two screens, one protected journey.", "nav", "My Jobs"),
    ("Post what you need, let suppliers compete, confirm your award.", "nav", "Post a Job"),
    ("Then upload permits, fund the escrow, and watch the staged gate carry it to completion.", "nav", "My Jobs"),
    ("Every step is checked, every machine is inspected, and your money is protected until the work is done.", "hold", None),
-   ("That's the Nguzo promise, you bring the demand, we coordinate the trust. Welcome aboard.", "hold", None),
+   ("That's the AFRIGEN Link promise, you bring the demand, we coordinate the trust. Welcome aboard.", "hold", None),
  ]),
 ]
 
 
 # ----------------------------------------------------------------------
-# ADMIN — the Nguzo HQ control desk. Walks every section: Overview, Jobs,
+# ADMIN — the AFRIGEN Link HQ control desk. Walks every section: Overview, Jobs,
 # the three gated admin actions (verify permits, confirm payment, approve
 # execution), Ground Force, Verification, Team & Access, Notifications, Ledger.
 # Teaching tone: explain WHY each desk exists, not just what to click.
 # ----------------------------------------------------------------------
 ADMIN = [
- ("intro", "ADMIN", "The Nguzo control desk", "Where the corridor is run", [
-   ("Welcome to the Nguzo Africa admin dashboard, the control desk for the whole corridor.", "hold", None),
-   ("If the client posts the demand and the supplier carries it, this is where Nguzo holds the trust between them.", "hold", None),
+ ("intro", "ADMIN", "The AFRIGEN Link control desk", "Where the corridor is run", [
+   ("Welcome to the AFRIGEN Link admin dashboard, the control desk for the whole corridor.", "hold", None),
+   ("If the client posts the demand and the supplier carries it, this is where AFRIGEN Link holds the trust between them.", "hold", None),
    ("Everything that protects both sides, escrow, permit checks, field verification, settlement, is operated from these screens.", "nav", "Overview"),
    ("On the left you have seven desks, Overview, Jobs, Ground Force, Verification, Team, Notifications, and Ledger.", "nav", "Jobs"),
    ("We will work through every single one, so you understand not just what each button does, but why it exists.", "nav", "Overview"),
@@ -395,10 +395,10 @@ ADMIN = [
    ("This is your Operations Overview, the live picture across the corridor at a glance.", "hover", "Operations Overview"),
    ("It's the first thing you open at the start of a shift, because it answers the only questions that really matter.", "hover", "Operations Overview"),
    ("How much money are we holding, how much have we earned, and how many jobs are in motion.", "hover", "Live operating picture"),
-   ("The first figure, Locked Escrow, is the total client money Nguzo is currently holding in trust.", "hover", "Locked Escrow"),
+   ("The first figure, Locked Escrow, is the total client money AFRIGEN Link is currently holding in trust.", "hover", "Locked Escrow"),
    ("This is the heart of the model, that money is real and tracked, but not released until work is signed off.", "hover", "Locked Escrow"),
-   ("Platform Revenue is the seven percent service fee Nguzo earns once jobs settle.", "hover", "Platform Revenue"),
-   ("That single fee is how Nguzo makes its money, fairly and transparently, the same percentage on every deal.", "hover", "Platform Revenue"),
+   ("Platform Revenue is the seven percent service fee AFRIGEN Link earns once jobs settle.", "hover", "Platform Revenue"),
+   ("That single fee is how AFRIGEN Link makes its money, fairly and transparently, the same percentage on every deal.", "hover", "Platform Revenue"),
    ("Then your counts, active contracts on the network, and the suppliers registered to carry them.", "hover", "Contracts"),
    ("Assets shows how much verified machinery and how many trucks are available across your suppliers.", "hover", "Suppliers"),
    ("And Breakdowns, which turns amber the moment a machine reports a fault in the field.", "hover", "Breakdowns"),
@@ -413,7 +413,7 @@ ADMIN = [
    ("This is where most of your work happens, so it's worth understanding exactly how it's laid out.", "hover", "Jobs"),
    ("This banner at the top is the most important thing on the page, it tells you how many jobs are waiting for your action right now.", "hover", "awaiting your action"),
    ("Think of it as your to-do list, if that banner is empty, every job is moving on its own.", "hover", "awaiting your action"),
-   ("Nguzo controls three gates, verifying permits, confirming payment, and approving execution. Nothing moves past them without you.", "hover", "verify permits, confirm payment, approve execution"),
+   ("AFRIGEN Link controls three gates, verifying permits, confirming payment, and approving execution. Nothing moves past them without you.", "hover", "verify permits, confirm payment, approve execution"),
    ("Those three gates are the entire reason clients and suppliers trust this platform, so we'll action all three.", "hover", "Jobs"),
    ("Any job needing your hand is flagged with an amber action tag, so you never miss one in the list.", "hover", "action"),
    ("Each row also carries its own stage tracker, showing exactly how far along that job is at a glance.", "hover", "Bidding"),
@@ -428,21 +428,21 @@ ADMIN = [
    ("Open the documents panel and you can view every permit they've attached.", "hover", "Documents"),
    ("You'd open each one, check the route, the dates, and the load details against what the job actually requires.", "hover", "Documents"),
    ("Then you mark each document verified once you're satisfied it's genuine.", "hover", "mark verified"),
-   ("Why does Nguzo gate this? Because an uncleared load can be turned back at a checkpoint, costing everyone days and money.", "hover", "Documents"),
+   ("Why does AFRIGEN Link gate this? Because an uncleared load can be turned back at a checkpoint, costing everyone days and money.", "hover", "Documents"),
    ("No convoy should ever roll on paperwork nobody has checked, and this is where you stop that from happening.", "hover", "Action required"),
    ("When the permits check out, you release the job with a single click.", "hoverbtn", "Verify permits & release"),
    ("That moves the job to its next gate, the payment, where the money becomes real.", "hover", "Activity"),
  ]),
 
  ("confirm-payment", "ADMIN", "Desk 2 — Gate 2: Payment", "Confirm the escrow", [
-   ("Here is the gate that makes Nguzo different from any ordinary broker, confirming the payment.", "hover", "Action required"),
+   ("Here is the gate that makes AFRIGEN Link different from any ordinary broker, confirming the payment.", "hover", "Action required"),
    ("The client has uploaded their T.T proof, the bank transfer that funds the entire job.", "hover", "Confirm the TT proof"),
-   ("This panel shows you the exact escrow amount to confirm, held by Nguzo on the client's behalf.", "hover", "Escrow to confirm"),
+   ("This panel shows you the exact escrow amount to confirm, held by AFRIGEN Link on the client's behalf.", "hover", "Escrow to confirm"),
    ("This is the trust layer, the single biggest reason both sides use the platform.", "hover", "Escrow to confirm"),
    ("The supplier can see the money is real and secured, but it stays locked until the work is actually done.", "hover", "Escrow to confirm"),
    ("You open the documents panel and check the T.T proof against the figure shown on screen.", "hover", "Documents"),
    ("You're confirming the amount matches, the reference is right, and the funds have genuinely landed.", "hover", "Documents"),
-   ("Once the funds match, you confirm payment received, and the escrow is officially recorded as held by Nguzo.", "hoverbtn", "Confirm payment received"),
+   ("Once the funds match, you confirm payment received, and the escrow is officially recorded as held by AFRIGEN Link.", "hoverbtn", "Confirm payment received"),
    ("Now both sides are protected, the client's money is safe, and the supplier knows it's there waiting for them.", "hover", "Activity"),
  ]),
 
@@ -451,21 +451,21 @@ ADMIN = [
    ("This is the green light, authorising the supplier and the field force to begin the work on the ground.", "hover", "Authorise the supplier and field force"),
    ("Take a moment here, because this is the point of no return, after this the machines move.", "hover", "Action required"),
    ("By now everything is verified, the machine inspected on site, the permits checked, the money held in escrow.", "hover", "Escrow"),
-   ("You can see the escrow is now recorded as held by Nguzo, so the supplier is guaranteed payment.", "hover", "Held by Nguzo"),
+   ("You can see the escrow is now recorded as held by AFRIGEN Link, so the supplier is guaranteed payment.", "hover", "Held by AFRIGEN Link"),
    ("Only when every single safeguard is in place do you release the job.", "hoverbtn", "Approve to execute"),
-   ("That one approval turns a careful paperwork process into a moving convoy, with full protection behind it.", "hover", "Held by Nguzo"),
+   ("That one approval turns a careful paperwork process into a moving convoy, with full protection behind it.", "hover", "Held by AFRIGEN Link"),
    ("And from here, the field force takes over on the ground, while you watch the job run to completion.", "hover", "Activity"),
  ]),
 
  ("ground-force", "ADMIN", "Desk 3 — Ground Force", "The physical moat", [
    ("Next is Ground Force, the physical moat that no software-only competitor can copy.", "nav", "Ground Force"),
-   ("Anyone can build a website, but only Nguzo puts real people next to the machines and at the borders.", "hover", "the physical moat"),
+   ("Anyone can build a website, but only AFRIGEN Link puts real people next to the machines and at the borders.", "hover", "the physical moat"),
    ("On the left, every field inspection your inspectors have carried out, with their notes and sign-off status.", "hover", "Field inspections"),
    ("Each entry is a real person who stood next to a machine and confirmed it exists and actually works.", "hover", "Field inspections"),
    ("The status pill tells you whether each inspection is still pending or fully verified.", "hover", "Field inspections"),
    ("On the right, the border logs, recorded by your liaison agents stationed at the crossings.", "hover", "Border logs"),
    ("They capture the institutional wait time at each post, and it turns amber when a crossing is stalling.", "hover", "Border logs"),
-   ("This is how Nguzo turns up at the border in person, instead of leaving a supplier stranded at a portal failure.", "hover", "Border logs"),
+   ("This is how AFRIGEN Link turns up at the border in person, instead of leaving a supplier stranded at a portal failure.", "hover", "Border logs"),
    ("Boots on the ground is the moat, and this desk is where you watch it work, shift after shift.", "scroll", 120),
  ]),
 
@@ -481,14 +481,14 @@ ADMIN = [
  ]),
 
  ("team", "ADMIN", "Desk 5 — Team & Access", "Control who gets in", [
-   ("The Team and Access desk controls who can do what inside Nguzo.", "nav", "Team"),
+   ("The Team and Access desk controls who can do what inside AFRIGEN Link.", "nav", "Team"),
    ("Every user in the system is listed here, with their email, verification status, and role.", "hover", "Team & Access"),
    ("This is your security desk, so it's worth understanding the rules built into it.", "hover", "Team & Access"),
    ("You can change a user's role from this dropdown, granting or revoking their access in one move.", "hover", "Role"),
    ("But notice the rule, admins and field force are internal roles, they can never be self-assigned.", "hover", "never self-assigned"),
    ("That stops anyone signing up and quietly handing themselves control of the platform.", "hover", "never self-assigned"),
    ("And the super-admin account is locked, so no one, not even another admin, can downgrade the owner.", "hover", "super-admin"),
-   ("This is how Nguzo stays secure, access is granted deliberately, never by accident.", "hover", "you"),
+   ("This is how AFRIGEN Link stays secure, access is granted deliberately, never by accident.", "hover", "you"),
  ]),
 
  ("notifications", "ADMIN", "Desk 6 — Notifications", "Every message on record", [
@@ -498,27 +498,27 @@ ADMIN = [
    ("Right now these are logged for the record, real email and S.M.S delivery activates later as we scale.", "hover", "Real email"),
    ("But the principle matters today, nothing is sent in the dark, every communication is auditable.", "hover", "On-record notification log"),
    ("If a client or supplier ever asks what they were told and when, the answer is right here.", "scroll", 140),
-   ("Transparency is part of the trust Nguzo sells, and this desk keeps the receipts.", "scroll", -120),
+   ("Transparency is part of the trust AFRIGEN Link sells, and this desk keeps the receipts.", "scroll", -120),
  ]),
 
  ("ledger", "ADMIN", "Desk 7 — Master Ledger", "Where the money settles", [
    ("Finally, the Master Ledger, the settlement record across every contract.", "nav", "Ledger"),
-   ("Currently Locked shows the escrow Nguzo is holding right now, across all live jobs.", "hover", "Currently Locked"),
-   ("Platform Revenue is the seven percent Nguzo has earned from settled work.", "hover", "Platform Revenue"),
-   ("Parts Credit Extended tracks any emergency spare parts Nguzo advanced against escrow to keep a job moving.", "hover", "Parts Credit Extended"),
+   ("Currently Locked shows the escrow AFRIGEN Link is holding right now, across all live jobs.", "hover", "Currently Locked"),
+   ("Platform Revenue is the seven percent AFRIGEN Link has earned from settled work.", "hover", "Platform Revenue"),
+   ("Parts Credit Extended tracks any emergency spare parts AFRIGEN Link advanced against escrow to keep a job moving.", "hover", "Parts Credit Extended"),
    ("And Settled Contracts counts the jobs fully paid out and closed.", "hover", "Settled Contracts"),
    ("Below, every contract shows its escrow, our fee, any parts credit, and the final supplier payout.", "hover", "Supplier Payout"),
    ("When a job is signed off, the split is automatic, supplier payout equals escrow, minus our fee, minus any parts credit.", "hover", "Fee"),
    ("No chasing, no disputes over numbers, the ledger settles everyone cleanly.", "scroll", 150),
  ]),
 
- ("close", "ADMIN", "You run the corridor", "Welcome to Nguzo HQ", [
+ ("close", "ADMIN", "You run the corridor", "Welcome to AFRIGEN Link HQ", [
    ("So that's the control desk, seven screens that run the entire corridor.", "nav", "Overview"),
    ("Overview shows you the money and the jobs, and the Jobs desk is where you action the three gates.", "nav", "Jobs"),
    ("Ground Force is your boots on the ground, and Verification keeps every supplier vetted.", "nav", "Ground Force"),
    ("Team controls access, Notifications keep the record, and the Ledger settles every shilling.", "nav", "Ledger"),
    ("Every gate you hold protects both the client and the supplier, that is the whole job.", "hold", None),
-   ("You bring the discipline, the platform brings the structure. Welcome to Nguzo HQ.", "hold", None),
+   ("You bring the discipline, the platform brings the structure. Welcome to AFRIGEN Link HQ.", "hold", None),
  ]),
 ]
 

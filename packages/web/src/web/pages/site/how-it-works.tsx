@@ -6,7 +6,7 @@ const STEPS = [
   ["03", "We verify on the ground", "A field inspector physically audits the machine, the yard and the paperwork before anything moves. No photo-swap or shell-company trick survives a person standing in the yard."],
   ["04", "Route & clear", "Domestic jobs run on local municipal and TARURA heavy-load clearances. Cross-border jobs spin up TANSAD validation, destination tariffs and border-dispatch alerts — with a liaison agent at the OSBP to clear portal failures by hand."],
   ["05", "Emergency parts, covered", "Breakdown 600km upcountry? Because the capital is already locked in escrow, we approve and ship the spare part same-day from our Dar parts network. Credit, with zero lending risk to anyone."],
-  ["06", "Sign off → auto-settle", "On client sign-off, escrow splits automatically: the supplier is paid, our flat 7% is taken, and itemized invoices land with both parties. No chasing, no 90-day wait."],
+  ["06", "Sign off → auto-settle", "On client sign-off, escrow splits automatically: the supplier is paid, our flat 10% is taken, and itemized invoices land with both parties. No chasing, no 90-day wait."],
 ];
 
 export default function HowItWorks() {
@@ -59,7 +59,7 @@ export default function HowItWorks() {
             </p>
           </div>
           <div className="overflow-hidden rounded-[1.5rem] border border-navy-600 bg-navy-900/40 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.8)]">
-            <img src="/section-corridor-map.webp" alt="East African trade corridors served by Nguzo" className="w-full" />
+            <img src="/section-corridor-map.webp" alt="East African trade corridors served by AFRIGEN Link" className="w-full" />
           </div>
         </div>
       </section>
@@ -76,7 +76,7 @@ export default function HowItWorks() {
               <H2 className="mt-3">Held safe, split fairly, no surprises.</H2>
               <Lead className="mt-4">
                 Your capital is locked the moment work begins and released only on sign-off. On completion it
-                splits automatically — supplier payout, our flat 7%, any parts credit — with itemized invoices
+                splits automatically — supplier payout, our flat 10%, any parts credit — with itemized invoices
                 to both sides. No human quietly skims it.
               </Lead>
             </div>
@@ -84,7 +84,7 @@ export default function HowItWorks() {
           <div className="mt-12 grid gap-5 md:grid-cols-3">
             {[
               ["100% in escrow", "The full project value is secured before any work starts. The supplier knows it's there; the client knows it won't release early."],
-              ["Flat 7%, every deal", "One transparent fee on every transaction — both cargo and machinery. No hidden markups, no per-side games."],
+              ["Flat 10%, every deal", "One transparent fee on every transaction — both cargo and machinery. No hidden markups, no per-side games."],
               ["Tracked, not held — for now", "We're onboarding a licensed escrow partner. Until then, funds are tracked and ledgered transparently, never quietly pooled."],
             ].map(([t, b], i) => (
               <Reveal key={t} delay={i * 80}>
@@ -96,7 +96,7 @@ export default function HowItWorks() {
             ))}
           </div>
           <Lead className="mt-8 max-w-2xl">
-            On sign-off the math is automatic: <span className="font-mono text-amber-600">supplier payout = escrow − 7% − any emergency-parts credit</span>, with itemized invoices generated for both sides.
+            On sign-off the math is automatic: <span className="font-mono text-amber-600">supplier payout = escrow − 10% − any emergency-parts credit</span>, with itemized invoices generated for both sides.
           </Lead>
         </div>
       </section>

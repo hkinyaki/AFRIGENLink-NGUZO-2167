@@ -29,7 +29,7 @@ export function SiteNav() {
         <Link href="/" className="flex items-center gap-2.5">
           <img src="/logo-icon.png" alt="" className="h-9 w-auto" />
           <span className="font-display text-[15px] font-extrabold tracking-tight text-[#141B2E]">
-            NGUZO <span className="text-amber-600">AFRICA</span>
+            AFRIGEN <span className="text-amber-600">Link</span>
           </span>
         </Link>
 

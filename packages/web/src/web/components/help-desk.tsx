@@ -79,7 +79,7 @@ export function HelpDesk({ me }: { me: Me }) {
         <div className="fixed bottom-20 right-5 z-50 flex h-[30rem] w-[22rem] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-2xl border border-navy-600 bg-navy-800 shadow-2xl">
           <div className="flex items-center justify-between border-b border-navy-600 bg-navy-900/60 px-4 py-3">
             <div>
-              <div className="text-sm font-semibold text-slate-100">Nguzo Help Desk</div>
+              <div className="text-sm font-semibold text-slate-100">AFRIGEN Link Help Desk</div>
               <div className="text-[11px] text-slate-500">
                 {ticket ? "Connected to your account manager" : "We usually reply within minutes"}
               </div>

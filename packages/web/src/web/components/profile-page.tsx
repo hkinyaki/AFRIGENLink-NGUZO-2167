@@ -78,7 +78,7 @@ export function ProfilePage({ me }: { me: Me }) {
 
       {isSupplier && (
         <Card>
-          <SectionTitle sub="Where Nguzo settles your verified payouts. Pulled from your locked profile — never editable mid-deal.">Settlement bank details</SectionTitle>
+          <SectionTitle sub="Where AFRIGEN Link settles your verified payouts. Pulled from your locked profile — never editable mid-deal.">Settlement bank details</SectionTitle>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Bank name"><Input value={bank.bankName} onChange={(e) => setBank({ ...bank, bankName: e.target.value })} /></Field>
             <Field label="Account name"><Input value={bank.bankAccountName} onChange={(e) => setBank({ ...bank, bankAccountName: e.target.value })} /></Field>

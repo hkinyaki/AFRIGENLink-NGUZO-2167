@@ -46,7 +46,7 @@ export default function Home() {
               </h1>
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-slate-200">
                 Moving cargo or renting machinery across East Africa shouldn't keep you up at night.
-                We built Nguzo so it doesn't have to.
+                We built AFRIGEN Link so it doesn't have to.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <a
@@ -65,7 +65,7 @@ export default function Home() {
               <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2">
                 <span className="font-mono text-xs text-amber-400">FUNDS TRACKED, NOT HELD</span>
                 <span className="hidden h-3 w-px bg-white/25 md:block" />
-                <span className="font-mono text-xs text-slate-300">Flat 7% · every deal</span>
+                <span className="font-mono text-xs text-slate-300">Flat 10% · every deal</span>
                 <span className="hidden h-3 w-px bg-white/25 md:block" />
                 <span className="font-mono text-xs text-slate-300">On-site inspections</span>
               </div>
@@ -179,13 +179,13 @@ export default function Home() {
         <div className="mx-auto max-w-6xl px-5 py-24">
           <div className="grid gap-12 md:grid-cols-[1.1fr_0.9fr] md:items-center">
             <div>
-              <p className="font-mono text-xs uppercase tracking-widest text-amber-600">About Nguzo</p>
+              <p className="font-mono text-xs uppercase tracking-widest text-amber-600">About AFRIGEN Link</p>
               <h2 className="mt-3 font-display text-3xl font-bold text-[#141B2E] md:text-4xl">
                 Africa doesn't have a payment problem. It has a trust problem.
               </h2>
               <p className="mt-5 max-w-xl text-base leading-relaxed text-[#5A6473]">
                 We've watched good deals fall apart for the same few reasons, over and over. So we built
-                Nguzo around fixing exactly those — not as an app that matches you and walks away, but as
+                AFRIGEN Link around fixing exactly those — not as an app that matches you and walks away, but as
                 something that stays in the deal with you until it's done.
               </p>
               <Link href="/about" className="mt-6 inline-flex items-center gap-1.5 font-semibold text-amber-600 hover:text-amber-500">
@@ -240,12 +240,12 @@ export default function Home() {
               <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#5A6473]">
                 That's completely fine — most people do. Funds are currently{" "}
                 <span className="font-mono text-amber-600">tracked, not held</span> while we onboard a
-                licensed escrow partner. A flat, transparent 7% on every deal. No owned fleet, no unsecured
+                licensed escrow partner. A flat, transparent 10% on every deal. No owned fleet, no unsecured
                 lending. Tanzania HQ, serving the Southern, Central and Northern corridors. Reach out and we'll walk
                 you through it.
               </p>
-              <a href="mailto:hello@nguzo.africa" className="mt-4 inline-block font-mono text-sm text-amber-600 hover:text-amber-500">
-                hello@nguzo.africa
+              <a href="mailto:hello@afrigen.link" className="mt-4 inline-block font-mono text-sm text-amber-600 hover:text-amber-500">
+                hello@afrigen.link
               </a>
             </div>
             <Link

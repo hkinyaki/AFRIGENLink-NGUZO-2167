@@ -5,10 +5,10 @@ export default function About() {
     <Page>
       <PageHeroImage
         image="/hero-about.webp"
-        eyebrow="About Nguzo Africa"
+        eyebrow="About AFRIGEN Link"
         chip="Dar es Salaam · East African corridors"
         title="Africa doesn't have a payment problem. It has a trust problem."
-        intro="We started Nguzo because we kept watching good deals collapse for the same three reasons — and none of them were about money being scarce."
+        intro="We started AFRIGEN Link because we kept watching good deals collapse for the same three reasons — and none of them were about money being scarce."
       />
 
       {/* story */}
@@ -27,7 +27,7 @@ export default function About() {
               disappointment. The problem was never discovery. It was trust.
             </p>
             <p>
-              So we built Nguzo to <span className="font-semibold text-[#141B2E]">stay inside the deal</span> —
+              So we built AFRIGEN Link to <span className="font-semibold text-[#141B2E]">stay inside the deal</span> —
               holding the money in escrow, putting a real inspector in the yard, standing a liaison agent at
               the border, and settling everyone fairly by rule. We don't disappear after the match. That's the
               whole company.
@@ -45,7 +45,7 @@ export default function About() {
             {[
               ["Software can be cloned. People can't.", "Anyone can copy a dashboard. Nobody can copy a trusted inspector in the yard or an agent who knows the officers at Tunduma by name."],
               ["Be honest about where we are.", "We tell you plainly: funds are tracked, not held, until our escrow licence lands. Trust starts with not overstating."],
-              ["Win only when both sides win.", "We take a flat 7% on completed deals — nothing else. We don't profit unless the job is genuinely done."],
+              ["Win only when both sides win.", "We take a flat 10% on completed deals — nothing else. We don't profit unless the job is genuinely done."],
             ].map(([t, b], i) => (
               <Reveal key={t} delay={i * 80}>
                 <div className="card-lite card-lift h-full p-8">

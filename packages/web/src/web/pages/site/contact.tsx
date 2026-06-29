@@ -21,7 +21,7 @@ export default function Contact() {
       if (!res.ok) throw new Error("Failed");
       setSent(true);
     } catch {
-      setError("Something went wrong. Please email us directly at hello@nguzo.africa.");
+      setError("Something went wrong. Please email us directly at hello@afrigen.link.");
     } finally {
       setLoading(false);
     }
@@ -45,8 +45,8 @@ export default function Contact() {
             <div className="mt-6 space-y-5">
               <div>
                 <div className="font-mono text-xs uppercase tracking-widest text-amber-600">Email</div>
-                <a href="mailto:hello@nguzo.africa" className="mt-1 block text-base text-[#141B2E] hover:text-amber-600">
-                  hello@nguzo.africa
+                <a href="mailto:hello@afrigen.link" className="mt-1 block text-base text-[#141B2E] hover:text-amber-600">
+                  hello@afrigen.link
                 </a>
               </div>
               <div>
@@ -61,12 +61,12 @@ export default function Contact() {
             <div className="mt-8 card-lite p-6">
               <p className="text-sm leading-relaxed text-[#5A6473]">
                 Funds are currently <span className="font-mono text-amber-600">tracked, not held</span> while
-                we onboard a licensed escrow partner. Flat 7% on every completed deal. No owned fleet, no
+                we onboard a licensed escrow partner. Flat 10% on every completed deal. No owned fleet, no
                 unsecured lending.
               </p>
             </div>
             <div className="mt-6 overflow-hidden rounded-[1.25rem] border border-[#E5E2DA] shadow-[0_20px_50px_-30px_rgba(20,27,46,0.4)]">
-              <img src="/hero-contact.webp" alt="Talk to a real person at Nguzo" className="h-52 w-full object-cover" />
+              <img src="/hero-contact.webp" alt="Talk to a real person at AFRIGEN Link" className="h-52 w-full object-cover" />
             </div>
           </div>
 

@@ -1,11 +1,11 @@
 {
-  "name": "AFRIGEN — Industrial Logistics Infrastructure",
-  "short_name": "AFRIGEN",
-  "description": "Heavy-machinery leasing & cross-border logistics coordination for East Africa.",
+  "name": "AFRIGEN Link — Cargo & Machinery Coordination",
+  "short_name": "AFRIGEN Link",
+  "description": "Escrow-secured cargo transport & heavy-machinery hire coordination across East Africa.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0B1220",
-  "theme_color": "#0B1220",
+  "background_color": "#F7F6F3",
+  "theme_color": "#141B2E",
   "icons": [
     { "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon" }
   ]

@@ -32,7 +32,7 @@ export const POSTS: BlogPost[] = [
     slug: "boots-on-the-ground",
     title: "Software can be cloned. The person in the yard can't.",
     excerpt:
-      "Why our field inspectors and border liaison agents are the part of Nguzo a competitor can't copy.",
+      "Why our field inspectors and border liaison agents are the part of AFRIGEN Link a competitor can't copy.",
     date: "2026-05-28",
     readMins: 4,
     tag: "How we work",

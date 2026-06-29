@@ -1510,7 +1510,7 @@ const app = new Hono<{ Variables: Vars }>()
       .set({ verificationStatus: b.status, physicalVerificationNotes: b.notes ?? "" })
       .where(eq(profile.id, pid));
     const subject =
-      b.status === "Verified" ? "You're verified on Nguzo" :
+      b.status === "Verified" ? "You're verified on AFRIGEN Link" :
       b.status === "SiteVisitScheduled" ? "Site visit scheduled" :
       b.status === "Rejected" ? "Verification needs attention" : "Verification update";
     await logNotification({ recipientProfileId: pid, subject, body: b.notes || `Your account status is now: ${b.status}.` });
@@ -1597,10 +1597,10 @@ const app = new Hono<{ Variables: Vars }>()
     const dupe = await db.select().from(profile).where(eq(profile.username, uname)).limit(1);
     if (dupe.length) return c.json({ error: "That username is already taken." }, 400);
     // Synthesize an internal email for better-auth (it is email-keyed).
-    const synthEmail = `${uname}@staff.nguzo.local`;
+    const synthEmail = `${uname}@staff.afrigen.local`;
     const existing = await db.select().from(authUser).where(eq(authUser.email, synthEmail)).limit(1);
     if (existing.length) return c.json({ error: "That username is already taken." }, 400);
-    const tempPassword = (b.password && b.password.length >= 8) ? b.password : `Nguzo-${Math.random().toString(36).slice(2, 8)}!`;
+    const tempPassword = (b.password && b.password.length >= 8) ? b.password : `AfriLink-${Math.random().toString(36).slice(2, 8)}!`;
     let userId: string;
     try {
       const res = await auth.api.signUpEmail({ body: { email: synthEmail, password: tempPassword, name: b.name.trim() } });
@@ -1654,7 +1654,7 @@ const app = new Hono<{ Variables: Vars }>()
       .limit(1);
     if (!target) return c.json({ error: "User not found." }, 404);
     if (isAllowlistedAdmin(target.email)) return c.json({ error: "Protected super-admin password cannot be reset here." }, 403);
-    const tempPassword = `Nguzo-${Math.random().toString(36).slice(2, 8)}!`;
+    const tempPassword = `AfriLink-${Math.random().toString(36).slice(2, 8)}!`;
     try {
       const ctx = await auth.$context;
       const hash = await ctx.password.hash(tempPassword);
@@ -1716,10 +1716,10 @@ const app = new Hono<{ Variables: Vars }>()
       .trim().toLowerCase().replace(/[^a-z0-9._-]/g, "").slice(0, 20) || `agent${Date.now().toString(36).slice(-4)}`;
     const dupe = await db.select().from(profile).where(eq(profile.username, uname)).limit(1);
     if (dupe.length) return c.json({ error: "That username is already taken — choose another." }, 400);
-    const synthEmail = `${uname}@staff.nguzo.local`;
+    const synthEmail = `${uname}@staff.afrigen.local`;
     const existing = await db.select().from(authUser).where(eq(authUser.email, synthEmail)).limit(1);
     if (existing.length) return c.json({ error: "That username is already taken." }, 400);
-    const pwd = (b.password && b.password.length >= 8) ? b.password : `Nguzo-${Math.random().toString(36).slice(2, 8)}!`;
+    const pwd = (b.password && b.password.length >= 8) ? b.password : `AfriLink-${Math.random().toString(36).slice(2, 8)}!`;
     let userId: string;
     try {
       const res = await auth.api.signUpEmail({ body: { email: synthEmail, password: pwd, name: req.proposedName } });
