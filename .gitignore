@@ -38,3 +38,4 @@ vo_full.wav
 
 .DS_Store
 booklets/build/
+.git-push.env
