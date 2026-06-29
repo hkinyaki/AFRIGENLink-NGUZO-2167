@@ -1,5 +1,29 @@
 import type { ReactNode } from "react";
 
+// ---- Reference helpers ----
+/** Human-readable contract/tender reference, e.g. NGZ-CT-3F9A2 */
+export function contractRef(id: string | number, prefix = "CT"): string {
+  const s = String(id).replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+  return `NGZ-${prefix}-${s.slice(-5).padStart(5, "0")}`;
+}
+
+// ---- KAM activity status ----
+const ACTIVITY: Record<string, { dot: string; label: string }> = {
+  online: { dot: "bg-emerald-400", label: "Online" },
+  offline: { dot: "bg-slate-500", label: "Offline" },
+  meeting: { dot: "bg-amber-500", label: "In a meeting" },
+  standby: { dot: "bg-sky-400", label: "On standby" },
+};
+export function ActivityDot({ status, showLabel = true }: { status?: string | null; showLabel?: boolean }) {
+  const a = ACTIVITY[status ?? "offline"] ?? ACTIVITY.offline;
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`h-2 w-2 rounded-full ${a.dot}`} />
+      {showLabel && <span className="text-[11px] text-slate-400">{a.label}</span>}
+    </span>
+  );
+}
+
 // ---- Status mapping ----
 const STATUS_STYLES: Record<string, string> = {
   // good
@@ -11,7 +35,9 @@ const STATUS_STYLES: Record<string, string> = {
   Delivered: "bg-[#16321F] text-[#5FD699] border-[#1E4A2E]",
   Accepted: "bg-[#16321F] text-[#5FD699] border-[#1E4A2E]",
   // neutral
-  Pending: "bg-navy-700 text-slate-300 border-navy-600",
+  Pending: "bg-amber-bg text-amber-500 border-amber-600",
+  "Under Review": "bg-amber-bg text-amber-500 border-amber-600",
+  Submitted: "bg-amber-bg text-amber-500 border-amber-600",
   Active: "bg-navy-700 text-slate-100 border-navy-600",
   ActiveTransit: "bg-navy-700 text-slate-100 border-navy-600",
   AwaitingEscrowDeposit: "bg-navy-700 text-slate-300 border-navy-600",
@@ -53,9 +79,13 @@ export function Card({ children, className = "", onCanvas = false, lift = false 
   );
 }
 
-export function KPIStat({ label, value, accent, hint, icon }: { label: string; value: string; accent?: "amber" | "good"; hint?: string; icon?: ReactNode }) {
+export function KPIStat({ label, value, accent, hint, icon, onClick }: { label: string; value: string; accent?: "amber" | "good"; hint?: string; icon?: ReactNode; onClick?: () => void }) {
   return (
-    <div className="surface-dark surface-lift p-4">
+    <div
+      className={`surface-dark surface-lift p-4 ${onClick ? "cursor-pointer transition hover:ring-1 hover:ring-amber-500/40" : ""}`}
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+    >
       <div className="flex items-start justify-between">
         <div className="text-[11px] uppercase tracking-wider text-slate-500">{label}</div>
         {icon && <span className="text-slate-600">{icon}</span>}
@@ -258,6 +288,49 @@ export function StageTracker({ current }: { current: string }) {
               {state === "done" ? "✓" : i + 1}
             </span>
             {s.short}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** 4-step payment activation tracker. Each step gates the next. */
+const PAYMENT_STEPS = [
+  { key: "TaskComplete", label: "Task complete", who: "Supplier" },
+  { key: "AwaitingKamSubmission", label: "Client sign-off", who: "Client" },
+  { key: "PendingAdminApproval", label: "KAM submits request", who: "KAM" },
+  { key: "Approved", label: "Admin approves & releases", who: "Admin" },
+] as const;
+
+export function PaymentTracker({ payoutStatus }: { payoutStatus?: string | null }) {
+  // index reached so far (a status means THAT step is done and we're on the next)
+  const order = ["None", "TaskComplete", "AwaitingKamSubmission", "PendingAdminApproval", "Approved"];
+  const reached = Math.max(0, order.indexOf(payoutStatus || "None"));
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {PAYMENT_STEPS.map((s, i) => {
+        const state = i < reached ? "done" : i === reached ? "active" : "todo";
+        return (
+          <div
+            key={s.key}
+            className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] ${
+              state === "done"
+                ? "border-[#1E4A2E] bg-[#16321F] text-[#5FD699]"
+                : state === "active"
+                ? "border-amber-600 bg-amber-bg text-amber-500"
+                : "border-navy-600 bg-navy-800/50 text-slate-500"
+            }`}
+          >
+            <span
+              className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold ${
+                state === "done" ? "bg-[#1E4A2E] text-[#5FD699]" : state === "active" ? "bg-amber-500 text-navy-900" : "bg-navy-600 text-slate-400"
+              }`}
+            >
+              {state === "done" ? "✓" : i + 1}
+            </span>
+            <span>{s.label}</span>
+            <span className="text-[9px] uppercase tracking-wide opacity-60">{s.who}</span>
           </div>
         );
       })}

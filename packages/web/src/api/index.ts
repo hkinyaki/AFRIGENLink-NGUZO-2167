@@ -23,13 +23,16 @@ import {
   activityEvents,
   notifications,
   extensions,
+  reversals,
   staffRequests,
   kybDocuments,
+  supportTickets,
+  chatMessages,
 } from "./database/schema";
-import { user as authUser } from "./database/auth-schema";
+import { user as authUser, session } from "./database/auth-schema";
 import { authMiddleware, requireAuth, requireRole } from "./middleware/auth";
 import { id, manifestRef, nextUserCode } from "./lib/ids";
-import { checklistFor, evaluateBreakdown, runSettlement, computeAmountToFund, CLIENT_FEE_RATE } from "./lib/engine";
+import { checklistFor, evaluateBreakdown, runSettlement, computeAmountToFund, CLIENT_FEE_RATE, computeReversal, supplierPenaltyPct, stageRank, daysToStart } from "./lib/engine";
 import { presignPut, presignGet } from "./lib/s3";
 import { computeAward } from "./lib/award";
 import { isNextStage, STAGE_ACTOR, STAGE_LABEL } from "./lib/stages";
@@ -56,6 +59,15 @@ function addDays(iso: string, days: number): string {
 }
 const isAllowlistedAdmin = (email?: string | null) =>
   !!email && ADMIN_EMAILS.includes(email.toLowerCase());
+
+/** Booked working days for a contract — inclusive of both start & end dates. */
+function bookedDaysFromContract(ct: { startDate?: string | null; endDate?: string | null }): number {
+  if (!ct.startDate || !ct.endDate) return 0;
+  const s = new Date(ct.startDate + "T00:00:00Z").getTime();
+  const e = new Date(ct.endDate + "T00:00:00Z").getTime();
+  if (isNaN(s) || isNaN(e) || e < s) return 0;
+  return Math.round((e - s) / 86400000) + 1; // inclusive
+}
 
 type Vars = {
   user: { id: string; email: string; name: string } | null;
@@ -167,6 +179,11 @@ async function advanceStage(c: import("hono").Context<{ Variables: Vars }>, targ
   return c.json({ ok: true, stage: target, stageLabel: label }, 200);
 }
 
+// Simulated document-view OTP store (in-memory, short TTL). A real RFC6238
+// TOTP via an external authenticator would replace this map without changing
+// the issue/verify route surface.
+const docOtpStore = new Map<string, { code: string; expires: number }>();
+
 const app = new Hono<{ Variables: Vars }>()
   .use(securityHeaders)
   .use(cors({ origin: (origin) => corsOrigin(origin), credentials: true, exposeHeaders: ["set-auth-token"] }))
@@ -214,7 +231,24 @@ const app = new Hono<{ Variables: Vars }>()
       await db.update(profile).set({ userCode: code }).where(eq(profile.id, p.id));
       p = { ...p, userCode: code };
     }
+    // Heartbeat: stamp last-seen so KAM auto online/offline can be derived.
+    if (p) {
+      const now = new Date();
+      await db.update(profile).set({ lastSeenAt: now }).where(eq(profile.id, p.id));
+      p = { ...p, lastSeenAt: now };
+    }
     return c.json({ user, profile: p }, 200);
+  })
+  // KAM sets manual activity override (online | offline | meeting | standby).
+  .post("/me/activity", requireAuth, async (c) => {
+    const p = c.get("profile")!;
+    if (p.role !== "key_account" && p.role !== "admin")
+      return c.json({ error: "Only managers set activity status." }, 403);
+    const { status } = await c.req.json<{ status: string }>();
+    if (!["online", "offline", "meeting", "standby"].includes(status))
+      return c.json({ error: "Invalid status." }, 400);
+    await db.update(profile).set({ kamActivityStatus: status, lastSeenAt: new Date() }).where(eq(profile.id, p.id));
+    return c.json({ ok: true }, 200);
   })
   .post("/me/role", requireAuth, async (c) => {
     const user = c.get("user")!;
@@ -448,6 +482,107 @@ const app = new Hono<{ Variables: Vars }>()
     await logEvent({ actorProfileId: me.id, type: "contact_revealed", summary: `${me.fullName || "Field agent"} revealed contact for ${s.companyName || s.fullName} (${s.userCode}).`, meta: { supplierId: s.id, inspectionId: iid } });
     return c.json({ phone: s.phone || "", name: s.companyName || s.fullName }, 200);
   })
+  // My Accounts — distinct suppliers this field agent has been assigned to inspect (contact masked)
+  .get("/field/my-accounts", requireAuth, requireRole("field", "admin"), async (c) => {
+    const me = c.get("profile")!;
+    const rows = me.role === "admin"
+      ? await db.select().from(inspections).orderBy(desc(inspections.createdAt))
+      : await db.select().from(inspections).where(eq(inspections.assignedFieldId, me.id)).orderBy(desc(inspections.createdAt));
+    const bySupplier = new Map<string, { count: number; last: number }>();
+    for (const r of rows) {
+      if (!r.supplierId) continue;
+      const cur = bySupplier.get(r.supplierId);
+      const ts = r.createdAt instanceof Date ? r.createdAt.getTime() : Number(r.createdAt || 0);
+      if (cur) { cur.count++; cur.last = Math.max(cur.last, ts); }
+      else bySupplier.set(r.supplierId, { count: 1, last: ts });
+    }
+    const out = await Promise.all([...bySupplier.entries()].map(async ([sid, agg]) => {
+      const [s] = await db.select().from(profile).where(eq(profile.id, sid)).limit(1);
+      const assetRows = s ? await db.select().from(assets).where(eq(assets.supplierId, sid)) : [];
+      return {
+        supplierId: sid,
+        name: s ? (s.companyName || s.fullName) : "—",
+        userCode: s?.userCode ?? "",
+        contactMasked: (s?.phone || "").replace(/.(?=.{2})/g, "•"),
+        yardLocation: s?.address || "",
+        verificationStatus: s?.verificationStatus ?? "",
+        assetCount: assetRows.length,
+        inspections: agg.count,
+        lastSeen: agg.last,
+      };
+    }));
+    out.sort((a, b) => b.lastSeen - a.lastSeen);
+    return c.json({ accounts: out }, 200);
+  })
+  // Spare-part deliveries routed to this field agent (escrow-credit emergency parts)
+  .get("/field/part-deliveries", requireAuth, requireRole("field", "admin"), async (c) => {
+    const me = c.get("profile")!;
+    const base = await db.select().from(partOrders).where(eq(partOrders.deliverTo, "FieldAgent")).orderBy(desc(partOrders.createdAt));
+    const out = await Promise.all(base.map(async (o) => {
+      const [part] = o.partId ? await db.select().from(parts).where(eq(parts.id, o.partId)).limit(1) : [];
+      const [contract] = o.contractId ? await db.select().from(contracts).where(eq(contracts.id, o.contractId)).limit(1) : [];
+      return { ...o, partName: part?.name ?? "Spare part", partSku: (part as any)?.sku ?? "", contractTitle: contract?.title ?? "" };
+    }));
+    return c.json({ deliveries: out }, 200);
+  })
+  // Field agent confirms a routed spare part was received on site
+  .post("/field/part-deliveries/:id/received", requireAuth, requireRole("field", "admin"), async (c) => {
+    const oid = c.req.param("id");
+    const me = c.get("profile")!;
+    const [order] = await db.select().from(partOrders).where(eq(partOrders.id, oid)).limit(1);
+    if (!order) return c.json({ error: "Order not found." }, 404);
+    if (order.deliverTo !== "FieldAgent") return c.json({ error: "This delivery is not routed to a field agent." }, 403);
+    if (order.status !== "Dispatched") return c.json({ error: "Only dispatched parts can be marked received." }, 400);
+    await db.update(partOrders).set({ status: "Delivered" }).where(eq(partOrders.id, oid));
+    await logEvent({ contractId: order.contractId, actorProfileId: me.id, type: "part.delivered", summary: `${me.fullName || "Field agent"} confirmed receipt of spare part on site.` });
+    return c.json({ ok: true }, 200);
+  })
+
+  // ============================================================
+  //  KAM — document-view OTP (simulated TOTP, logged to admin)
+  //  A KAM must request a one-time code before opening a sensitive
+  //  document. The code is shown on-screen now (simulated), and the
+  //  access attempt is logged to Admin notifications. Real RFC6238
+  //  TOTP via an external authenticator drops into this same seam.
+  // ============================================================
+  .post("/chat/doc-otp/issue", requireAuth, requireRole("key_account", "admin"), async (c) => {
+    const me = c.get("profile")!;
+    const { docId } = await c.req.json().catch(() => ({}));
+    if (!docId) return c.json({ error: "docId required" }, 400);
+    const [doc] = await db.select().from(documents).where(eq(documents.id, docId)).limit(1);
+    if (!doc) return c.json({ error: "Document not found." }, 404);
+    // 6-digit simulated code, 5-minute TTL, keyed per KAM+doc
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    docOtpStore.set(`${me.id}:${docId}`, { code, expires: Date.now() + 5 * 60_000 });
+    // log the access request to every admin
+    const admins = await db.select().from(profile).where(eq(profile.role, "admin"));
+    await notifyMany(admins.map((a) => a.id), {
+      subject: "Document access — OTP issued",
+      body: `${me.fullName || me.companyName || "A KAM"} (${me.userCode}) requested a one-time code to view document "${doc.label || doc.kind}". Access logged.`,
+    });
+    await logEvent({ actorProfileId: me.id, type: "doc_otp_issued", summary: `${me.fullName || "KAM"} (${me.userCode}) requested an OTP to view "${doc.label || doc.kind}".`, meta: { docId } });
+    // simulated channel: return the code so the UI can show it. Real TOTP would NOT return it.
+    return c.json({ ok: true, simulatedCode: code, expiresInSec: 300 }, 200);
+  })
+  .post("/chat/doc-otp/verify", requireAuth, requireRole("key_account", "admin"), async (c) => {
+    const me = c.get("profile")!;
+    const { docId, code } = await c.req.json().catch(() => ({}));
+    if (!docId || !code) return c.json({ error: "docId and code required" }, 400);
+    const key = `${me.id}:${docId}`;
+    const rec = docOtpStore.get(key);
+    if (!rec || rec.expires < Date.now()) return c.json({ error: "Code expired — request a new one." }, 401);
+    if (rec.code !== String(code).trim()) return c.json({ error: "Incorrect code." }, 401);
+    docOtpStore.delete(key);
+    const [doc] = await db.select().from(documents).where(eq(documents.id, docId)).limit(1);
+    if (!doc) return c.json({ error: "Document not found." }, 404);
+    const admins = await db.select().from(profile).where(eq(profile.role, "admin"));
+    await notifyMany(admins.map((a) => a.id), {
+      subject: "Document opened",
+      body: `${me.fullName || me.companyName || "A KAM"} (${me.userCode}) verified OTP and opened "${doc.label || doc.kind}".`,
+    });
+    await logEvent({ actorProfileId: me.id, type: "doc_opened", summary: `${me.fullName || "KAM"} (${me.userCode}) opened "${doc.label || doc.kind}" after OTP.`, meta: { docId } });
+    return c.json({ ok: true, url: doc.url ?? null }, 200);
+  })
   // ---- public-ish: a single profile (contact card) — scoped ----
   .get("/profile/:profileId", requireAuth, async (c) => {
     const me = c.get("profile")!;
@@ -472,9 +607,23 @@ const app = new Hono<{ Variables: Vars }>()
     let rows;
     if (mine === "1" && p.role === "supplier") {
       rows = await db.select().from(assets).where(eq(assets.supplierId, p.id)).orderBy(desc(assets.createdAt));
-    } else {
-      rows = await db.select().from(assets).orderBy(desc(assets.createdAt));
+      // Enrich each asset with its job history + a live-job flag (for the supplier's read-only fleet view).
+      const enriched = await Promise.all(rows.map(async (a) => {
+        const ctrs = await db.select().from(contracts).where(eq(contracts.assetId, a.id)).orderBy(desc(contracts.createdAt));
+        const liveStatuses = ["ActiveTransit", "BreakdownIncident"];
+        const liveJobs = ctrs.filter((c2) => liveStatuses.includes(c2.milestoneStatus));
+        const jobs = ctrs.map((c2) => ({ id: c2.id, title: c2.title, status: c2.milestoneStatus, destination: c2.destination, startDate: c2.startDate, endDate: c2.endDate }));
+        return {
+          ...a,
+          jobs,
+          liveJobCount: liveJobs.length,
+          onLiveJob: liveJobs.length > 0,
+          doubleEntry: liveJobs.length > 1, // same asset committed to >1 live job at once → red flag
+        };
+      }));
+      return c.json({ assets: enriched }, 200);
     }
+    rows = await db.select().from(assets).orderBy(desc(assets.createdAt));
     return c.json({ assets: rows }, 200);
   })
   .post("/assets", requireAuth, requireRole("supplier"), async (c) => {
@@ -590,7 +739,26 @@ const app = new Hono<{ Variables: Vars }>()
     await db.update(assets).set({ operationalStatus: "Active" }).where(eq(assets.id, contract.assetId));
     return c.json({ ok: true }, 200);
   })
-  // client sign-off → opens the human-approved payout chain (NO silent disburse)
+  // STEP 1 — supplier marks the job/task complete (front gate of the payout chain)
+  .post("/contracts/:id/mark-complete", requireAuth, requireRole("supplier"), async (c) => {
+    const cid = c.req.param("id");
+    const p = c.get("profile")!;
+    const [contract] = await db.select().from(contracts).where(eq(contracts.id, cid)).limit(1);
+    if (!contract) return c.json({ message: "Not found" }, 404);
+    if (contract.supplierId !== p.id) return c.json({ error: "Forbidden" }, 403);
+    if (contract.milestoneStatus === "FundsDisbursed") return c.json({ error: "Already settled." }, 400);
+    if (contract.payoutStatus && contract.payoutStatus !== "None")
+      return c.json({ error: "Task already marked complete." }, 400);
+    const b = await c.req.json<{ remarks?: string }>().catch(() => ({}));
+    await db
+      .update(contracts)
+      .set({ payoutStatus: "TaskComplete", taskCompletedAt: new Date(), completionRemarks: (b.remarks ?? "").slice(0, 1000) })
+      .where(eq(contracts.id, cid));
+    await logEvent({ contractId: cid, tenderId: contract.tenderId ?? "", actorProfileId: p.id, type: "task.complete", summary: `${p.companyName || "Supplier"} marked "${contract.title}" complete. Awaiting client sign-off.` });
+    await logNotification({ recipientProfileId: contract.clientId, tenderId: contract.tenderId ?? "", subject: "Task complete — please sign off", body: `${p.companyName || "Your supplier"} marked "${contract.title}" complete. Review and sign off to release payment.` });
+    return c.json({ ok: true }, 200);
+  })
+  // STEP 2 — client sign-off (requires supplier TaskComplete first) → hands to KAM
   .post("/contracts/:id/sign-off", requireAuth, requireRole("client"), async (c) => {
     const cid = c.req.param("id");
     const p = c.get("profile")!;
@@ -598,21 +766,22 @@ const app = new Hono<{ Variables: Vars }>()
     if (!contract) return c.json({ message: "Not found" }, 404);
     if (contract.clientId !== p.id) return c.json({ error: "Forbidden" }, 403);
     if (contract.milestoneStatus === "FundsDisbursed") return c.json({ message: "Already disbursed" }, 400);
-    if (contract.payoutStatus === "AwaitingSupplierApproval") return c.json({ message: "Payout already in progress" }, 400);
+    if (contract.payoutStatus !== "TaskComplete")
+      return c.json({ error: "The supplier must mark the task complete before you can sign off." }, 400);
 
     await db
       .update(contracts)
-      .set({ signedOffAt: new Date(), payoutStatus: "AwaitingSupplierApproval", milestoneStatus: "SignedOff" })
+      .set({ signedOffAt: new Date(), payoutStatus: "AwaitingKamSubmission", milestoneStatus: "SignedOff" })
       .where(eq(contracts.id, cid));
     if (contract.assetId) await db.update(assets).set({ operationalStatus: "Available" }).where(eq(assets.id, contract.assetId));
 
-    await logEvent({ contractId: cid, tenderId: contract.tenderId ?? "", actorProfileId: p.id, type: "contract.signoff", summary: `Client signed off "${contract.title}". Payout pending KAM processing.` });
+    await logEvent({ contractId: cid, tenderId: contract.tenderId ?? "", actorProfileId: p.id, type: "contract.signoff", summary: `Client signed off "${contract.title}". Payout pending KAM submission.` });
     // notify all KAMs + admins to process the payout
     const staff = await db.select().from(profile).where(inArray(profile.role, ["key_account", "admin"]));
     await notifyMany(staff.map((s) => s.id), {
       tenderId: contract.tenderId ?? "",
-      subject: "Sign-off received — process payout",
-      body: `Client signed off "${contract.title}". Review the supplier bank details and upload the TT slip to release payment.`,
+      subject: "Sign-off received — submit payout request",
+      body: `Client signed off "${contract.title}". Review the supplier bank details and submit the payment request for execution.`,
     });
     return c.json({ ok: true }, 200);
   })
@@ -640,7 +809,7 @@ const app = new Hono<{ Variables: Vars }>()
     const preview = runSettlement(baseValue, contract.emergencyCreditDeductedTzs);
     return c.json({ contract, bank: isStaff ? bank : null, slipUrl, payoutStatus: contract.payoutStatus, preview }, 200);
   })
-  // KAM/Admin: upload TT slip to supplier
+  // STEP 3 — KAM submits the payment request for execution (uploads TT slip) → admin queue
   .post("/contracts/:id/payout-slip", requireAuth, requireRole("key_account", "admin"), async (c) => {
     const cid = c.req.param("id");
     const p = c.get("profile")!;
@@ -648,22 +817,25 @@ const app = new Hono<{ Variables: Vars }>()
     if (!b.slipKey) return c.json({ error: "slipKey required" }, 400);
     const [contract] = await db.select().from(contracts).where(eq(contracts.id, cid)).limit(1);
     if (!contract) return c.json({ message: "Not found" }, 404);
-    if (contract.payoutStatus !== "AwaitingSupplierApproval") {
-      return c.json({ error: "Contract is not awaiting payout (client must sign off first)." }, 400);
+    if (contract.payoutStatus !== "AwaitingKamSubmission") {
+      return c.json({ error: "Contract is not awaiting KAM submission (client must sign off first)." }, 400);
     }
-    await db.update(contracts).set({ payoutSlipKey: b.slipKey }).where(eq(contracts.id, cid));
-    await logEvent({ contractId: cid, tenderId: contract.tenderId ?? "", actorProfileId: p.id, type: "payout.slip", summary: `${p.companyName || "KAM"} uploaded the payout TT slip for "${contract.title}".` });
-    await logNotification({ recipientProfileId: contract.supplierId, tenderId: contract.tenderId ?? "", subject: "Payment slip uploaded — please confirm", body: `Nguzo uploaded the TT slip for "${contract.title}". Open your dashboard to review and confirm receipt.` });
+    await db
+      .update(contracts)
+      .set({ payoutSlipKey: b.slipKey, payoutStatus: "PendingAdminApproval", kamSubmittedAt: new Date() })
+      .where(eq(contracts.id, cid));
+    await logEvent({ contractId: cid, tenderId: contract.tenderId ?? "", actorProfileId: p.id, type: "payout.submitted", summary: `${p.companyName || "KAM"} submitted the payment request for "${contract.title}" for admin approval.` });
+    const admins = await db.select().from(profile).where(eq(profile.role, "admin"));
+    await notifyMany(admins.map((a) => a.id), { tenderId: contract.tenderId ?? "", subject: "Payment request awaiting approval", body: `A payment request for "${contract.title}" is ready for your approval and release.` });
     return c.json({ ok: true }, 200);
   })
-  // Supplier: approve the TT slip → run settlement, lock invoices/ledger
-  .post("/contracts/:id/payout-approve", requireAuth, requireRole("supplier"), async (c) => {
+  // STEP 4 — admin approves & releases → run settlement, lock invoices/ledger
+  .post("/contracts/:id/approve-release", requireAuth, requireRole("admin"), async (c) => {
     const cid = c.req.param("id");
     const p = c.get("profile")!;
     const [contract] = await db.select().from(contracts).where(eq(contracts.id, cid)).limit(1);
     if (!contract) return c.json({ message: "Not found" }, 404);
-    if (contract.supplierId !== p.id) return c.json({ error: "Forbidden" }, 403);
-    if (contract.payoutStatus !== "AwaitingSupplierApproval") return c.json({ error: "Nothing to approve." }, 400);
+    if (contract.payoutStatus !== "PendingAdminApproval") return c.json({ error: "Nothing to release. The KAM must submit the payment request first." }, 400);
     if (!contract.payoutSlipKey) return c.json({ error: "No payment slip has been uploaded yet." }, 400);
 
     const baseValue = contract.contractValueTzs || contract.totalEscrowBalanceTzs;
@@ -675,16 +847,225 @@ const app = new Hono<{ Variables: Vars }>()
         supplierPayoutTzs: s.supplierPayoutTzs,
         milestoneStatus: "FundsDisbursed",
         payoutStatus: "Approved",
+        adminApprovedAt: new Date(),
       })
       .where(eq(contracts.id, cid));
     await db.insert(invoices).values([
       { id: id("inv"), contractId: cid, party: "Client", lineItems: s.clientLineItems, totalTzs: baseValue + Math.round(baseValue * 0.05) },
       { id: id("inv"), contractId: cid, party: "Supplier", lineItems: s.supplierLineItems, totalTzs: s.supplierPayoutTzs },
     ]);
-    await logEvent({ contractId: cid, tenderId: contract.tenderId ?? "", actorProfileId: p.id, type: "payout.approved", summary: `${p.companyName || "Supplier"} confirmed payment received. Settlement locked.` });
-    const staff = await db.select().from(profile).where(inArray(profile.role, ["key_account", "admin"]));
-    await notifyMany([contract.clientId, ...staff.map((x) => x.id)], { tenderId: contract.tenderId ?? "", subject: "Payout confirmed", body: `Supplier confirmed payment for "${contract.title}". The deal is settled.` });
+    await logEvent({ contractId: cid, tenderId: contract.tenderId ?? "", actorProfileId: p.id, type: "payout.released", summary: `${p.companyName || "Admin"} approved and released payment for "${contract.title}". Settlement locked.` });
+    const staff = await db.select().from(profile).where(eq(profile.role, "key_account"));
+    await notifyMany([contract.clientId, contract.supplierId, ...staff.map((x) => x.id)], { tenderId: contract.tenderId ?? "", subject: "Payment released", body: `Payment for "${contract.title}" has been approved and released. The deal is settled.` });
     return c.json({ ok: true, settlement: s }, 200);
+  })
+
+  // ======================================================================
+  //  REVERSALS — cancellation / refund / shortened (cut-off) contracts
+  //  Chain: Client requests → KAM reviews → Admin approves & executes.
+  //  Money SIMULATED ("funds tracked, not held"). Refund dest = bank.
+  // ======================================================================
+
+  // helper to build a ReversalInput from a contract row
+  // (inlined per-route below; bookedDays derived from start/end dates)
+
+  // CLIENT requests a reversal — returns a server-computed preview, stores Requested.
+  .post("/contracts/:id/reversal/request", requireAuth, requireRole("client"), async (c) => {
+    const cid = c.req.param("id");
+    const p = c.get("profile")!;
+    const [contract] = await db.select().from(contracts).where(eq(contracts.id, cid)).limit(1);
+    if (!contract) return c.json({ message: "Not found" }, 404);
+    if (contract.clientId !== p.id) return c.json({ error: "Forbidden" }, 403);
+    if (contract.milestoneStatus === "FundsDisbursed")
+      return c.json({ error: "This contract is already settled and cannot be reversed." }, 400);
+    if (contract.cancelStatus === "Requested")
+      return c.json({ error: "A reversal request is already in progress for this contract." }, 400);
+    if (contract.cancelStatus === "Reversed")
+      return c.json({ error: "This contract has already been reversed." }, 400);
+
+    const b = await c.req.json<{ reason: "Cancel" | "Refund" | "Shorten"; actualDays?: number; note?: string }>();
+    const reason = b.reason;
+    if (!["Cancel", "Refund", "Shorten"].includes(reason)) return c.json({ error: "Invalid reason." }, 400);
+
+    const stage = contract.contractStage || "Awarded";
+    const bookedDays = bookedDaysFromContract(contract);
+    if (reason === "Shorten" && (bookedDays <= 0 || !contract.dailyRateTzs))
+      return c.json({ error: "This contract has no daily-hire term to shorten." }, 400);
+
+    const preview = computeReversal({
+      reason,
+      stage,
+      startDateIso: contract.startDate || new Date().toISOString().slice(0, 10),
+      contractValueTzs: contract.contractValueTzs || contract.totalEscrowBalanceTzs,
+      clientFeePaidTzs: contract.clientFeeTzs,
+      emergencyCreditDeductedTzs: contract.emergencyCreditDeductedTzs,
+      transferFeeTzs: contract.transferFeeTzs,
+      dailyRateTzs: contract.dailyRateTzs,
+      units: contract.unitsAwarded || 1,
+      bookedDays,
+      actualDays: reason === "Shorten" ? b.actualDays : undefined,
+    });
+    if (!preview.balanced) return c.json({ error: "Reversal failed a balance check. Admin has been notified." }, 422);
+
+    const rid = id("rev");
+    await db.insert(reversals).values({
+      id: rid,
+      contractId: cid,
+      tenderId: contract.tenderId ?? "",
+      requestedByProfileId: p.id,
+      reason,
+      stageAtRequest: stage,
+      actualDays: reason === "Shorten" ? Math.max(0, Math.min(b.actualDays ?? bookedDays, bookedDays)) : null,
+      clientNote: (b.note ?? "").slice(0, 1000),
+      status: "Requested",
+      lineItems: { client: preview.clientLineItems, supplier: preview.supplierLineItems, nguzo: preview.nguzoLineItems },
+    });
+    await db.update(contracts).set({ cancelStatus: "Requested" }).where(eq(contracts.id, cid));
+
+    await logEvent({ contractId: cid, tenderId: contract.tenderId ?? "", actorProfileId: p.id, type: "reversal.requested", summary: `${p.companyName || "Client"} requested a ${reason.toLowerCase()} on "${contract.title}". Awaiting KAM review.` });
+    const staff = await db.select().from(profile).where(inArray(profile.role, ["key_account", "admin"]));
+    await notifyMany(staff.map((s) => s.id), { tenderId: contract.tenderId ?? "", subject: `Reversal requested — ${reason}`, body: `${p.companyName || "A client"} requested a ${reason.toLowerCase()} on "${contract.title}". Review the figures and forward to admin.` });
+    return c.json({ ok: true, id: rid, preview }, 200);
+  })
+
+  // KAM reviews a reversal — approve-forward to admin, or reject back to client.
+  .post("/reversals/:id/review", requireAuth, requireRole("key_account", "admin"), async (c) => {
+    const rid = c.req.param("id");
+    const p = c.get("profile")!;
+    const b = await c.req.json<{ decision: "Forward" | "Reject"; note?: string }>();
+    const [rev] = await db.select().from(reversals).where(eq(reversals.id, rid)).limit(1);
+    if (!rev) return c.json({ message: "Not found" }, 404);
+    if (rev.status !== "Requested") return c.json({ error: "This reversal is not awaiting review." }, 400);
+    const [contract] = await db.select().from(contracts).where(eq(contracts.id, rev.contractId)).limit(1);
+
+    if (b.decision === "Reject") {
+      await db.update(reversals).set({ status: "Rejected", kamReviewedBy: p.id, kamNote: (b.note ?? "").slice(0, 1000), resolvedAt: new Date() }).where(eq(reversals.id, rid));
+      if (contract) await db.update(contracts).set({ cancelStatus: "None" }).where(eq(contracts.id, contract.id));
+      await logEvent({ contractId: rev.contractId, tenderId: rev.tenderId, actorProfileId: p.id, type: "reversal.rejected", summary: `${p.companyName || "KAM"} declined the ${rev.reason.toLowerCase()} request${b.note ? ` — ${b.note}` : ""}.` });
+      await logNotification({ recipientProfileId: rev.requestedByProfileId, tenderId: rev.tenderId, subject: "Reversal request declined", body: `Your ${rev.reason.toLowerCase()} request on "${contract?.title || "the contract"}" was declined.${b.note ? ` Reason: ${b.note}` : ""}` });
+      return c.json({ ok: true }, 200);
+    }
+
+    await db.update(reversals).set({ status: "KamReviewed", kamReviewedBy: p.id, kamNote: (b.note ?? "").slice(0, 1000) }).where(eq(reversals.id, rid));
+    await logEvent({ contractId: rev.contractId, tenderId: rev.tenderId, actorProfileId: p.id, type: "reversal.reviewed", summary: `${p.companyName || "KAM"} reviewed the ${rev.reason.toLowerCase()} request and forwarded it to admin.` });
+    const admins = await db.select().from(profile).where(eq(profile.role, "admin"));
+    await notifyMany(admins.map((a) => a.id), { tenderId: rev.tenderId, subject: "Reversal awaiting approval", body: `A ${rev.reason.toLowerCase()} on "${contract?.title || "a contract"}" was reviewed by ${p.companyName || "a KAM"} and is ready for your approval.` });
+    return c.json({ ok: true }, 200);
+  })
+
+  // ADMIN approves & executes — recomputes server-side, writes ledger + money snapshot.
+  .post("/reversals/:id/approve", requireAuth, requireRole("admin"), async (c) => {
+    const rid = c.req.param("id");
+    const p = c.get("profile")!;
+    const b = await c.req.json<{ reversalSlipKey?: string }>().catch(() => ({}));
+    const [rev] = await db.select().from(reversals).where(eq(reversals.id, rid)).limit(1);
+    if (!rev) return c.json({ message: "Not found" }, 404);
+    if (rev.status !== "KamReviewed") return c.json({ error: "A KAM must review this reversal before approval." }, 400);
+    const [contract] = await db.select().from(contracts).where(eq(contracts.id, rev.contractId)).limit(1);
+    if (!contract) return c.json({ message: "Contract not found" }, 404);
+    if (contract.milestoneStatus === "FundsDisbursed") return c.json({ error: "Contract already settled." }, 400);
+
+    // RECOMPUTE server-side — never trust the stored/client figures.
+    const bookedDays = bookedDaysFromContract(contract);
+    const result = computeReversal({
+      reason: rev.reason as "Cancel" | "Refund" | "Shorten",
+      stage: rev.stageAtRequest || contract.contractStage || "Awarded",
+      startDateIso: contract.startDate || new Date().toISOString().slice(0, 10),
+      contractValueTzs: contract.contractValueTzs || contract.totalEscrowBalanceTzs,
+      clientFeePaidTzs: contract.clientFeeTzs,
+      emergencyCreditDeductedTzs: contract.emergencyCreditDeductedTzs,
+      transferFeeTzs: contract.transferFeeTzs,
+      dailyRateTzs: contract.dailyRateTzs,
+      units: contract.unitsAwarded || 1,
+      bookedDays,
+      actualDays: rev.reason === "Shorten" ? rev.actualDays ?? bookedDays : undefined,
+    });
+    if (!result.balanced) return c.json({ error: "Reversal failed its balance invariant — refusing to execute. Resolve manually." }, 422);
+
+    const now = new Date();
+    await db.update(reversals).set({
+      status: "Executed",
+      adminApprovedBy: p.id,
+      reversalSlipKey: (b.reversalSlipKey ?? "").slice(0, 300),
+      clientRefundTzs: result.clientRefundTzs,
+      nguzoFeeKeptTzs: result.nguzoFeeKeptTzs,
+      nguzoFeeRefundedTzs: result.nguzoFeeRefundedTzs,
+      supplierPenaltyTzs: result.supplierPenaltyTzs,
+      transferFeeKeptTzs: result.transferFeeKeptTzs,
+      partsDeductedTzs: result.partsDeductedTzs,
+      retainedInEscrowTzs: result.retainedInEscrowTzs,
+      newContractValueTzs: result.newContractValueTzs,
+      lineItems: { client: result.clientLineItems, supplier: result.supplierLineItems, nguzo: result.nguzoLineItems },
+      resolvedAt: now,
+    }).where(eq(reversals.id, rid));
+
+    if (rev.reason === "Shorten") {
+      const actual = Math.max(0, Math.min(rev.actualDays ?? bookedDays, bookedDays));
+      await db.update(contracts).set({
+        cancelStatus: "Reversed",
+        actualDaysWorked: actual,
+        contractValueTzs: result.newContractValueTzs,
+        totalEscrowBalanceTzs: result.retainedInEscrowTzs + Math.round(result.newContractValueTzs * CLIENT_FEE_RATE),
+      }).where(eq(contracts.id, contract.id));
+    } else {
+      await db.update(contracts).set({ cancelStatus: "Reversed", status: "Cancelled", milestoneStatus: "Cancelled" }).where(eq(contracts.id, contract.id));
+      if (contract.assetId) await db.update(assets).set({ operationalStatus: "Available" }).where(eq(assets.id, contract.assetId));
+    }
+
+    await logEvent({
+      contractId: contract.id,
+      tenderId: rev.tenderId,
+      actorProfileId: p.id,
+      type: "reversal.executed",
+      summary: `${p.companyName || "Admin"} executed a ${rev.reason.toLowerCase()} on "${contract.title}". Client refund TZS ${result.clientRefundTzs.toLocaleString()}; supplier ${result.supplierAdjustmentTzs ? `keeps TZS ${result.supplierAdjustmentTzs.toLocaleString()}` : "no charge"}.`,
+      meta: {
+        reason: rev.reason,
+        clientRefundTzs: result.clientRefundTzs,
+        nguzoFeeKeptTzs: result.nguzoFeeKeptTzs,
+        nguzoFeeRefundedTzs: result.nguzoFeeRefundedTzs,
+        supplierPenaltyTzs: result.supplierPenaltyTzs,
+        transferFeeKeptTzs: result.transferFeeKeptTzs,
+        partsDeductedTzs: result.partsDeductedTzs,
+        retainedInEscrowTzs: result.retainedInEscrowTzs,
+        newContractValueTzs: result.newContractValueTzs,
+      },
+    });
+    const staff = await db.select().from(profile).where(eq(profile.role, "key_account"));
+    await notifyMany([contract.clientId, contract.supplierId, ...staff.map((x) => x.id)], {
+      tenderId: rev.tenderId,
+      subject: `Reversal executed — ${rev.reason}`,
+      body: `The ${rev.reason.toLowerCase()} on "${contract.title}" was approved and executed. Client refund: TZS ${result.clientRefundTzs.toLocaleString()} (tracked, not held).`,
+    });
+    return c.json({ ok: true, result }, 200);
+  })
+
+  // READ — single contract's reversal (any party on the contract)
+  .get("/contracts/:id/reversal", requireAuth, async (c) => {
+    const cid = c.req.param("id");
+    const p = c.get("profile")!;
+    const [contract] = await db.select().from(contracts).where(eq(contracts.id, cid)).limit(1);
+    if (!contract) return c.json({ message: "Not found" }, 404);
+    const isParty = contract.clientId === p.id || contract.supplierId === p.id || p.role === "key_account" || p.role === "admin";
+    if (!isParty) return c.json({ error: "Forbidden" }, 403);
+    const rows = await db.select().from(reversals).where(eq(reversals.contractId, cid)).orderBy(desc(reversals.createdAt));
+    const slipUrl = rows[0]?.reversalSlipKey ? await presignGet(rows[0].reversalSlipKey) : "";
+    return c.json({ reversals: rows, slipUrl }, 200);
+  })
+
+  // READ — role-scoped reversal list for dashboards/queues
+  .get("/reversals", requireAuth, async (c) => {
+    const p = c.get("profile")!;
+    const rows = await db.select().from(reversals).orderBy(desc(reversals.createdAt));
+    let scoped = rows;
+    if (p.role === "admin" || p.role === "key_account") {
+      // staff see all (KAM queue filters client-side on status)
+    } else {
+      // client/supplier see only reversals touching their own contracts
+      const myContracts = await db.select({ id: contracts.id }).from(contracts).where(p.role === "client" ? eq(contracts.clientId, p.id) : eq(contracts.supplierId, p.id));
+      const ids = new Set(myContracts.map((x) => x.id));
+      scoped = rows.filter((r) => ids.has(r.contractId));
+    }
+    return c.json({ reversals: scoped }, 200);
   })
 
   // ---- breakdown / parts engine ----
@@ -700,13 +1081,14 @@ const app = new Hono<{ Variables: Vars }>()
   .post("/contracts/:id/report-breakdown", requireAuth, requireRole("supplier"), async (c) => {
     const cid = c.req.param("id");
     const p = c.get("profile")!;
-    const b = await c.req.json<{ partId: string; deliverTo?: "MachineSupplier" | "FieldAgent" }>();
+    const b = await c.req.json<{ partId: string; deliverTo?: "MachineSupplier" | "FieldAgent"; qty?: number; receiverName?: string; receiverDestination?: string }>();
     const [contract] = await db.select().from(contracts).where(eq(contracts.id, cid)).limit(1);
     if (!contract) return c.json({ message: "Contract not found" }, 404);
     if (contract.supplierId !== p.id) return c.json({ error: "Forbidden" }, 403);
     const [part] = await db.select().from(parts).where(eq(parts.id, b.partId)).limit(1);
     if (!part) return c.json({ message: "Part not found" }, 404);
     if (part.status === "OutOfStock" || part.stockQty <= 0) return c.json({ error: "That part is out of stock." }, 400);
+    const qty = Math.max(1, Math.min(b.qty ?? 1, part.stockQty));
 
     if (contract.assetId) await db.update(assets).set({ operationalStatus: "Breakdown" }).where(eq(assets.id, contract.assetId));
     await db.update(contracts).set({ milestoneStatus: "BreakdownIncident" }).where(eq(contracts.id, cid));
@@ -719,8 +1101,11 @@ const app = new Hono<{ Variables: Vars }>()
       requestedByProfileId: p.id,
       partsSupplierId: part.partsSupplierId,
       deliverTo: b.deliverTo === "FieldAgent" ? "FieldAgent" : "MachineSupplier",
+      qty,
+      receiverName: (b.receiverName ?? "").slice(0, 120),
+      receiverDestination: (b.receiverDestination ?? "").slice(0, 200),
       retailCostTzs: part.retailCostTzs,
-      totalCostTzs: part.retailCostTzs + part.logisticsHandlingFeeTzs,
+      totalCostTzs: (part.retailCostTzs + part.logisticsHandlingFeeTzs) * qty,
       manifestRef: "",
     };
     await db.insert(partOrders).values(order);
@@ -797,12 +1182,28 @@ const app = new Hono<{ Variables: Vars }>()
     const [part] = await db.select().from(parts).where(eq(parts.id, order.partId)).limit(1);
     if (!part) return c.json({ message: "Part not found" }, 404);
     if (part.stockQty <= 0) return c.json({ error: "No stock to dispatch." }, 400);
-    const newQty = part.stockQty - 1;
+    const orderQty = Math.max(1, order.qty || 1);
+    const newQty = Math.max(0, part.stockQty - orderQty);
     await db.update(parts).set({ stockQty: newQty, status: newQty <= 0 ? "OutOfStock" : "Active" }).where(eq(parts.id, part.id));
     await db.update(partOrders).set({ status: "Dispatched", courier: b.courier ?? order.courier ?? "Shabiby", waybillRef: b.waybillRef ?? "" }).where(eq(partOrders.id, oid));
     await logEvent({ contractId: order.contractId, actorProfileId: p.id, type: "parts.dispatched", summary: `${part.partName} dispatched via ${b.courier ?? order.courier} (waybill ${b.waybillRef ?? "—"}).` });
     await notifyMany([order.requestedByProfileId, order.kamId].filter(Boolean), { subject: "Spare dispatched", body: `${part.partName} is on its way (${b.courier ?? order.courier}, waybill ${b.waybillRef ?? "—"}).` });
     return c.json({ ok: true }, 200);
+  })
+  // Parts Supplier: generate a simulated EFD receipt once the part is dispatched/delivered (payment cleared)
+  .post("/part-orders/:id/generate-receipt", requireAuth, requireRole("parts_supplier", "admin"), async (c) => {
+    const oid = c.req.param("id");
+    const p = c.get("profile")!;
+    const [order] = await db.select().from(partOrders).where(eq(partOrders.id, oid)).limit(1);
+    if (!order) return c.json({ message: "Order not found" }, 404);
+    if (!["Dispatched", "Delivered"].includes(order.status)) return c.json({ error: "EFD receipt is issued after the part is dispatched." }, 400);
+    if (order.efdNumber) return c.json({ ok: true, efdNumber: order.efdNumber }, 200); // idempotent
+    // Simulated EFD/TRA receipt number (format: 12 digits, like a TZ fiscal receipt)
+    const efdNumber = "EFD" + Math.floor(100000000000 + Math.random() * 899999999999).toString();
+    await db.update(partOrders).set({ efdNumber }).where(eq(partOrders.id, oid));
+    await logEvent({ contractId: order.contractId, actorProfileId: p.id, type: "parts.receipt", summary: `EFD receipt ${efdNumber} issued for the spare order.` });
+    await notifyMany([order.requestedByProfileId, order.kamId].filter(Boolean), { subject: "EFD receipt issued", body: `An EFD receipt (${efdNumber}) is available for your spare order.` });
+    return c.json({ ok: true, efdNumber }, 200);
   })
   .post("/part-orders/:id/status", requireAuth, async (c) => {
     const oid = c.req.param("id");
@@ -877,7 +1278,12 @@ const app = new Hono<{ Variables: Vars }>()
       assetId?: string; tenderId?: string; contractId?: string;
       mechanicalNotes: string; legitimacySignedOff: boolean; vinPhotos?: string[];
       docsChecked?: boolean; machineInspected?: boolean; submit?: boolean;
+      frontPhotoKey?: string; backPhotoKey?: string;
     }>();
+    // Tender-linked reports require both machine photos (front + back) before submission.
+    if (b.tenderId && b.submit && (!b.frontPhotoKey || !b.backPhotoKey)) {
+      return c.json({ error: "Both front and back machine photos are required before submitting." }, 400);
+    }
     // Standalone yard audits (no tender) keep the old single-shot behaviour.
     // Tender-linked reports are 2-step + KAM-reviewed: submit → Submitted (NO auto-advance).
     const isTenderReport = !!b.tenderId;
@@ -891,13 +1297,19 @@ const app = new Hono<{ Variables: Vars }>()
       mechanicalNotes: b.mechanicalNotes ?? "",
       legitimacySignedOff: !!b.legitimacySignedOff,
       vinPhotos: b.vinPhotos ?? [],
+      frontPhotoKey: b.frontPhotoKey ?? "",
+      backPhotoKey: b.backPhotoKey ?? "",
       docsChecked: !!b.docsChecked,
       machineInspected: !!b.machineInspected,
       reportStatus: isTenderReport ? (submit ? "Submitted" : "Draft") : "Approved",
     };
     await db.insert(inspections).values(row);
     if (b.assetId) {
-      await db.update(assets).set({ auditTimestamp: new Date() }).where(eq(assets.id, b.assetId));
+      const photoUpdate: { auditTimestamp: Date; photos?: string[] } = { auditTimestamp: new Date() };
+      // Save the 2 mandatory machine photos onto the inspected asset's fleet record.
+      const machinePhotos = [b.frontPhotoKey, b.backPhotoKey].filter((k): k is string => !!k);
+      if (machinePhotos.length) photoUpdate.photos = machinePhotos;
+      await db.update(assets).set(photoUpdate).where(eq(assets.id, b.assetId));
       if (b.legitimacySignedOff && !isTenderReport) {
         const [asset] = await db.select().from(assets).where(eq(assets.id, b.assetId)).limit(1);
         if (asset) await db.update(profile).set({ verificationStatus: "Verified" }).where(eq(profile.id, asset.supplierId));
@@ -1058,7 +1470,7 @@ const app = new Hono<{ Variables: Vars }>()
     const rows = await db
       .select()
       .from(profile)
-      .where(inArray(profile.role, ["client", "supplier", "parts_supplier"]));
+      .where(inArray(profile.role, ["client", "supplier", "parts_supplier", "key_account", "field"]));
     const withDocs = await Promise.all(
       rows.map(async (r) => {
         const docs = await db.select().from(kybDocuments).where(eq(kybDocuments.profileId, r.id));
@@ -1067,7 +1479,9 @@ const app = new Hono<{ Variables: Vars }>()
     );
     const remote = withDocs.filter((r) => r.role === "client");
     const siteVisit = withDocs.filter((r) => r.role === "supplier" || r.role === "parts_supplier");
-    return c.json({ remote, siteVisit }, 200);
+    // internal staff (KAM / field) still pending KYC verification
+    const staff = withDocs.filter((r) => ["key_account", "field"].includes(r.role) && r.verificationStatus !== "Verified");
+    return c.json({ remote, siteVisit, staff }, 200);
   })
   // Full profile + all KYB documents (presigned read URLs) for the review panel.
   .get("/admin/profile/:profileId", requireAuth, requireRole("admin", "key_account"), async (c) => {
@@ -1112,6 +1526,11 @@ const app = new Hono<{ Variables: Vars }>()
         role: profile.role,
         userCode: profile.userCode,
         companyName: profile.companyName,
+        fullName: profile.fullName,
+        phone: profile.phone,
+        managerId: profile.managerId,
+        fieldStation: profile.fieldStation,
+        username: profile.username,
         verificationStatus: profile.verificationStatus,
         email: authUser.email,
         name: authUser.name,
@@ -1134,8 +1553,10 @@ const app = new Hono<{ Variables: Vars }>()
   .post("/admin/staff/:profileId/role", requireAuth, requireRole("admin"), async (c) => {
     const pid = c.req.param("profileId");
     const b = await c.req.json<{ role: string }>();
-    if (!["admin", "key_account", "field", "supplier", "client", "parts_supplier"].includes(b.role)) {
-      return c.json({ error: "Invalid role." }, 400);
+    // Internal staff roles only — external user roles (client/supplier/parts) are
+    // FIXED at registration and can never be changed afterwards.
+    if (!["admin", "key_account", "field"].includes(b.role)) {
+      return c.json({ error: "Role is fixed after registration. Only internal staff roles can be reassigned." }, 400);
     }
     const me = c.get("profile")!;
     if (pid === me.id) {
@@ -1148,6 +1569,10 @@ const app = new Hono<{ Variables: Vars }>()
       .where(eq(profile.id, pid))
       .limit(1);
     if (!target[0]) return c.json({ error: "User not found." }, 404);
+    // Cannot convert an external user (client/supplier/parts) into staff or vice-versa.
+    if (["client", "supplier", "parts_supplier"].includes(target[0].role)) {
+      return c.json({ error: "This is an external account. Its role is fixed at registration." }, 403);
+    }
     if (isAllowlistedAdmin(target[0].email) && b.role !== "admin") {
       return c.json({ error: "This account is a protected super-admin and cannot be demoted." }, 403);
     }
@@ -1214,6 +1639,40 @@ const app = new Hono<{ Variables: Vars }>()
     await db.delete(profile).where(eq(profile.id, pid));
     await db.delete(authUser).where(eq(authUser.id, target.userId)); // cascades sessions/accounts
     return c.json({ ok: true }, 200);
+  })
+  // Admin: reset a user's password (forgot-password). Issues a temp password,
+  // revokes their sessions, and forces a change on next login.
+  .post("/admin/staff/:profileId/reset-password", requireAuth, requireRole("admin"), async (c) => {
+    const pid = c.req.param("profileId");
+    const me = c.get("profile")!;
+    if (pid === me.id) return c.json({ error: "Use your own profile to change your password." }, 403);
+    const [target] = await db
+      .select({ id: profile.id, userId: profile.userId, email: authUser.email })
+      .from(profile)
+      .leftJoin(authUser, eq(profile.userId, authUser.id))
+      .where(eq(profile.id, pid))
+      .limit(1);
+    if (!target) return c.json({ error: "User not found." }, 404);
+    if (isAllowlistedAdmin(target.email)) return c.json({ error: "Protected super-admin password cannot be reset here." }, 403);
+    const tempPassword = `Nguzo-${Math.random().toString(36).slice(2, 8)}!`;
+    try {
+      const ctx = await auth.$context;
+      const hash = await ctx.password.hash(tempPassword);
+      // update the credential account row (providerId = "credential")
+      const accts = await ctx.internalAdapter.findAccounts(target.userId);
+      const cred = accts.find((a: { providerId: string }) => a.providerId === "credential");
+      if (cred) {
+        await ctx.internalAdapter.updatePassword(target.userId, hash);
+      } else {
+        await ctx.internalAdapter.createAccount({ userId: target.userId, providerId: "credential", accountId: target.userId, password: hash });
+      }
+      // revoke all sessions so the old password can't be reused
+      await db.delete(session).where(eq(session.userId, target.userId));
+    } catch (e) {
+      return c.json({ error: "Could not reset password: " + (e as Error).message }, 400);
+    }
+    await db.update(profile).set({ mustChangePassword: true }).where(eq(profile.id, pid));
+    return c.json({ ok: true, tempPassword }, 200);
   })
   // ---- staff requests (KAM → Admin field-agent add) ----
   .get("/staff-requests", requireAuth, async (c) => {
@@ -1467,12 +1926,34 @@ const app = new Hono<{ Variables: Vars }>()
     const sups = supIds.length ? await db.select().from(profile).where(inArray(profile.id, supIds)) : [];
     const supName = new Map(sups.map((s) => [s.id, s.companyName]));
     const [client] = await db.select().from(profile).where(eq(profile.id, tender.clientId)).limit(1);
+    // ---- party profiles for the job card (CL / SUP / PS / KAM / FA) ----
+    const partyIds = [...new Set([
+      tender.clientId,
+      ...tContracts.map((x) => x.supplierId),
+      ...sups.map((s) => s.managerId).filter(Boolean) as string[],
+      ...insp.flatMap((i) => [i.assignedFieldId || i.inspectorId, i.reviewedBy]),
+    ].filter(Boolean))];
+    const partyRows = partyIds.length ? await db.select().from(profile).where(inArray(profile.id, partyIds)) : [];
+    const partyEmails = partyRows.length ? await db.select({ id: authUser.id, email: authUser.email }).from(authUser).where(inArray(authUser.id, partyRows.map((p) => p.userId).filter(Boolean) as string[])) : [];
+    const emailOf = new Map(partyEmails.map((e) => [e.id, e.email]));
+    const mk = (pid?: string, label?: string) => {
+      const p = pid ? partyRows.find((x) => x.id === pid) : null;
+      if (!p) return null;
+      return { id: p.id, label, role: p.role, name: p.fullName || p.companyName || "—", userCode: p.userCode, contact: p.phone || p.agentNumber || emailOf.get(p.userId) || "", verificationStatus: p.verificationStatus, managerId: p.managerId };
+    };
+    const supParties = tContracts.map((x) => {
+      const sup = sups.find((s) => s.id === x.supplierId);
+      return { ...mk(x.supplierId, sup?.role === "parts_supplier" ? "Parts supplier" : "Supplier"), kam: mk(sup?.managerId, "Account manager (KAM)") };
+    }).filter((x) => x.id);
+    const fieldParties = [...new Map(insp.map((i) => { const m = mk(i.assignedFieldId || i.inspectorId, "Field agent"); return [m?.id, m]; }).filter(([k]) => k)).values()];
+    const parties = { client: mk(tender.clientId, "Client"), suppliers: supParties, fieldAgents: fieldParties };
     return c.json(
       {
         tender,
         stageLabel: STAGE_LABEL[tender.tenderStage as keyof typeof STAGE_LABEL] ?? tender.tenderStage,
         nextActor: STAGE_ACTOR[tender.tenderStage as keyof typeof STAGE_ACTOR] ?? "none",
         client,
+        parties,
         bids: tBids.map((b) => ({ ...b, supplierName: supName.get(b.supplierId) ?? "Supplier" })),
         contracts: tContracts.map((x) => ({ ...x, supplierName: supName.get(x.supplierId) ?? "Supplier" })),
         documents: docs,
@@ -1799,7 +2280,23 @@ const app = new Hono<{ Variables: Vars }>()
   .get("/admin/ground-force", requireAuth, requireRole("admin","key_account"), async (c) => {
     const insp = await db.select().from(inspections).orderBy(desc(inspections.createdAt));
     const logs = await db.select().from(borderLogs).orderBy(desc(borderLogs.createdAt));
-    return c.json({ inspections: insp, borderLogs: logs }, 200);
+    // resolve field-agent + KAM identities for each record
+    const pids = [...new Set([
+      ...insp.flatMap((i) => [i.inspectorId, i.assignedFieldId, i.reviewedBy, i.supplierId]),
+      ...logs.map((l) => l.loggedBy),
+    ].filter(Boolean))];
+    const ps = pids.length ? await db.select().from(profile).where(inArray(profile.id, pids)) : [];
+    const idn = new Map(ps.map((x) => [x.id, { name: x.fullName || x.companyName || "—", code: x.userCode, number: x.agentNumber || x.phone || "", role: x.role }]));
+    const idOf = (pid?: string) => (pid && idn.get(pid)) || null;
+    return c.json({
+      inspections: insp.map((i) => ({
+        ...i,
+        agent: idOf(i.assignedFieldId || i.inspectorId),
+        kam: idOf(i.reviewedBy),
+        supplier: idOf(i.supplierId),
+      })),
+      borderLogs: logs.map((l) => ({ ...l, agent: idOf(l.loggedBy) })),
+    }, 200);
   })
   .get("/admin/notifications", requireAuth, requireRole("admin","key_account"), async (c) => {
     const rows = await db.select().from(notifications).orderBy(desc(notifications.createdAt)).limit(200);
@@ -1807,6 +2304,142 @@ const app = new Hono<{ Variables: Vars }>()
     const ps = ids.length ? await db.select().from(profile).where(inArray(profile.id, ids)) : [];
     const nameOf = new Map(ps.map((x) => [x.id, x.companyName]));
     return c.json({ notifications: rows.map((n) => ({ ...n, recipientName: nameOf.get(n.recipientProfileId) ?? "User" })) }, 200);
+  })
+
+  // ============================================================
+  //  HELP-DESK — scripted bot intake → live 1:1 chat with assigned KAM
+  // ============================================================
+  // Get my open/active ticket (most recent) + its messages. Creates none.
+  .get("/support/ticket", requireAuth, async (c) => {
+    const p = c.get("profile")!;
+    const [t] = await db
+      .select()
+      .from(supportTickets)
+      .where(and(eq(supportTickets.openerProfileId, p.id), eq(supportTickets.status, "Open")))
+      .orderBy(desc(supportTickets.createdAt))
+      .limit(1);
+    if (!t) return c.json({ ticket: null, messages: [] }, 200);
+    const msgs = await db.select().from(chatMessages).where(eq(chatMessages.ticketId, t.id)).orderBy(chatMessages.createdAt);
+    // resolve sender display
+    const ids = [...new Set(msgs.map((m) => m.fromProfileId).filter(Boolean))];
+    const ps = ids.length ? await db.select().from(profile).where(inArray(profile.id, ids)) : [];
+    const nameOf = new Map(ps.map((x) => [x.id, { name: x.fullName || x.companyName || "User", role: x.role, code: x.userCode }]));
+    return c.json(
+      {
+        ticket: t,
+        messages: msgs.map((m) => ({ ...m, sender: m.fromProfileId ? nameOf.get(m.fromProfileId) : null })),
+      },
+      200
+    );
+  })
+  // Open a new help-desk ticket (only CL / SUP / PS). Routes to assigned KAM or admin fallback.
+  .post("/support/ticket", requireAuth, async (c) => {
+    const p = c.get("profile")!;
+    if (!["client", "supplier", "parts_supplier"].includes(p.role))
+      return c.json({ error: "Help-desk is for clients and suppliers." }, 403);
+    const b = await c.req.json<{ topic?: string; urgency?: string; detail?: string }>().catch(() => ({}));
+    // route to assigned KAM, else any admin
+    let kamId = p.managerId || "";
+    if (!kamId) {
+      const [adm] = await db.select().from(profile).where(eq(profile.role, "admin")).limit(1);
+      kamId = adm?.id ?? "";
+    }
+    const tid = id("tkt");
+    const now = new Date();
+    await db.insert(supportTickets).values({
+      id: tid,
+      openerProfileId: p.id,
+      assignedKamId: kamId,
+      topic: (b.topic ?? "").slice(0, 200),
+      urgency: ["Low", "Normal", "High"].includes(b.urgency ?? "") ? b.urgency! : "Normal",
+      botComplete: true,
+      status: "Open",
+      lastMessageAt: now,
+    });
+    // seed the transcript: bot summary + opener's first detail message
+    await db.insert(chatMessages).values({
+      id: id("cmsg"),
+      ticketId: tid,
+      fromProfileId: "",
+      kind: "bot",
+      body: `Thanks — I've connected you with your account manager. Topic: ${b.topic || "General"} · Urgency: ${b.urgency || "Normal"}. Someone will reply here shortly.`,
+      createdAt: now,
+    });
+    if (b.detail?.trim()) {
+      await db.insert(chatMessages).values({
+        id: id("cmsg"),
+        ticketId: tid,
+        fromProfileId: p.id,
+        kind: "user",
+        body: b.detail.trim().slice(0, 2000),
+        createdAt: new Date(now.getTime() + 1),
+      });
+    }
+    if (kamId)
+      await logNotification({
+        recipientProfileId: kamId,
+        subject: "New help-desk message",
+        body: `${p.companyName || p.fullName || "A partner"} (${p.userCode}) opened a help-desk chat — ${b.topic || "General"}.`,
+      });
+    return c.json({ ok: true, ticketId: tid }, 200);
+  })
+  // Post a message into a ticket. Opener or the assigned KAM/admin only.
+  .post("/support/ticket/:tid/message", requireAuth, async (c) => {
+    const p = c.get("profile")!;
+    const tid = c.req.param("tid");
+    const [t] = await db.select().from(supportTickets).where(eq(supportTickets.id, tid)).limit(1);
+    if (!t) return c.json({ error: "Ticket not found." }, 404);
+    const isOpener = t.openerProfileId === p.id;
+    const isHandler = t.assignedKamId === p.id || p.role === "admin";
+    if (!isOpener && !isHandler) return c.json({ error: "Not your conversation." }, 403);
+    if (t.status === "Closed") return c.json({ error: "This conversation is closed." }, 409);
+    const b = await c.req.json<{ body?: string }>().catch(() => ({}));
+    if (!b.body?.trim()) return c.json({ error: "Empty message." }, 400);
+    const now = new Date();
+    await db.insert(chatMessages).values({
+      id: id("cmsg"),
+      ticketId: tid,
+      fromProfileId: p.id,
+      kind: "user",
+      body: b.body.trim().slice(0, 2000),
+      createdAt: now,
+    });
+    await db.update(supportTickets).set({ lastMessageAt: now }).where(eq(supportTickets.id, tid));
+    // notify the other party
+    const other = isOpener ? t.assignedKamId : t.openerProfileId;
+    if (other)
+      await logNotification({
+        recipientProfileId: other,
+        subject: "New help-desk reply",
+        body: `${p.fullName || p.companyName || "Someone"} replied in your help-desk chat.`,
+      });
+    return c.json({ ok: true }, 200);
+  })
+  // Read a ticket's full transcript (opener OR assigned KAM / admin).
+  .get("/support/ticket/:tid/thread", requireAuth, async (c) => {
+    const p = c.get("profile")!;
+    const tid = c.req.param("tid");
+    const [t] = await db.select().from(supportTickets).where(eq(supportTickets.id, tid)).limit(1);
+    if (!t) return c.json({ error: "Ticket not found." }, 404);
+    const allowed = t.openerProfileId === p.id || t.assignedKamId === p.id || p.role === "admin";
+    if (!allowed) return c.json({ error: "Not your conversation." }, 403);
+    const msgs = await db.select().from(chatMessages).where(eq(chatMessages.ticketId, tid)).orderBy(chatMessages.createdAt);
+    const ids = [...new Set(msgs.map((m) => m.fromProfileId).filter(Boolean))];
+    const ps = ids.length ? await db.select().from(profile).where(inArray(profile.id, ids)) : [];
+    const nameOf = new Map(ps.map((x) => [x.id, { name: x.fullName || x.companyName || "User", role: x.role, code: x.userCode }]));
+    return c.json({ ticket: t, messages: msgs.map((m) => ({ ...m, sender: m.fromProfileId ? nameOf.get(m.fromProfileId) : null })) }, 200);
+  })
+  // KAM/admin: list tickets assigned to me (or all, for admin).
+  .get("/support/queue", requireAuth, requireRole("key_account", "admin"), async (c) => {
+    const p = c.get("profile")!;
+    const rows =
+      p.role === "admin"
+        ? await db.select().from(supportTickets).orderBy(desc(supportTickets.lastMessageAt)).limit(200)
+        : await db.select().from(supportTickets).where(eq(supportTickets.assignedKamId, p.id)).orderBy(desc(supportTickets.lastMessageAt)).limit(200);
+    const ids = [...new Set(rows.map((t) => t.openerProfileId))];
+    const ps = ids.length ? await db.select().from(profile).where(inArray(profile.id, ids)) : [];
+    const nameOf = new Map(ps.map((x) => [x.id, { name: x.companyName || x.fullName || "User", code: x.userCode, phone: x.phone }]));
+    return c.json({ tickets: rows.map((t) => ({ ...t, opener: nameOf.get(t.openerProfileId) ?? null })) }, 200);
   })
 
   // ---- public contact form ----

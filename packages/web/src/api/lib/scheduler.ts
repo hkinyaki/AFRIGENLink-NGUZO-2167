@@ -10,12 +10,14 @@
  * Delivery: in-app notification (always) + email when Resend is configured
  * (handled inside logNotification). No SMS gateway yet.
  */
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, ne, lt } from "drizzle-orm";
 import { db } from "../database";
-import { contracts, extensions } from "../database/schema";
+import { contracts, extensions, supportTickets, chatMessages } from "../database/schema";
 import { logNotification } from "./events";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const TICKET_IDLE_MS = 30 * 60 * 1000; // auto-close help-desk chats after 30 min of silence
+const TICKET_SWEEP_MS = 5 * 60 * 1000; // check every 5 min
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -93,12 +95,41 @@ async function runOverdueSweep() {
   }
 }
 
+// Auto-close help-desk tickets after a window of silence; transcript persists (read-only).
+async function runTicketSweep() {
+  const cutoff = new Date(Date.now() - TICKET_IDLE_MS);
+  const stale = await db
+    .select()
+    .from(supportTickets)
+    .where(and(eq(supportTickets.status, "Open"), lt(supportTickets.lastMessageAt, cutoff)));
+  for (const t of stale) {
+    const now = new Date();
+    await db.update(supportTickets).set({ status: "Closed", closedAt: now }).where(eq(supportTickets.id, t.id));
+    await db.insert(chatMessages).values({
+      id: `cmsg_${now.getTime()}_${Math.random().toString(36).slice(2, 8)}`,
+      ticketId: t.id,
+      fromProfileId: "",
+      kind: "system",
+      body: "This conversation was closed after a period of inactivity. Start a new chat anytime — your manager has the full history.",
+      createdAt: now,
+    });
+  }
+}
+
 async function sweep() {
   try {
     await runReminderSweep();
     await runOverdueSweep();
   } catch (err) {
     console.warn("[scheduler] sweep error:", (err as Error)?.message);
+  }
+}
+
+async function ticketSweep() {
+  try {
+    await runTicketSweep();
+  } catch (err) {
+    console.warn("[scheduler] ticket sweep error:", (err as Error)?.message);
   }
 }
 
@@ -109,5 +140,8 @@ export function startScheduler() {
   // Run shortly after boot, then daily.
   setTimeout(sweep, 5000);
   setInterval(sweep, DAY_MS);
-  console.log("[scheduler] hire-extension reminder + overdue sweep active (daily).");
+  // Faster cadence for help-desk idle auto-close.
+  setTimeout(ticketSweep, 8000);
+  setInterval(ticketSweep, TICKET_SWEEP_MS);
+  console.log("[scheduler] hire-extension + overdue (daily) + help-desk auto-close (5m) active.");
 }

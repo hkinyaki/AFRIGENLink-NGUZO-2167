@@ -51,11 +51,33 @@ export const TenderAPI = {
     authFetch(`/api/contracts/${contractId}/extend/${extId}/pay`, { method: "POST", body: JSON.stringify({ paymentProofUrl }) }),
   getExtensions: (contractId: string) =>
     authFetch(`/api/contracts/${contractId}/extensions`) as Promise<{ extensions: any[] }>,
-  // payout chain
+  // payout chain — 4 gated steps: supplier mark-complete → client sign-off → KAM submit → admin release
+  markComplete: (contractId: string, remarks?: string) => authFetch(`/api/contracts/${contractId}/mark-complete`, { method: "POST", body: JSON.stringify({ remarks }) }),
   signOff: (contractId: string) => authFetch(`/api/contracts/${contractId}/sign-off`, { method: "POST", body: JSON.stringify({}) }),
   getPayout: (contractId: string) => authFetch(`/api/contracts/${contractId}/payout`) as Promise<{ contract: any; bank: any; slipUrl: string; payoutStatus: string; preview: any }>,
   uploadPayoutSlip: (contractId: string, slipKey: string) => authFetch(`/api/contracts/${contractId}/payout-slip`, { method: "POST", body: JSON.stringify({ slipKey }) }),
-  approvePayout: (contractId: string) => authFetch(`/api/contracts/${contractId}/payout-approve`, { method: "POST", body: JSON.stringify({}) }),
+  approveRelease: (contractId: string) => authFetch(`/api/contracts/${contractId}/approve-release`, { method: "POST", body: JSON.stringify({}) }),
+
+  // --- reversals (cancel / refund / shorten) ---
+  reversalRequest: (
+    contractId: string,
+    body: { reason: "Cancel" | "Refund" | "Shorten"; actualDays?: number; note?: string },
+  ) =>
+    authFetch(`/api/contracts/${contractId}/reversal/request`, { method: "POST", body: JSON.stringify(body) }) as Promise<{
+      ok: boolean;
+      id: string;
+      preview: any;
+    }>,
+  reversalReview: (reversalId: string, body: { decision: "Forward" | "Reject"; note?: string }) =>
+    authFetch(`/api/reversals/${reversalId}/review`, { method: "POST", body: JSON.stringify(body) }),
+  reversalApprove: (reversalId: string, reversalSlipKey?: string) =>
+    authFetch(`/api/reversals/${reversalId}/approve`, { method: "POST", body: JSON.stringify({ reversalSlipKey }) }) as Promise<{
+      ok: boolean;
+      result: any;
+    }>,
+  getReversal: (contractId: string) =>
+    authFetch(`/api/contracts/${contractId}/reversal`) as Promise<{ reversals: any[]; slipUrl: string }>,
+  listReversals: () => authFetch("/api/reversals") as Promise<{ reversals: any[] }>,
   // field report review (KAM)
   reviewReport: (inspectionId: string, body: { approve: boolean; declineReason?: string; hardDecline?: boolean }) =>
     authFetch(`/api/inspections/${inspectionId}/review`, { method: "POST", body: JSON.stringify(body) }),
@@ -68,11 +90,13 @@ export const PartsAPI = {
   create: (body: any) => authFetch("/api/parts", { method: "POST", body: JSON.stringify(body) }),
   update: (id: string, body: any) => authFetch(`/api/parts/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   orders: () => authFetch("/api/part-orders") as Promise<{ orders: any[] }>,
-  reportBreakdown: (contractId: string, partId: string, deliverTo?: string) =>
-    authFetch(`/api/contracts/${contractId}/report-breakdown`, { method: "POST", body: JSON.stringify({ partId, deliverTo }) }),
+  reportBreakdown: (contractId: string, partId: string, opts?: { deliverTo?: string; qty?: number; receiverName?: string; receiverDestination?: string }) =>
+    authFetch(`/api/contracts/${contractId}/report-breakdown`, { method: "POST", body: JSON.stringify({ partId, ...(opts ?? {}) }) }),
   route: (orderId: string) => authFetch(`/api/part-orders/${orderId}/route`, { method: "POST", body: JSON.stringify({}) }) as Promise<{ ok: boolean; reason?: string }>,
   dispatch: (orderId: string, body: { courier?: string; waybillRef?: string }) =>
     authFetch(`/api/part-orders/${orderId}/dispatch`, { method: "POST", body: JSON.stringify(body) }),
+  generateReceipt: (orderId: string) =>
+    authFetch(`/api/part-orders/${orderId}/generate-receipt`, { method: "POST", body: JSON.stringify({}) }) as Promise<{ ok: boolean; efdNumber: string }>,
 };
 
 export const StaffAPI = {
@@ -82,6 +106,8 @@ export const StaffAPI = {
   create: (body: { username: string; password?: string; name: string; role: string; phone?: string; managerId?: string; fieldStation?: string }) =>
     authFetch("/api/admin/staff/create", { method: "POST", body: JSON.stringify(body) }) as Promise<{ ok: boolean; profileId: string; username: string; tempPassword: string; userCode: string }>,
   remove: (profileId: string) => authFetch(`/api/admin/staff/${profileId}/delete`, { method: "POST", body: JSON.stringify({}) }),
+  resetPassword: (profileId: string) =>
+    authFetch(`/api/admin/staff/${profileId}/reset-password`, { method: "POST", body: JSON.stringify({}) }) as Promise<{ ok: boolean; tempPassword: string }>,
   requests: () => authFetch("/api/staff-requests") as Promise<{ requests: any[] }>,
   requestAgent: (body: { proposedName: string; proposedEmail: string; proposedPhone?: string }) =>
     authFetch("/api/staff-requests", { method: "POST", body: JSON.stringify(body) }),
@@ -99,13 +125,23 @@ export const ProfileAPI = {
   get: (profileId: string) => authFetch(`/api/profile/${profileId}`) as Promise<{ profile: any }>,
 };
 
+export const SupportAPI = {
+  myTicket: () => authFetch("/api/support/ticket") as Promise<{ ticket: any; messages: any[] }>,
+  open: (body: { topic: string; urgency: string; detail: string }) =>
+    authFetch("/api/support/ticket", { method: "POST", body: JSON.stringify(body) }) as Promise<{ ok: boolean; ticketId: string }>,
+  send: (ticketId: string, body: string) =>
+    authFetch(`/api/support/ticket/${ticketId}/message`, { method: "POST", body: JSON.stringify({ body }) }),
+  queue: () => authFetch("/api/support/queue") as Promise<{ tickets: any[] }>,
+  thread: (ticketId: string) => authFetch(`/api/support/ticket/${ticketId}/thread`) as Promise<{ ticket: any; messages: any[] }>,
+};
+
 export const OnboardingAPI = {
   get: () => authFetch("/api/onboarding") as Promise<{ profile: any; kybDocuments: any[] }>,
   save: (body: Record<string, unknown>) => authFetch("/api/onboarding", { method: "POST", body: JSON.stringify(body) }) as Promise<{ ok: boolean; profile: any }>,
 };
 
 export const AdminAPI = {
-  verificationQueue: () => authFetch("/api/admin/verification-queue") as Promise<{ remote: any[]; siteVisit: any[] }>,
+  verificationQueue: () => authFetch("/api/admin/verification-queue") as Promise<{ remote: any[]; siteVisit: any[]; staff: any[] }>,
   profile: (profileId: string) => authFetch(`/api/admin/profile/${profileId}`) as Promise<{ profile: any; documents: any[]; faceUrl: string; idDocUrl: string; photoUrl: string }>,
   verify: (profileId: string, status: string, notes?: string) =>
     authFetch(`/api/admin/verify/${profileId}`, { method: "POST", body: JSON.stringify({ status, notes }) }),
@@ -124,6 +160,10 @@ export const FieldAPI = {
   inspections: () => authFetch("/api/field/inspections") as Promise<{ inspections: any[] }>,
   revealContact: (inspectionId: string) =>
     authFetch(`/api/field/inspection/${inspectionId}/reveal-contact`, { method: "POST", body: JSON.stringify({}) }) as Promise<{ phone: string; name: string }>,
+  myAccounts: () => authFetch("/api/field/my-accounts") as Promise<{ accounts: any[] }>,
+  partDeliveries: () => authFetch("/api/field/part-deliveries") as Promise<{ deliveries: any[] }>,
+  markPartReceived: (orderId: string) =>
+    authFetch(`/api/field/part-deliveries/${orderId}/received`, { method: "POST", body: JSON.stringify({}) }) as Promise<{ ok: boolean }>,
 };
 
 export const DocAPI = {
@@ -134,6 +174,9 @@ export const DocAPI = {
   save: (body: { tenderId?: string; contractId?: string; kind: string; label?: string; fileKey: string; mimeType?: string }) =>
     authFetch("/api/documents", { method: "POST", body: JSON.stringify(body) }),
   verify: (id: string) => authFetch(`/api/documents/${id}/verify`, { method: "POST", body: JSON.stringify({}) }),
+  // simulated doc-view OTP (logged to admin)
+  otpIssue: (docId: string) => authFetch("/api/chat/doc-otp/issue", { method: "POST", body: JSON.stringify({ docId }) }) as Promise<{ ok: boolean; simulatedCode: string; expiresInSec: number }>,
+  otpVerify: (docId: string, code: string) => authFetch("/api/chat/doc-otp/verify", { method: "POST", body: JSON.stringify({ docId, code }) }) as Promise<{ ok: boolean; url: string | null }>,
 };
 
 /** Presign → PUT directly to storage → return the object key. */
@@ -325,6 +368,48 @@ export function generateInvoicePDF(inv: { party: string; lineItems: { label: str
 }
 
 /**
+ * Spare-part EFD (fiscal) receipt — simulated TRA receipt issued by the parts supplier
+ * once the part is dispatched (payment cleared). EFD number is simulated.
+ */
+export function generateEfdReceiptPDF(o: {
+  efdNumber: string; partName?: string; sku?: string; qty?: number;
+  retailCostTzs?: number; totalCostTzs?: number; contractTitle?: string;
+  receiverName?: string; receiverDestination?: string; courier?: string; waybillRef?: string;
+}) {
+  const doc = new jsPDF();
+  header(doc, "EFD Receipt — Spare Part");
+  let y = 50;
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(NAVY);
+  doc.text(`EFD No. ${o.efdNumber}`, 14, y);
+  y += 9;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor("#333333");
+  const row = (k: string, v: string) => { doc.setFont("helvetica", "bold"); doc.text(k, 14, y); doc.setFont("helvetica", "normal"); doc.text(v, 78, y); y += 7; };
+  row("Part", `${o.partName ?? "Spare part"}${o.sku ? ` (${o.sku})` : ""}`);
+  row("Quantity", String(o.qty ?? 1));
+  if (o.contractTitle) row("Contract", o.contractTitle);
+  if (o.receiverName || o.receiverDestination) row("Deliver to", `${o.receiverName ?? "—"}${o.receiverDestination ? ` @ ${o.receiverDestination}` : ""}`);
+  if (o.courier) row("Courier", `${o.courier}${o.waybillRef ? ` · waybill ${o.waybillRef}` : ""}`);
+  y += 3;
+  doc.setDrawColor("#DDDDDD");
+  doc.line(14, y, 196, y);
+  y += 9;
+  const qty = o.qty ?? 1;
+  const unit = o.retailCostTzs ?? (o.totalCostTzs ? Math.round((o.totalCostTzs) / qty) : 0);
+  const total = o.totalCostTzs ?? unit * qty;
+  doc.text("Unit price", 14, y); doc.text(fmt(unit), 196, y, { align: "right" }); y += 7;
+  doc.text(`Quantity × ${qty}`, 14, y); doc.text(fmt(unit * qty), 196, y, { align: "right" }); y += 7;
+  doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+  doc.text("Total (VAT incl.)", 14, y); doc.text(fmt(total), 196, y, { align: "right" }); y += 14;
+  doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor("#888888");
+  doc.text("Simulated EFD fiscal receipt for demonstration · figures illustrative · no real TRA transmission.", 14, y);
+  doc.save(`Nguzo-EFD-${o.efdNumber}.pdf`);
+}
+
+/**
  * Nguzo escrow funding bank-details sheet (PLACEHOLDER details for now).
  * Downloadable at the TT-upload stage so the client knows where to wire funds.
  */
@@ -376,4 +461,88 @@ export function generateNguzoBankPDF(opts: { contractTitle: string; amountToFund
   );
   doc.text(note, 14, y);
   doc.save(`Nguzo-Bank-Details-${(opts.reference || "funding").replace(/[^a-z0-9]/gi, "-")}.pdf`);
+}
+
+/** Reversal advice note — cancellation / refund / shortened-hire line items. */
+export function generateReversalPDF(opts: {
+  reference: string;
+  contractTitle: string;
+  reason: string; // Cancel | Refund | Shorten
+  clientName?: string;
+  supplierName?: string;
+  lineItems: {
+    client: { label: string; amountTzs: number }[];
+    supplier: { label: string; amountTzs: number }[];
+    nguzo: { label: string; amountTzs: number }[];
+  };
+  clientRefundTzs?: number;
+  status?: string;
+}) {
+  const doc = new jsPDF();
+  header(doc, "Reversal Advice");
+  let y = 50;
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor("#333333");
+  const meta = (k: string, v: string) => {
+    doc.setFont("helvetica", "bold");
+    doc.text(k, 14, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(v, 78, y);
+    y += 7;
+  };
+  meta("Reference", opts.reference);
+  meta("Job / Contract", opts.contractTitle);
+  meta("Type", opts.reason);
+  if (opts.clientName) meta("Client", opts.clientName);
+  if (opts.supplierName) meta("Supplier", opts.supplierName);
+  if (opts.status) meta("Status", opts.status);
+  y += 2;
+  doc.setDrawColor("#DDDDDD");
+  doc.line(14, y, 196, y);
+  y += 9;
+
+  const section = (title: string, items: { label: string; amountTzs: number }[]) => {
+    if (!items.length) return;
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(NAVY);
+    doc.setFontSize(11);
+    doc.text(title, 14, y);
+    y += 7;
+    doc.setFontSize(10);
+    items.forEach((it) => {
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor("#333333");
+      doc.text(it.label, 14, y);
+      const neg = it.amountTzs < 0;
+      doc.setTextColor(neg ? "#a23" : "#333333");
+      doc.text(`${neg ? "− " : ""}${fmt(Math.abs(it.amountTzs))}`, 196, y, { align: "right" });
+      y += 6;
+    });
+    y += 4;
+  };
+  section("Client", opts.lineItems.client);
+  section("Supplier", opts.lineItems.supplier);
+  section("Nguzo Africa", opts.lineItems.nguzo);
+
+  if (typeof opts.clientRefundTzs === "number") {
+    doc.setDrawColor("#DDDDDD");
+    doc.line(14, y, 196, y);
+    y += 8;
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(AMBER);
+    doc.setFontSize(12);
+    doc.text("Net refund to client bank account", 14, y);
+    doc.setTextColor(NAVY);
+    doc.text(fmt(opts.clientRefundTzs), 196, y, { align: "right" });
+    y += 10;
+  }
+  doc.setFontSize(8.5);
+  doc.setTextColor("#888888");
+  const note = doc.splitTextToSize(
+    "Reversal figures are computed by Nguzo Africa's settlement engine and recomputed at approval. Refunds are instructed to the client's registered bank account; funds are tracked end-to-end (not held by Nguzo). Emergency-parts already drawn are deducted before any refund. This advice is for record only pending the licensed escrow/aggregator binding.",
+    182
+  );
+  doc.text(note, 14, y);
+  doc.save(`Nguzo-Reversal-${(opts.reference || "advice").replace(/[^a-z0-9]/gi, "-")}.pdf`);
 }

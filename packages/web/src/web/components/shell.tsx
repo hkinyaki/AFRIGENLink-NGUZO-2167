@@ -1,8 +1,10 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import { Logo } from "./brand";
-import { VerifiedBadge } from "./ui";
+import { VerifiedBadge, ActivityDot } from "./ui";
 import { authClient, clearToken } from "../lib/auth";
+import { api } from "../lib/api";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Me } from "../lib/use-me";
 
 export type NavItem = { label: string; href: string; icon: ReactNode };
@@ -20,6 +22,7 @@ export function AppShell({
 }) {
   const [loc, navigate] = useLocation();
   const [open, setOpen] = useState(false);
+  const isKam = me.profile.role === "key_account";
 
   const roleLabel: Record<string, string> = {
     admin: "Operations / Admin",
@@ -113,18 +116,115 @@ export function AppShell({
           </div>
           <div className="flex items-center gap-3">
             {me.profile.role !== "admin" && <VerifiedBadge status={me.profile.verificationStatus} />}
-            <div className="hidden text-right sm:block">
-              <div className="text-xs font-medium text-slate-100">{me.profile.companyName || me.user.name}</div>
-              <div className="text-[10px] text-slate-500">{me.user.email}</div>
-            </div>
-            <div className="grid h-8 w-8 place-items-center rounded-full bg-navy-700 text-xs font-semibold text-amber-500">
-              {(me.profile.companyName || me.user.name || "A").slice(0, 2).toUpperCase()}
-            </div>
+            <AvatarMenu me={me} isKam={isKam} navigate={navigate} signOut={signOut} />
           </div>
         </header>
         <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>
+  );
+}
+
+function AvatarMenu({
+  me,
+  isKam,
+  navigate,
+  signOut,
+}: {
+  me: Me;
+  isKam: boolean;
+  navigate: (href: string) => void;
+  signOut: () => void;
+}) {
+  const [menu, setMenu] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const qc = useQueryClient();
+  const initials = (me.profile.companyName || me.user.name || "A").slice(0, 2).toUpperCase();
+
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setMenu(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  async function setActivity(status: string) {
+    await api["me"]["activity"].$post({ json: { status } });
+    qc.invalidateQueries({ queryKey: ["me"] });
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setMenu((v) => !v)}
+        className="flex items-center gap-2 rounded-full border border-navy-600 bg-navy-700/60 py-1 pl-1 pr-2 transition hover:border-amber-600/50"
+      >
+        <span className="relative grid h-8 w-8 place-items-center rounded-full bg-navy-700 text-xs font-semibold text-amber-500">
+          {initials}
+          {isKam && (
+            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-navy-800">
+              <ActivityDot status={me.profile.kamActivityStatus} showLabel={false} />
+            </span>
+          )}
+        </span>
+        <svg className="hidden text-slate-400 sm:block" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+
+      {menu && (
+        <div className="absolute right-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-xl border border-navy-600 bg-navy-800 shadow-xl">
+          <div className="border-b border-navy-600 px-4 py-3">
+            <div className="truncate text-sm font-medium text-slate-100">{me.profile.companyName || me.user.name}</div>
+            <div className="truncate text-[11px] text-slate-500">{me.user.email}</div>
+            {me.profile.userCode && (
+              <div className="mt-0.5 font-mono text-[10px] tracking-wide text-amber-500/80">{me.profile.userCode}</div>
+            )}
+          </div>
+
+          {isKam && (
+            <div className="border-b border-navy-600 px-4 py-2.5">
+              <div className="mb-1.5 text-[10px] font-medium uppercase tracking-widest text-slate-500">My status</div>
+              <div className="grid grid-cols-2 gap-1">
+                {(["online", "meeting", "standby", "offline"] as const).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setActivity(s)}
+                    className={`flex items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-[11px] transition ${
+                      (me.profile.kamActivityStatus ?? "offline") === s
+                        ? "bg-navy-700 text-slate-100"
+                        : "text-slate-400 hover:bg-navy-700/50"
+                    }`}
+                  >
+                    <ActivityDot status={s} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="py-1">
+            <MenuItem label="Profile" onClick={() => { navigate("/app/profile"); setMenu(false); }} />
+            <MenuItem label="Settings" onClick={() => { navigate("/app/profile"); setMenu(false); }} />
+            <MenuItem label="Sign out" danger onClick={signOut} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MenuItem({ label, onClick, danger }: { label: string; onClick: () => void; danger?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`block w-full px-4 py-2 text-left text-sm transition hover:bg-navy-700/60 ${
+        danger ? "text-[#F08982]" : "text-slate-300"
+      }`}
+    >
+      {label}
+    </button>
   );
 }
 

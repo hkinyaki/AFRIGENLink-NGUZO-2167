@@ -1,40 +1,74 @@
-# Nguzo Procurement Workflow — BUILT ✅
+# Nguzo Dashboard Touch-Up — progress
 
-Quantity-demand multi-supplier tender + strict staged-approval gate. All verified.
+## DONE & VERIFIED
+- schema.ts: profile(logoKey,kamActivityStatus,lastSeenAt) + supportTickets/chatMessages/chatParticipants + contracts(payout chain fields) + partOrders(qty,receiver*,efd,invoice,receipt). DB PUSHED ✓
+- main.tsx: global 2-min refetchInterval ✓
+- API: /me heartbeat, /me/activity, /me/password, /me/profile, /profile ✓
+- ui.tsx: contractRef() + ActivityDot() + PaymentTracker(4-step) ✓
+- shell.tsx: AvatarMenu dropdown + KAM activity status ✓
+- ProfilePage component + /app/profile route on client/kam/parts (supplier/field/admin keep own) ✓
 
-## Shipped
-- **Schema**: tenders, bids, documents, messages, activityEvents, notifications; contracts extended (tenderId, unitsAwarded, agreedPricePerUnitTzs, agreementSignedUrl, contractStage); inspections link to tender/contract. Pushed to Turso.
-- **Lib**: s3 (presignPut/Get), award (computeAward auto-fill + volume-weighted flat fair), stages (strict gate map + actors), events (logEvent/logNotification/notifyMany).
-- **API** (src/api/index.ts): uploads/presign, documents CRUD+verify, tenders CRUD, bids, confirm-award (spawns 1 contract/supplier + compliance + notifs), 8 staged advance endpoints (each role+order guarded via advanceStage), per-tender messages, timeline, admin tenders/ground-force/notifications. Legacy contract/cargo/parts endpoints untouched.
-- **Web constants**: asset-types.ts (demand types + carrier/machine dropdowns), stage-view.ts (tracker).
-- **UI components**: FileUpload (presign→PUT→save), StageTracker, Timeline, MessageThread. jsPDF agreement + invoice in lib/tenders.ts (replaced window.print popup).
-- **Dashboards rewired**:
-  - client: My Jobs + Post a Job (demand) + Job detail (bids→confirm award, permit+TT upload w/ escrow preview, timeline, messaging, docs).
-  - supplier: Jobs (Open Tenders bid qty+price / My Awards) + Job detail (agreement download+upload, fleet docs, tracker, messaging). Fleet/Vault/Breakdown kept. Old CargoBids removed.
-  - field: Inspections (jobs at MachineDocsUploaded → review docs, inspect, verify→advance). Yard Audits + Border Log kept.
-  - admin: Jobs (pipeline + verify permits / confirm TT / approve execute) + Ground Force + Notifications. Overview/Verify/Team/Ledger kept.
-- **Seed**: 2nd supplier added (supplier2@nguzo.africa). 3 tenders: open w/ 2 bids (auto-fill demo), awarded mid-gate at PermitsUploaded (admin action), executing multi-supplier w/ escrow held. Timeline+messages+notifs seeded.
+### Phase 0 — help desk (COMPLETE ✓ verified end-to-end)
+- supportTickets/chatMessages tables ✓
+- 5 help-desk endpoints (GET/POST /support/ticket, POST message, GET thread, GET queue) ✓
+- HelpDesk widget (client/supplier/parts) + HelpDeskInbox (kam/admin nav+route) ✓
+- demo client now assigned managerId=kam ✓ (fixed routing)
+- VERIFIED curl: client opens → routes to KAM → KAM replies → client reads thread ✓
 
-## Verified
-- Build clean (SKIP_BUILD_PRERENDER=1 vite build). tsc --noEmit clean.
-- All 4 dashboards load, 0 console errors (Playwright).
-- Full gate via curl: award flat 512,500 + 2 contracts; 8 transitions in strict order all 200; wrong-actor blocked; 12 timeline events.
+### Phase 0.5 — payment activation chain (COMPLETE ✓ verified end-to-end)
+- supplier mark-complete ✓ / client sign-off (gate: requires TaskComplete) ✓
+- KAM payout-slip (gate: requires AwaitingKamSubmission) ✓
+- admin approve-release (gate: requires PendingAdminApproval) + runSettlement ✓
+- payout-gateway.ts lib + PayoutGatewayModal (admin) + PaymentTracker x4 ✓
+- VERIFIED curl: all 3 gate-locks 400, full chain → settlement 10% correct (3.52M→client+5%/supplier-5%) ✓
 
-## QA WALK (June 19 2026) — PASSED ✅
-- qa_walk.py drives one fresh job (3 tippers, Dar→Geita) through ALL 10 gate stages, 2 suppliers, mixing real UI clicks + authed API calls (presign uploads). 31/31 functional checks pass.
-- Award auto-filled 3/3 units, flat fair TZS 513,333/unit, 2 contracts spawned. All 8 transitions strict-order 200. Wrong-actor execute → 403. Out-of-order advance → 400. Timeline = 12 events (verified in DB; the script's "1 event" was an API read-timing artifact, not a bug).
-- 14 clean branded screenshots in shots/qa/ (00-auth, 10-16 client, 11/14 supplier, 20-21 field, 30-33 admin) — reuse for PDF + videos.
-- Playwright: pip install --break-system-packages playwright; executable_path=/home/user/.cache/ms-playwright/chromium-1223/chrome-linux64/chrome, args=["--no-sandbox"]. Login: button[type=submit], pass nguzo2026.
+## NEXT — Phases 1-6 (per-dashboard, plan-dashboards.md) — AUDIT what's actually left
+ADMIN -> KAM -> FIELD -> SUPPLIER -> PARTS -> CLIENT
+(many items may already be built — audit each against plan before building)
 
-## NEXT: tutorials (plan approved /home/user/nguzo-tutorials-plan.md)
-1. QA — DONE.
-2. PDF walkthrough — DONE. 11-page A4 branded guide at tutorials/Nguzo-Platform-Guide.pdf (cover→overview 10-stage table→Client→Supplier→Field→Admin→Investor read). Built via tutorials/build_guide.py (HTML→Chrome PDF, Sora/Manrope/IBM Plex Mono, navy #141B2E/amber #D99A2B, real QA screenshots embedded base64). Logo is 1024² square emblem — show as square mark not horizontal band.
-3. 5 narrated video clips (per role + overview pitch). Overview first for approval. Voice = george (default). Reuse capture.py/build_assets.py/build_video.py. → tutorials/clips/
+## FINAL
+- re-seed, tsc, vite build, Playwright 7 roles 0 errors, curl gate checks, push GitHub
 
-## Deferred (per decisions)
-- E-sign (agreement download→sign→re-upload for now). Real email/SMS (notifications Logged). Real courier API. Auto-permit fetch. Single-asset quick-contract folded into demand flow.
+## ENV
+- dev: tmux `srv` Vite :4200, cwd packages/web
+- logins: {client,supplier,supplier2,field,kam,parts,admin}@nguzo.africa / nguzo2026
+- playwright chrome: /usr/bin/google-chrome-stable
+- github: https://github.com/hkinyaki/AFRIGENLink-NGUZO-2167.git
 
-## Env
-- Dev: tmux `srv` Vite :4200, cwd packages/web. Restart: tmux kill-server; tmux new-session -d -s srv -c /home/user/afrigen/packages/web; tmux send-keys -t srv 'exec ./node_modules/.bin/vite --port 4200 --host 2>&1 | tee /tmp/srv.log' Enter
-- Logins: client@/supplier@/supplier2@/field@/admin@nguzo.africa / nguzo2026
-- Re-seed: cd packages/web && bun --env-file=../../.env src/api/demo-seed.ts
+## Phase 3 — FIELD ✅ DONE & VERIFIED (June 29 2026)
+- 2 mandatory machine photos (front+back) block report submit; saved to inspected asset.photos.
+  - schema: inspections.frontPhotoKey/backPhotoKey added + pushed.
+  - api: POST /inspections validates+persists photos, copies to assets.photos.
+  - field.tsx InspectJob: 2 photo pickers (capture=environment), gate on both keys.
+- NEW backend: /field/my-accounts (assigned suppliers, masked contact), /field/part-deliveries (deliverTo=FieldAgent), POST /field/part-deliveries/:id/received.
+- NEW FieldAPI helpers + field.tsx sections: My Accounts, Spare Deliveries, Job History (read-only docs/photos/report status only — no contract/money).
+- VERIFIED: tsc EXIT 0, re-seed, 5 field routes render 0 console errors, 3 new endpoints 200.
+- NEXT: Phase 4 SUPPLIER (supplier.tsx).
+
+## Phase 4 — SUPPLIER ✅ DONE & VERIFIED (June 29 2026)
+- Fleet READ-ONLY: removed Add asset btn + AddAsset modal. Cards show inspection photos (front/back), full status badge, expandable job history, double-entry red-flag ring (asset on >1 live job).
+- /assets?mine=1 enriched per asset: jobs[], liveJobCount, onLiveJob, doubleEntry.
+- Breakdown: added Quantity + Receiver name + Destination fields; spare search "by name or code"; reportBreakdown passes qty/receiver/destination; backend persists + scales totalCost by qty; orders list shows qty/deliverTo/receiver/destination.
+- Ledger already had locked escrow + parts credit + payouts (kept).
+- VERIFIED: tsc EXIT 0, re-seed, 6 supplier routes 0 console errors, fleet AddAsset absent, breakdown new fields render, asset enrichment present.
+- NEXT: Phase 5 PARTS (parts.tsx).
+
+## Phase 5 — PARTS ✅ DONE & VERIFIED (June 29 2026)
+- Inventory: added dedicated "Item code" (SKU) column (mono amber).
+- DispatchCard + History: show qty + receiver + destination.
+- Dispatch now decrements stock by order.qty (was always 1).
+- NEW "Invoices & Receipts" section (/app/billing): "Generate EFD receipt" → backend POST /part-orders/:id/generate-receipt (parts_supplier/admin, gated Dispatched/Delivered, idempotent, simulated EFD number) → "Download receipt" generates simulated EFD fiscal PDF (generateEfdReceiptPDF).
+- NEW "Ledger" section (/app/ledger): orders sorted by date, fulfilled value + dispatch-queue KPIs, EFD column.
+- VERIFIED: tsc EXIT 0, re-seed, 6 parts routes 0 console errors, generate-receipt → 200 + EFD number.
+- NEXT: Phase 6 CLIENT (client.tsx).
+
+## Phase 7 — REVERSALS (cancel/refund/shorten) — IN PROGRESS (June 29 2026)
+- [x] engine.computeReversal + supplierPenaltyPct + daysToStart + stageRank — 22/22 unit tests pass
+- [x] schema: reversals table + contracts.cancelStatus/actualDaysWorked — PUSHED
+- [x] API: request/review/approve + 2 reads — tsc EXIT 0
+- [x] reversal PDF (generateReversalPDF) — tsc EXIT 0
+- [x] TenderAPI helpers (reversalRequest/Review/Approve/getReversal/listReversals)
+- [x] UI: client (ReversalPanel modal), kam (Reversals review queue), admin (Reversals + gateway modal + PDF), supplier (ledger penalty/transfer table). Ledger/timeline entries flow via reversal.* activityEvents.
+- [x] seed demo reversals: Shorten (Requested → KAM queue) + Cancel (KamReviewed → admin queue)
+- [x] verify: tsc EXIT 0, vite build clean (30 routes), curl e2e PASS (request→KAM forward→admin approve, balanced, refund 787500 + retained 650000), smoke 0 console errors (client/kam/admin/supplier incl /app/reversals), visual KAM+admin queues render seeded rows
+- [ ] push github

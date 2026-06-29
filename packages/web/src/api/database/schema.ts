@@ -51,6 +51,45 @@ export const profile = sqliteTable("profile", {
   bankAccountNo: text("bank_account_no").notNull().default(""),
   bankSwift: text("bank_swift").notNull().default(""),
   bankBranch: text("bank_branch").notNull().default(""),
+  // --- KYB company logo (mandatory at onboarding for company accounts) ---
+  logoKey: text("logo_key").notNull().default(""), // S3 key
+  // --- KAM activity / presence ---
+  kamActivityStatus: text("kam_activity_status").notNull().default("offline"), // online | offline | meeting | standby (manual overrides)
+  lastSeenAt: integer("last_seen_at", { mode: "timestamp_ms" }), // heartbeat for auto online/offline
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).notNull(),
+});
+
+/** supportTickets — help-desk live chat (CL/SUP/PS → assigned KAM, 1:1) */
+export const supportTickets = sqliteTable("support_tickets", {
+  id: text("id").primaryKey(),
+  openerProfileId: text("opener_profile_id").notNull(),
+  assignedKamId: text("assigned_kam_id").notNull().default(""), // KAM (or admin fallback) handling it
+  topic: text("topic").notNull().default(""),
+  urgency: text("urgency").notNull().default("Normal"), // Low | Normal | High
+  botComplete: integer("bot_complete", { mode: "boolean" }).notNull().default(false), // bot intake finished → live chat
+  status: text("status").notNull().default("Open"), // Open | Closed
+  lastMessageAt: integer("last_message_at", { mode: "timestamp_ms" }),
+  closedAt: integer("closed_at", { mode: "timestamp_ms" }),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).notNull(),
+});
+
+/** chatMessages — used by BOTH help-desk tickets (ticketId) and contract/tender rooms (tenderId) */
+export const chatMessages = sqliteTable("chat_messages", {
+  id: text("id").primaryKey(),
+  ticketId: text("ticket_id").default(""), // help-desk scope
+  tenderId: text("tender_id").default(""), // contract/tender room scope
+  fromProfileId: text("from_profile_id").notNull().default(""), // "" for bot/system
+  kind: text("kind").notNull().default("user"), // bot | user | system
+  body: text("body").notNull().default(""),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).notNull(),
+});
+
+/** chatParticipants — who is in a contract/tender multi-party room */
+export const chatParticipants = sqliteTable("chat_participants", {
+  id: text("id").primaryKey(),
+  tenderId: text("tender_id").default(""),
+  ticketId: text("ticket_id").default(""),
+  profileId: text("profile_id").notNull(),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).notNull(),
 });
 
@@ -182,13 +221,56 @@ export const contracts = sqliteTable("contracts", {
   removalRight: integer("removal_right").notNull().default(0), // 1 = supplier may recover machine (unpaid extension past end date)
   // --- Payout chain (replaces silent auto-settle) ---
   payoutSlipKey: text("payout_slip_key").notNull().default(""), // KAM-uploaded TT slip to supplier (S3 key)
-  payoutStatus: text("payout_status").notNull().default("None"), // None | AwaitingSupplierApproval | Approved
+  // 4-step activation chain: None → TaskComplete (supplier) → AwaitingKamSubmission (client sign-off)
+  //   → PendingAdminApproval (KAM submits) → AwaitingSupplierApproval (admin releases) → Approved (supplier confirms)
+  payoutStatus: text("payout_status").notNull().default("None"),
+  taskCompletedAt: integer("task_completed_at", { mode: "timestamp_ms" }), // supplier "Mark task complete"
+  completionRemarks: text("completion_remarks").notNull().default(""), // supplier notes at task completion
+  kamSubmittedAt: integer("kam_submitted_at", { mode: "timestamp_ms" }), // KAM "Submit payment request"
+  adminApprovedAt: integer("admin_approved_at", { mode: "timestamp_ms" }), // admin "Approve & release"
   signedOffAt: integer("signed_off_at", { mode: "timestamp_ms" }), // client sign-off timestamp (triggers payout chain)
   // per-supplier sub-stage within the gate:
   // Awarded | AgreementSigned | MachineDocsUploaded | FieldVerified | Executing | SignedOff | FundsDisbursed
   contractStage: text("contract_stage").notNull().default("Awarded"),
   // legacy field kept for existing rows / settlement flow
   milestoneStatus: text("milestone_status").notNull().default("AwaitingEscrowDeposit"),
+  // --- Reversal lifecycle (cancel / refund / shorten) ---
+  cancelStatus: text("cancel_status").notNull().default("None"), // None | Requested | Reversed
+  actualDaysWorked: integer("actual_days_worked"), // set on a shortened contract
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).notNull(),
+});
+
+/** reversals — cancellations, refunds & shortened (cut-off) contract reversals */
+export const reversals = sqliteTable("reversals", {
+  id: text("id").primaryKey(),
+  contractId: text("contract_id").notNull(),
+  tenderId: text("tender_id").notNull().default(""),
+  requestedByProfileId: text("requested_by_profile_id").notNull(),
+  reason: text("reason").notNull().default("Cancel"), // Cancel | Refund | Shorten
+  stageAtRequest: text("stage_at_request").notNull().default(""), // contract/tender stage when requested
+  actualDays: integer("actual_days"), // Shorten only — days actually worked
+  clientNote: text("client_note").notNull().default(""),
+  // workflow: Requested → KamReviewed → AdminApproved → Executed | Rejected
+  status: text("status").notNull().default("Requested"),
+  kamReviewedBy: text("kam_reviewed_by").notNull().default(""),
+  kamNote: text("kam_note").notNull().default(""),
+  adminApprovedBy: text("admin_approved_by").notNull().default(""),
+  rejectReason: text("reject_reason").notNull().default(""),
+  // --- Money snapshot (computed server-side at approval, simulated/tracked) ---
+  clientRefundTzs: integer("client_refund_tzs").notNull().default(0),
+  nguzoFeeKeptTzs: integer("nguzo_fee_kept_tzs").notNull().default(0),
+  nguzoFeeRefundedTzs: integer("nguzo_fee_refunded_tzs").notNull().default(0),
+  supplierPenaltyTzs: integer("supplier_penalty_tzs").notNull().default(0),
+  transferFeeKeptTzs: integer("transfer_fee_kept_tzs").notNull().default(0),
+  partsDeductedTzs: integer("parts_deducted_tzs").notNull().default(0),
+  retainedInEscrowTzs: integer("retained_in_escrow_tzs").notNull().default(0),
+  newContractValueTzs: integer("new_contract_value_tzs").notNull().default(0),
+  lineItems: text("line_items", { mode: "json" })
+    .$type<{ client: { label: string; amountTzs: number }[]; supplier: { label: string; amountTzs: number }[]; nguzo: { label: string; amountTzs: number }[] }>()
+    .default({ client: [], supplier: [], nguzo: [] }),
+  refundDestination: text("refund_destination").notNull().default("bank"), // bank (orchestrator instruction)
+  reversalSlipKey: text("reversal_slip_key").notNull().default(""), // admin-uploaded reversal proof (S3 key)
+  resolvedAt: integer("resolved_at", { mode: "timestamp_ms" }),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).notNull(),
 });
 
@@ -240,6 +322,12 @@ export const partOrders = sqliteTable("part_orders", {
   courier: text("courier").default(""), // Shabiby | Super Feo
   totalCostTzs: integer("total_cost_tzs").notNull().default(0),
   manifestRef: text("manifest_ref").default(""),
+  qty: integer("qty").notNull().default(1),
+  receiverName: text("receiver_name").notNull().default(""),
+  receiverDestination: text("receiver_destination").notNull().default(""),
+  efdNumber: text("efd_number").notNull().default(""), // simulated EFD receipt number
+  invoiceKey: text("invoice_key").notNull().default(""), // auto-generated invoice PDF on request
+  receiptKey: text("receipt_key").notNull().default(""), // EFD receipt PDF after payment cleared
   createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).notNull(),
 });
 
@@ -265,6 +353,8 @@ export const inspections = sqliteTable("inspections", {
   assignedFieldId: text("assigned_field_id").notNull().default(""), // field agent assigned to this inspection (yard)
   supplierId: text("supplier_id").notNull().default(""), // supplier profile being inspected (for scoping/contact)
   vinPhotos: text("vin_photos", { mode: "json" }).$type<string[]>().default([]),
+  frontPhotoKey: text("front_photo_key").notNull().default(""), // mandatory machine front photo (→ asset.photos)
+  backPhotoKey: text("back_photo_key").notNull().default(""), // mandatory machine back photo (→ asset.photos)
   mechanicalNotes: text("mechanical_notes").default(""),
   legitimacySignedOff: integer("legitimacy_signed_off", { mode: "boolean" }).notNull().default(false),
   // --- 2-step field report + KAM review ---

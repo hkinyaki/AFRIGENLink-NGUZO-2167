@@ -7,9 +7,11 @@ import { TenderAPI, generateAgreementPDF, generateInvoicePDF, generateNguzoBankP
 import { api } from "../lib/api";
 import { DEMAND_TYPES, typeOptions, ROUTE_OPTIONS, type DemandType } from "../constants/asset-types";
 import { AppShell, Icons, type NavItem } from "../components/shell";
+import { ProfilePage } from "../components/profile-page";
+import { HelpDesk } from "../components/help-desk";
 import {
   Button, Card, Field, Input, Select, SectionTitle, StatusPill, Empty, KPIStat,
-  StageTracker, Timeline, MessageThread, FileUpload,
+  StageTracker, Timeline, MessageThread, FileUpload, PaymentTracker,
 } from "../components/ui";
 
 const nav: NavItem[] = [
@@ -34,7 +36,7 @@ export default function ClientApp({ me }: { me: Me }) {
       nav={nav}
       ledgerSummary={
         <div className="text-xs text-slate-400">
-          In escrow <span className="ml-1 font-display font-semibold text-amber-500 tnum">{tzs(escrowPreview)}</span>
+          Monitored <span className="ml-1 font-display font-semibold text-amber-500 tnum">{tzs(escrowPreview)}</span>
         </div>
       }
     >
@@ -43,7 +45,9 @@ export default function ClientApp({ me }: { me: Me }) {
         <Route path="/app/new" component={() => <PostJob />} />
         <Route path="/app/ledger" component={() => <Ledger />} />
         <Route path="/app/job/:id">{(p) => <JobDetail id={p.id} me={me} />}</Route>
+        <Route path="/app/profile" component={() => <ProfilePage me={me} />} />
       </Switch>
+      <HelpDesk me={me} />
     </AppShell>
   );
 }
@@ -379,7 +383,7 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
           {/* Client action: TT payment proof = escrow funding */}
           {stage === "PermitsVerified" && (
             <Card className="border-amber-600 p-5">
-              <SectionTitle sub="Permits verified. Upload your TT payment proof — this funds the escrow held by Nguzo.">Your step — Payment proof</SectionTitle>
+              <SectionTitle sub="Permits verified. Upload your TT payment proof — this funds the escrow monitored by Nguzo.">Your step — Payment proof</SectionTitle>
               <div className="mb-3">
                 <Button variant="ghost" onClick={() => generateNguzoBankPDF({ contractTitle: t.title, amountToFundTzs: escrowAmt, reference: t.id })}>
                   Download Nguzo bank details (PDF)
@@ -396,7 +400,7 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
                   <span>Total to fund (escrow preview)</span>
                   <span className="tnum font-display font-semibold text-amber-500">{tzs(escrowAmt)}</span>
                 </div>
-                <p className="text-[11px] text-slate-500">Funds tracked, not held. Suppliers are paid on completion, less their own 5% fee.</p>
+                <p className="text-[11px] text-slate-500">Funds tracked and monitored, not held. Suppliers are paid on completion, less their own 5% fee.</p>
               </div>
               <div className="space-y-3">
                 <FileUpload label="TT payment proof" kind="TTProof" tenderId={id} onUploaded={refresh} buttonLabel="Upload TT proof" />
@@ -413,30 +417,36 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
             <Card className="p-5">
               <div className="mb-2 text-[11px] uppercase tracking-wider text-slate-500">Escrow</div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">{stage === "TTUploaded" ? "Awaiting Nguzo confirmation" : "Held in escrow by Nguzo"}</span>
+                <span className="text-sm text-slate-400">{stage === "TTUploaded" ? "Awaiting Nguzo confirmation" : "Monitored in escrow by Nguzo"}</span>
                 <span className="tnum font-display text-lg font-semibold text-amber-500">{tzs(escrowAmt)}</span>
               </div>
               <p className="mt-2 text-[11px] text-slate-500">Funds are tracked end-to-end (includes 5% client fee) and released to suppliers on completion, less their 5% supplier fee.</p>
             </Card>
           )}
 
-          {/* Client sign-off → opens the payout chain (KAM processes payment) */}
+          {/* Client sign-off → step 2 of the payout chain (after supplier marks task complete) */}
           {stage === "Executing" && (
             <Card className="border-amber-600 p-5">
-              <SectionTitle sub="When the job is complete, sign off each supplier line. Nguzo then processes the payout — no funds move until you sign off.">Sign off & release payment</SectionTitle>
-              <div className="space-y-2">
+              <SectionTitle sub="Once the supplier marks the job complete, sign off to release payment. Your manager then submits it and an admin approves the release — funds stay tracked, not moved, until you sign off.">Sign off & release payment</SectionTitle>
+              <div className="space-y-3">
                 {contracts.map((c: any) => {
                   const done = c.milestoneStatus === "FundsDisbursed";
-                  const awaiting = c.payoutStatus === "AwaitingSupplierApproval";
+                  const canSign = c.payoutStatus === "TaskComplete";
+                  const inProgress = ["AwaitingKamSubmission", "PendingAdminApproval"].includes(c.payoutStatus);
                   return (
-                    <div key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-navy-600 bg-navy-900 p-3 text-sm">
-                      <div>
-                        <div className="text-slate-100">{c.supplierName} · {c.unitsAwarded} unit{c.unitsAwarded > 1 ? "s" : ""}</div>
-                        <div className="text-[11px] text-slate-500">{tzs(c.contractValueTzs || c.agreedPricePerUnitTzs * c.unitsAwarded)} value</div>
+                    <div key={c.id} className="rounded-md border border-navy-600 bg-navy-900 p-3 text-sm">
+                      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <div className="text-slate-100">{c.supplierName} · {c.unitsAwarded} unit{c.unitsAwarded > 1 ? "s" : ""}</div>
+                          <div className="text-[11px] text-slate-500">{tzs(c.contractValueTzs || c.agreedPricePerUnitTzs * c.unitsAwarded)} value</div>
+                        </div>
+                        {done ? <span className="text-xs text-good">Settled</span>
+                          : canSign ? <Button variant="amber" disabled={signOff.isPending} onClick={() => signOff.mutate(c.id)}>{signOff.isPending ? "Signing…" : "Sign off & approve payment"}</Button>
+                          : inProgress ? <span className="text-xs text-amber-500">Payout in progress</span>
+                          : <span className="text-xs text-slate-500">Waiting for supplier to mark task complete</span>}
                       </div>
-                      {done ? <span className="text-xs text-good">Settled</span>
-                        : awaiting ? <span className="text-xs text-amber-500">Payout in progress</span>
-                        : <Button variant="amber" disabled={signOff.isPending} onClick={() => signOff.mutate(c.id)}>{signOff.isPending ? "Signing…" : "Sign off"}</Button>}
+                      <PaymentTracker payoutStatus={c.payoutStatus} />
+                      {canSign && c.completionRemarks && <div className="mt-2 rounded border border-navy-600 bg-navy-800 p-2 text-[11px] text-slate-400">Supplier note: {c.completionRemarks}</div>}
                     </div>
                   );
                 })}
@@ -448,6 +458,11 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
           {/* Machinery hire — extension panel (active execution only) */}
           {isMachinery && (stage === "TTConfirmed" || stage === "Executing") && (
             <ExtensionPanel contracts={contracts} onDone={refresh} />
+          )}
+
+          {/* Cancel / refund / shorten a hire */}
+          {contracts.length > 0 && stage !== "Bidding" && (
+            <ReversalPanel contracts={contracts} tender={t} isMachinery={isMachinery} onDone={refresh} />
           )}
 
           {/* Documents */}
@@ -485,6 +500,132 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
           </Card>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Cancel / refund / shorten a contract — request, preview figures, route to KAM. */
+function ReversalPanel({ contracts, tender, isMachinery, onDone }: { contracts: any[]; tender: any; isMachinery: boolean; onDone: () => void }) {
+  const active = contracts.filter((c) => c.milestoneStatus !== "FundsDisbursed" && c.status !== "Cancelled");
+  if (active.length === 0) return null;
+  return (
+    <Card className="p-5">
+      <SectionTitle sub="Cancel a contract, request a refund, or end a machinery hire early. Your manager reviews the figures, then an admin approves and instructs the refund to your bank. Funds are tracked, not held.">
+        Cancel / refund a contract
+      </SectionTitle>
+      <div className="space-y-3">
+        {active.map((c) => (
+          <ReversalRow key={c.id} contract={c} tender={tender} isMachinery={isMachinery} onDone={onDone} />
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function ReversalRow({ contract, tender, isMachinery, onDone }: { contract: any; tender: any; isMachinery: boolean; onDone: () => void }) {
+  const [reason, setReason] = useState<"Cancel" | "Refund" | "Shorten">(isMachinery ? "Shorten" : "Cancel");
+  const [actualDays, setActualDays] = useState(1);
+  const [note, setNote] = useState("");
+  const [preview, setPreview] = useState<any>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [done, setDone] = useState(false);
+
+  const existing = contract.cancelStatus && contract.cancelStatus !== "None";
+
+  async function submit() {
+    setBusy(true);
+    setErr("");
+    try {
+      const r = await TenderAPI.reversalRequest(contract.id, {
+        reason,
+        actualDays: reason === "Shorten" ? actualDays : undefined,
+        note,
+      });
+      setPreview(r.preview);
+      setDone(true);
+      onDone();
+    } catch (e: any) {
+      setErr(e?.message || "Could not submit the request.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (existing && !done) {
+    return (
+      <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4 text-sm">
+        <div className="flex items-center justify-between">
+          <span className="text-slate-300">{contract.title || tender.title}</span>
+          <span className="text-[11px] uppercase tracking-wider text-amber-500">
+            {contract.cancelStatus === "Reversed" ? "Reversed" : "Reversal in progress"}
+          </span>
+        </div>
+        <p className="mt-1 text-xs text-slate-500">
+          {contract.cancelStatus === "Reversed"
+            ? "This contract has been reversed. See the ledger for the settled figures."
+            : "Your request is with your manager / admin for review."}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
+      <div className="mb-3 text-sm text-slate-300">{contract.title || tender.title}</div>
+      {done && preview ? (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/[0.06] p-3 text-sm">
+          <p className="font-medium text-amber-400">Request submitted</p>
+          <p className="mt-1 text-xs text-slate-400">
+            Estimated refund to your bank:{" "}
+            <span className="font-semibold text-slate-200">TZS {Number(preview.clientRefundTzs || 0).toLocaleString()}</span>{" "}
+            (subject to admin approval). Your manager will review it next.
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="text-xs text-slate-400">
+            Type
+            <select
+              className="mt-1 w-full rounded-lg border border-white/10 bg-navy-900 px-3 py-2 text-sm text-slate-200"
+              value={reason}
+              onChange={(e) => setReason(e.target.value as any)}
+            >
+              <option value="Cancel">Cancel the contract</option>
+              <option value="Refund">Request a refund</option>
+              {isMachinery && <option value="Shorten">End the hire early (shorten)</option>}
+            </select>
+          </label>
+          {reason === "Shorten" && (
+            <label className="text-xs text-slate-400">
+              Days actually worked
+              <input
+                type="number"
+                min={0}
+                className="mt-1 w-full rounded-lg border border-white/10 bg-navy-900 px-3 py-2 text-sm text-slate-200"
+                value={actualDays}
+                onChange={(e) => setActualDays(Math.max(0, Number(e.target.value)))}
+              />
+            </label>
+          )}
+          <label className="text-xs text-slate-400 sm:col-span-2">
+            Note (optional)
+            <textarea
+              className="mt-1 w-full rounded-lg border border-white/10 bg-navy-900 px-3 py-2 text-sm text-slate-200"
+              rows={2}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Tell your manager why…"
+            />
+          </label>
+          <div className="sm:col-span-2 flex items-center gap-3">
+            <Button variant="amber" disabled={busy} onClick={submit}>
+              {busy ? "Submitting…" : "Request reversal"}
+            </Button>
+            {err && <span className="text-xs text-bad">{err}</span>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

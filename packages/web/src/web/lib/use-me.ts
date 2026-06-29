@@ -26,6 +26,9 @@ export type Me = {
     bankAccountNo?: string | null;
     bankSwift?: string | null;
     bankBranch?: string | null;
+    logoKey?: string | null;
+    kamActivityStatus?: string | null;
+    lastSeenAt?: number | null;
   };
 };
 

@@ -6,9 +6,10 @@ import { tzs } from "../lib/format";
 import type { Me } from "../lib/use-me";
 import { TenderAPI, PartsAPI, generateAgreementPDF, generateInvoicePDF } from "../lib/tenders";
 import { AppShell, Icons, type NavItem } from "../components/shell";
+import { HelpDesk } from "../components/help-desk";
 import {
   Button, Card, Field, Input, Select, SectionTitle, StatusPill, Empty, KPIStat,
-  StageTracker, Timeline, MessageThread, FileUpload, ManagerCard,
+  StageTracker, Timeline, MessageThread, FileUpload, ManagerCard, PaymentTracker,
 } from "../components/ui";
 
 const nav: NavItem[] = [
@@ -44,6 +45,7 @@ export default function SupplierApp({ me }: { me: Me }) {
         <Route path="/app/breakdown" component={() => <Breakdown me={me} />} />
         <Route path="/app/profile" component={() => <ProfileBank me={me} />} />
       </Switch>
+      <HelpDesk me={me} />
     </AppShell>
   );
 }
@@ -305,119 +307,96 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
 const ASSET_TYPES = ["Excavator", "Prime Mover", "Tipper Truck", "Bulldozer", "Cargo Truck"];
 
 function Fleet() {
-  const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
   const q = useQuery({
     queryKey: ["my-assets"],
     queryFn: async () => (await (await api.assets.$get({ query: { mine: "1" } })).json()).assets,
+    refetchInterval: 120000,
   });
+  const [openId, setOpenId] = useState("");
   const rows = q.data ?? [];
 
   return (
     <div className="p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <SectionTitle sub="List your heavy assets — engine serials, day rates, yard location.">Fleet Configuration</SectionTitle>
-        <Button variant="amber" onClick={() => setOpen(true)}>
-          + Add asset
-        </Button>
+      <div className="mb-4">
+        <SectionTitle sub="Your fleet is built and verified by Nguzo field agents during inspection — you cannot edit or remove assets here. Each machine shows its live status and job history.">My Fleet</SectionTitle>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         <KPIStat label="Assets" value={String(rows.length)} />
-        <KPIStat label="Available" value={String(rows.filter((r) => r.operationalStatus === "Available").length)} accent="good" />
-        <KPIStat label="Active" value={String(rows.filter((r) => r.operationalStatus === "Active").length)} />
-        <KPIStat label="Breakdown" value={String(rows.filter((r) => r.operationalStatus === "Breakdown").length)} accent="amber" />
+        <KPIStat label="Available" value={String(rows.filter((r: any) => r.operationalStatus === "Available").length)} accent="good" />
+        <KPIStat label="On live job" value={String(rows.filter((r: any) => r.onLiveJob).length)} />
+        <KPIStat label="Breakdown" value={String(rows.filter((r: any) => r.operationalStatus === "Breakdown").length)} accent="amber" />
       </div>
 
       {rows.length === 0 ? (
-        <Empty>No assets listed. Add your first machine to start receiving contracts.</Empty>
+        <Empty>No assets yet. Your fleet appears here once a Nguzo field agent inspects and verifies a machine.</Empty>
       ) : (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {rows.map((a) => (
-            <Card key={a.id} className="p-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="font-display font-semibold text-slate-100">{a.assetType}</div>
-                  <div className="text-sm text-slate-400">
-                    {a.manufacturer} {a.model}
+          {rows.map((a: any) => {
+            const photos: string[] = a.photos ?? [];
+            return (
+              <Card key={a.id} className={`overflow-hidden p-0 ${a.doubleEntry ? "ring-1 ring-bad" : ""}`}>
+                {photos.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-px bg-navy-600">
+                    {photos.slice(0, 2).map((src, i) => (
+                      <img key={i} src={src} alt={`${a.assetType} ${i === 0 ? "front" : "back"}`} className="aspect-video w-full object-cover" />
+                    ))}
                   </div>
+                ) : (
+                  <div className="grid aspect-video place-items-center bg-navy-900 text-xs text-slate-600">No inspection photos yet</div>
+                )}
+                <div className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="font-display font-semibold text-slate-100">{a.assetType}</div>
+                      <div className="text-sm text-slate-400">{a.manufacturer} {a.model}</div>
+                    </div>
+                    <StatusPill status={a.operationalStatus} />
+                  </div>
+                  {a.doubleEntry && (
+                    <div className="mt-2 flex items-center gap-2 rounded-md border border-bad/50 bg-bad/10 px-2 py-1.5 text-[11px] text-bad">
+                      {Icons.alert}<span>Double-entry: committed to {a.liveJobCount} live jobs at once.</span>
+                    </div>
+                  )}
+                  <div className="mt-3 space-y-1 text-xs text-slate-500">
+                    <div>Engine: {a.engineSerial || "—"}</div>
+                    <div>VIN/Chassis: {a.vinChassis || "—"}</div>
+                    <div>Yard: {a.yardLocation || "—"}</div>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between border-t border-navy-600 pt-3">
+                    <button className="text-xs text-amber-500 hover:underline" onClick={() => setOpenId(openId === a.id ? "" : a.id)}>
+                      {openId === a.id ? "Hide" : "View"} jobs ({a.jobs?.length ?? 0})
+                    </button>
+                    <span className="font-display font-semibold text-slate-100 tnum">{tzs(a.dayRateTzs)}/day</span>
+                  </div>
+                  {openId === a.id && (
+                    <div className="mt-2 space-y-1.5 border-t border-navy-600 pt-2">
+                      {(a.jobs ?? []).length === 0 ? (
+                        <p className="text-[11px] text-slate-500">No jobs yet.</p>
+                      ) : (a.jobs as any[]).map((j) => (
+                        <div key={j.id} className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-300">{j.title || "Job"}{j.destination ? ` → ${j.destination}` : ""}</span>
+                          <StatusPill status={j.status} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <StatusPill status={a.operationalStatus} />
-              </div>
-              <div className="mt-3 space-y-1 text-xs text-slate-500">
-                <div>Engine: {a.engineSerial || "—"}</div>
-                <div>VIN/Chassis: {a.vinChassis || "—"}</div>
-                <div>Yard: {a.yardLocation || "—"}</div>
-              </div>
-              <div className="mt-3 border-t border-navy-600 pt-3 text-right font-display font-semibold text-slate-100 tnum">
-                {tzs(a.dayRateTzs)}/day
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       )}
-
-      {open && <AddAsset onClose={() => setOpen(false)} onSaved={() => { qc.invalidateQueries({ queryKey: ["my-assets"] }); setOpen(false); }} />}
-    </div>
-  );
-}
-
-function AddAsset({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const [f, setF] = useState({ assetType: "Excavator", manufacturer: "", model: "", vinChassis: "", engineSerial: "", dayRateTzs: 0, yardLocation: "" });
-  const save = useMutation({
-    mutationFn: async () => api.assets.$post({ json: f }),
-    onSuccess: onSaved,
-  });
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <Card className="relative z-10 w-full max-w-lg p-6 rise">
-        <SectionTitle>Add Asset</SectionTitle>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Type">
-            <Select value={f.assetType} onChange={(e) => setF({ ...f, assetType: e.target.value })}>
-              {ASSET_TYPES.map((t) => (
-                <option key={t}>{t}</option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Manufacturer">
-            <Input value={f.manufacturer} onChange={(e) => setF({ ...f, manufacturer: e.target.value })} placeholder="Caterpillar / Volvo" />
-          </Field>
-          <Field label="Model">
-            <Input value={f.model} onChange={(e) => setF({ ...f, model: e.target.value })} placeholder="320D / FH16" />
-          </Field>
-          <Field label="Day rate (TZS)">
-            <Input type="number" value={f.dayRateTzs || ""} onChange={(e) => setF({ ...f, dayRateTzs: Number(e.target.value) })} />
-          </Field>
-          <Field label="Engine serial">
-            <Input value={f.engineSerial} onChange={(e) => setF({ ...f, engineSerial: e.target.value })} />
-          </Field>
-          <Field label="VIN / Chassis">
-            <Input value={f.vinChassis} onChange={(e) => setF({ ...f, vinChassis: e.target.value })} />
-          </Field>
-          <div className="col-span-2">
-            <Field label="Yard location">
-              <Input value={f.yardLocation} onChange={(e) => setF({ ...f, yardLocation: e.target.value })} placeholder="Vingunguti yard, Dar" />
-            </Field>
-          </div>
-        </div>
-        <div className="mt-5 flex justify-end gap-2">
-          <Button variant="ghost" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button variant="amber" disabled={save.isPending} onClick={() => save.mutate()}>
-            Save asset
-          </Button>
-        </div>
-      </Card>
     </div>
   );
 }
 
 function Ledger() {
   const q = useQuery({ queryKey: ["contracts"], queryFn: async () => (await (await api.contracts.$get()).json()).contracts });
+  const revQ = useQuery({ queryKey: ["supplier-reversals"], queryFn: () => TenderAPI.listReversals().then((r) => r.reversals), refetchInterval: 10000 });
   const rows = q.data ?? [];
+  const reversals = (revQ.data ?? []).filter((r) => r.status === "Executed" && (r.supplierPenaltyTzs || r.transferFeeKeptTzs));
+  const titleFor = (cid: string) => rows.find((c) => c.id === cid)?.title || cid;
   const paidOut = rows.filter((r) => r.milestoneStatus === "FundsDisbursed").reduce((s, r) => s + (r.supplierPayoutTzs || 0), 0);
   const creditUsed = rows.reduce((s, r) => s + (r.emergencyCreditDeductedTzs || 0), 0);
   const lockedEscrow = rows.filter((r) => r.milestoneStatus !== "FundsDisbursed").reduce((s, r) => s + (r.totalEscrowBalanceTzs || 0), 0);
@@ -469,48 +448,82 @@ function Ledger() {
           </table>
         </Card>
       )}
-    </div>
-  );
-}
-
-/** TT-slip review: confirm payment received once Nguzo (KAM) uploads the slip. */
-function Payments() {
-  const qc = useQueryClient();
-  const q = useQuery({ queryKey: ["contracts"], queryFn: async () => (await (await api.contracts.$get()).json()).contracts as any[], refetchInterval: 5000 });
-  const rows = (q.data ?? []).filter((c) => c.payoutStatus === "AwaitingSupplierApproval");
-  return (
-    <div className="p-6">
-      <SectionTitle sub="When Nguzo uploads your payment slip, review it and confirm receipt to lock the settlement.">Payments</SectionTitle>
-      {rows.length === 0 ? <Empty>No payments to confirm.</Empty> : (
-        <div className="space-y-3">
-          {rows.map((c) => <PayoutReview key={c.id} contract={c} onDone={() => qc.invalidateQueries({ queryKey: ["contracts"] })} />)}
+      {reversals.length > 0 && (
+        <div className="mt-8">
+          <div className="mb-2 text-[11px] uppercase tracking-wider text-slate-500">Cancellations & shortened hires</div>
+          <Card className="overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-navy-600 text-left text-[11px] uppercase tracking-wider text-slate-500">
+                  <th className="px-4 py-3">Contract</th><th className="px-4 py-3">Type</th>
+                  <th className="px-4 py-3 text-right">Penalty kept</th><th className="px-4 py-3 text-right">Transfer kept</th>
+                  <th className="px-4 py-3 text-right">Net to you</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reversals.map((r) => (
+                  <tr key={r.id} className="border-b border-navy-700">
+                    <td className="px-4 py-3 text-slate-100">{titleFor(r.contractId)}</td>
+                    <td className="px-4 py-3 text-slate-300">{r.reason}</td>
+                    <td className="px-4 py-3 text-right tnum text-slate-200">{r.supplierPenaltyTzs ? tzs(r.supplierPenaltyTzs) : "—"}</td>
+                    <td className="px-4 py-3 text-right tnum text-slate-200">{r.transferFeeKeptTzs ? tzs(r.transferFeeKeptTzs) : "—"}</td>
+                    <td className="px-4 py-3 text-right tnum text-good">{tzs((r.supplierPenaltyTzs || 0) + (r.transferFeeKeptTzs || 0))}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
         </div>
       )}
     </div>
   );
 }
 
-function PayoutReview({ contract, onDone }: { contract: any; onDone: () => void }) {
-  const q = useQuery({ queryKey: ["payout", contract.id], queryFn: () => TenderAPI.getPayout(contract.id), refetchInterval: 5000 });
-  const approve = useMutation({ mutationFn: () => TenderAPI.approvePayout(contract.id), onSuccess: onDone });
-  const data = q.data;
+/** Supplier payment desk: mark a finished job complete (step 1), then track the release chain. */
+function Payments() {
+  const qc = useQueryClient();
+  const q = useQuery({ queryKey: ["contracts"], queryFn: async () => (await (await api.contracts.$get()).json()).contracts as any[], refetchInterval: 5000 });
+  const rows = (q.data ?? []).filter((c) =>
+    ["ActiveTransit", "BreakdownIncident"].includes(c.milestoneStatus) ||
+    (c.payoutStatus && c.payoutStatus !== "None")
+  );
+  return (
+    <div className="p-6">
+      <SectionTitle sub="When you finish a job, mark it complete. The client signs off, your Key Account Manager submits the payment, and an admin approves the release — you can follow every step here.">Payments</SectionTitle>
+      {rows.length === 0 ? <Empty>No active jobs or payments yet.</Empty> : (
+        <div className="space-y-3">
+          {rows.map((c) => <SupplierPayout key={c.id} contract={c} onDone={() => qc.invalidateQueries({ queryKey: ["contracts"] })} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SupplierPayout({ contract, onDone }: { contract: any; onDone: () => void }) {
+  const [remarks, setRemarks] = useState("");
+  const complete = useMutation({ mutationFn: () => TenderAPI.markComplete(contract.id, remarks), onSuccess: onDone });
+  const canComplete = (!contract.payoutStatus || contract.payoutStatus === "None") && ["ActiveTransit", "BreakdownIncident"].includes(contract.milestoneStatus);
+  const net = contract.supplierPayoutTzs ?? Math.round((contract.contractValueTzs || contract.totalEscrowBalanceTzs || 0) * 0.95);
   return (
     <Card className="p-5">
       <div className="mb-2 flex items-center justify-between">
         <div className="font-medium text-slate-100">{contract.title}</div>
-        <StatusPill status={data?.slipUrl ? "Pending" : "Requested"} />
+        <StatusPill status={contract.payoutStatus === "Approved" ? "Settled" : contract.payoutStatus === "None" || !contract.payoutStatus ? "In progress" : "Payout in progress"} />
       </div>
-      <div className="mb-3 text-sm text-slate-400">Net payout: <span className="tnum text-good">{tzs(data?.preview?.supplierPayoutTzs ?? contract.supplierPayoutTzs ?? 0)}</span></div>
-      {data?.slipUrl ? (
-        <div className="space-y-3">
-          <a href={data.slipUrl} target="_blank" rel="noreferrer" className="text-sm text-amber-500 hover:underline">View payment slip ↗</a>
-          <div>
-            <Button variant="amber" disabled={approve.isPending} onClick={() => approve.mutate()}>{approve.isPending ? "Confirming…" : "Confirm payment received"}</Button>
-          </div>
-          {approve.error && <p className="text-xs text-bad">{(approve.error as Error).message}</p>}
+      <div className="mb-3 text-sm text-slate-400">Net payout (after 5% fee): <span className="tnum text-good">{tzs(net)}</span></div>
+      <div className="mb-3"><PaymentTracker payoutStatus={contract.payoutStatus} /></div>
+      {canComplete ? (
+        <div className="space-y-2 rounded-md border border-amber-600/40 bg-amber-bg/40 p-3">
+          <Field label="Completion remarks (optional)">
+            <Input value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder="e.g. Delivered on site, handover signed." />
+          </Field>
+          <Button variant="amber" disabled={complete.isPending} onClick={() => complete.mutate()}>{complete.isPending ? "Submitting…" : "Mark task complete"}</Button>
+          {complete.error && <p className="text-xs text-bad">{(complete.error as Error).message}</p>}
         </div>
+      ) : contract.payoutStatus === "Approved" ? (
+        <p className="text-sm text-good">Payment released and settled.</p>
       ) : (
-        <p className="text-sm text-slate-500">Awaiting Nguzo to upload the payment slip.</p>
+        <p className="text-sm text-slate-500">Task marked complete — awaiting the client, your manager and admin to release payment.</p>
       )}
     </Card>
   );
@@ -522,13 +535,16 @@ function Breakdown({ me }: { me: Me }) {
   const [contractId, setContractId] = useState("");
   const [query, setQuery] = useState("");
   const [deliverTo, setDeliverTo] = useState<"MachineSupplier" | "FieldAgent">("MachineSupplier");
+  const [qty, setQty] = useState(1);
+  const [receiverName, setReceiverName] = useState("");
+  const [receiverDestination, setReceiverDestination] = useState("");
 
   const contracts = useQuery({ queryKey: ["contracts"], queryFn: async () => (await (await api.contracts.$get()).json()).contracts });
   const parts = useQuery({ queryKey: ["parts-search", query], queryFn: () => PartsAPI.search(query).then((r) => r.parts) });
   const orders = useQuery({ queryKey: ["my-part-orders"], queryFn: () => PartsAPI.orders().then((r) => r.orders), refetchInterval: 5000 });
   const request = useMutation({
-    mutationFn: (partId: string) => PartsAPI.reportBreakdown(contractId, partId, deliverTo),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["my-part-orders"] }); qc.invalidateQueries({ queryKey: ["contracts"] }); },
+    mutationFn: (partId: string) => PartsAPI.reportBreakdown(contractId, partId, { deliverTo, qty, receiverName, receiverDestination }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["my-part-orders"] }); qc.invalidateQueries({ queryKey: ["contracts"] }); setReceiverName(""); setReceiverDestination(""); setQty(1); },
   });
 
   const activeContracts = (contracts.data ?? []).filter((c) => ["ActiveTransit", "BreakdownIncident"].includes(c.milestoneStatus));
@@ -557,13 +573,22 @@ function Breakdown({ me }: { me: Me }) {
                 <div className="flex justify-between text-slate-400"><span>Escrow available for parts</span><span className="tnum text-amber-500">{tzs(escrowAvail)}</span></div>
               </div>
             )}
-            <Field label="Deliver to">
-              <Select value={deliverTo} onChange={(e) => setDeliverTo(e.target.value as any)}>
-                <option value="MachineSupplier">My team (machine supplier)</option>
-                <option value="FieldAgent">Field agent on site</option>
-              </Select>
-            </Field>
-            <Field label="Search spare part"><Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="e.g. turbocharger, 320D…" /></Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Deliver to">
+                <Select value={deliverTo} onChange={(e) => setDeliverTo(e.target.value as any)}>
+                  <option value="MachineSupplier">My team (machine supplier)</option>
+                  <option value="FieldAgent">Field agent on site</option>
+                </Select>
+              </Field>
+              <Field label="Quantity">
+                <Input type="number" min={1} value={qty || ""} onChange={(e) => setQty(Math.max(1, Number(e.target.value)))} />
+              </Field>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Receiver name"><Input value={receiverName} onChange={(e) => setReceiverName(e.target.value)} placeholder="Who receives on site" /></Field>
+              <Field label="Destination"><Input value={receiverDestination} onChange={(e) => setReceiverDestination(e.target.value)} placeholder="Site / yard / town" /></Field>
+            </div>
+            <Field label="Search spare part by name or code"><Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="e.g. turbocharger, 320D, SKU…" /></Field>
             <div className="space-y-2">
               {inStock.length === 0 ? <p className="text-sm text-slate-500">No matching in-stock spares.</p> : inStock.map((p: any) => {
                 const total = p.retailCostTzs + p.logisticsHandlingFeeTzs;
@@ -594,10 +619,14 @@ function Breakdown({ me }: { me: Me }) {
                     <StatusPill status={o.status} />
                   </div>
                   <div className="mt-1 text-[11px] text-slate-500">
-                    {o.contractTitle}
+                    Qty {o.qty ?? 1}{o.contractTitle ? ` · ${o.contractTitle}` : ""}
+                    {o.deliverTo === "FieldAgent" ? " · to field agent" : " · to my team"}
                     {o.status === "Rejected" && o.rejectReason ? ` · ${o.rejectReason}` : ""}
                     {o.waybillRef ? ` · ${o.courier} waybill ${o.waybillRef}` : ""}
                   </div>
+                  {(o.receiverName || o.receiverDestination) && (
+                    <div className="mt-0.5 text-[11px] text-slate-500">Deliver to {o.receiverName || "—"}{o.receiverDestination ? ` @ ${o.receiverDestination}` : ""}</div>
+                  )}
                 </div>
               ))}
             </div>

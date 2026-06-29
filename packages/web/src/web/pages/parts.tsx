@@ -2,15 +2,20 @@ import { Route, Switch } from "wouter";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { tzs } from "../lib/format";
+import { shortDate } from "../lib/format";
 import type { Me } from "../lib/use-me";
-import { PartsAPI } from "../lib/tenders";
+import { PartsAPI, generateEfdReceiptPDF } from "../lib/tenders";
 import { AppShell, Icons, type NavItem } from "../components/shell";
+import { ProfilePage } from "../components/profile-page";
+import { HelpDesk } from "../components/help-desk";
 import { Button, Card, Field, Input, SectionTitle, StatusPill, Empty, KPIStat, ManagerCard } from "../components/ui";
 
 const nav: NavItem[] = [
   { label: "POS / Dispatch", href: "/app", icon: Icons.box },
   { label: "Inventory", href: "/app/inventory", icon: Icons.grid },
   { label: "Order History", href: "/app/history", icon: Icons.file },
+  { label: "Invoices & Receipts", href: "/app/billing", icon: Icons.file },
+  { label: "Ledger", href: "/app/ledger", icon: Icons.grid },
 ];
 
 export default function PartsApp({ me }: { me: Me }) {
@@ -20,7 +25,11 @@ export default function PartsApp({ me }: { me: Me }) {
         <Route path="/app" component={() => <POS me={me} />} />
         <Route path="/app/inventory" component={() => <Inventory />} />
         <Route path="/app/history" component={() => <History />} />
+        <Route path="/app/billing" component={() => <Billing />} />
+        <Route path="/app/ledger" component={() => <PartsLedger />} />
+        <Route path="/app/profile" component={() => <ProfilePage me={me} />} />
       </Switch>
+      <HelpDesk me={me} />
     </AppShell>
   );
 }
@@ -50,8 +59,9 @@ function DispatchCard({ order, onDone }: { order: any; onDone: () => void }) {
     <Card className="p-4">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <div className="font-medium text-slate-100">{order.part?.partName ?? "Spare part"}</div>
-          <div className="text-xs text-slate-500">{order.contractTitle} · deliver to {order.deliverTo === "FieldAgent" ? "field agent" : "machine supplier"} · {tzs(order.part?.retailCostTzs ?? order.retailCostTzs)}</div>
+          <div className="font-medium text-slate-100">{order.part?.partName ?? "Spare part"} {order.part?.sku && <span className="ml-1 text-[11px] text-slate-500">{order.part.sku}</span>}</div>
+          <div className="text-xs text-slate-500">Qty {order.qty ?? 1} · {order.contractTitle} · deliver to {order.deliverTo === "FieldAgent" ? "field agent" : "machine supplier"} · {tzs(order.part?.retailCostTzs ?? order.retailCostTzs)}</div>
+          {(order.receiverName || order.receiverDestination) && <div className="text-[11px] text-slate-500">Receiver: {order.receiverName || "—"}{order.receiverDestination ? ` @ ${order.receiverDestination}` : ""}</div>}
         </div>
         <StatusPill status={order.status} />
       </div>
@@ -118,7 +128,7 @@ function Inventory() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-navy-600 text-left text-[11px] uppercase tracking-wider text-slate-500">
-                <th className="px-4 py-3">Part</th><th className="px-4 py-3">Model</th>
+                <th className="px-4 py-3">Item code</th><th className="px-4 py-3">Part</th><th className="px-4 py-3">Model</th>
                 <th className="px-4 py-3 text-right">Retail</th><th className="px-4 py-3 text-right">Stock</th>
                 <th className="px-4 py-3">Status</th>
               </tr>
@@ -126,7 +136,8 @@ function Inventory() {
             <tbody>
               {rows.map((p: any) => (
                 <tr key={p.id} className="border-b border-navy-700">
-                  <td className="px-4 py-3 text-slate-100">{p.partName} <span className="text-[11px] text-slate-500">{p.sku}</span></td>
+                  <td className="px-4 py-3 font-mono text-[12px] text-amber-500">{p.sku || "—"}</td>
+                  <td className="px-4 py-3 text-slate-100">{p.partName}</td>
                   <td className="px-4 py-3 text-slate-400">{p.compatibleModel}</td>
                   <td className="px-4 py-3 text-right tnum text-slate-200">{tzs(p.retailCostTzs)}</td>
                   <td className="px-4 py-3 text-right">
@@ -167,6 +178,95 @@ function History() {
             </Card>
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+function Billing() {
+  const qc = useQueryClient();
+  const q = useQuery({ queryKey: ["parts-orders"], queryFn: () => PartsAPI.orders(), refetchInterval: 10000 });
+  const rows = (q.data?.orders ?? []).filter((o: any) => ["Dispatched", "Delivered"].includes(o.status));
+  const gen = useMutation({
+    mutationFn: (orderId: string) => PartsAPI.generateReceipt(orderId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["parts-orders"] }),
+  });
+  return (
+    <div className="p-6">
+      <SectionTitle sub="Issue an EFD fiscal receipt once a spare is dispatched and payment has cleared. Receipts are shared with the buyer through the platform.">Invoices & Receipts</SectionTitle>
+      {rows.length === 0 ? <Empty>No billable orders yet.</Empty> : (
+        <div className="space-y-3">
+          {rows.map((o: any) => {
+            const unit = o.part?.retailCostTzs ?? o.retailCostTzs ?? 0;
+            const qty = o.qty ?? 1;
+            const total = o.totalCostTzs ?? unit * qty;
+            return (
+              <Card key={o.id} className="p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="font-medium text-slate-100">{o.part?.partName ?? "Spare part"} {o.part?.sku && <span className="ml-1 text-[11px] font-mono text-amber-500">{o.part.sku}</span>}</div>
+                    <div className="text-[11px] text-slate-500">Qty {qty} · {tzs(total)} · {o.contractTitle || "—"}</div>
+                    {(o.receiverName || o.receiverDestination) && <div className="text-[11px] text-slate-500">Receiver: {o.receiverName || "—"}{o.receiverDestination ? ` @ ${o.receiverDestination}` : ""}</div>}
+                    {o.efdNumber && <div className="mt-1 text-[11px] text-good">EFD {o.efdNumber}</div>}
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <StatusPill status={o.status} />
+                    {o.efdNumber ? (
+                      <Button variant="ghost" onClick={() => generateEfdReceiptPDF({ efdNumber: o.efdNumber, partName: o.part?.partName, sku: o.part?.sku, qty, retailCostTzs: unit, totalCostTzs: total, contractTitle: o.contractTitle, receiverName: o.receiverName, receiverDestination: o.receiverDestination, courier: o.courier, waybillRef: o.waybillRef })}>Download receipt ↓</Button>
+                    ) : (
+                      <Button variant="amber" disabled={gen.isPending} onClick={() => gen.mutate(o.id)}>{gen.isPending ? "Issuing…" : "Generate EFD receipt"}</Button>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PartsLedger() {
+  const q = useQuery({ queryKey: ["parts-orders"], queryFn: () => PartsAPI.orders(), refetchInterval: 10000 });
+  const orders = q.data?.orders ?? [];
+  const fulfilled = orders.filter((o: any) => ["Dispatched", "Delivered"].includes(o.status));
+  const value = (o: any) => o.totalCostTzs ?? ((o.part?.retailCostTzs ?? o.retailCostTzs ?? 0) * (o.qty ?? 1));
+  const earned = fulfilled.reduce((s: number, o: any) => s + value(o), 0);
+  const pending = orders.filter((o: any) => o.status === "SentToParts").reduce((s: number, o: any) => s + value(o), 0);
+  // newest first
+  const sorted = [...orders].sort((a: any, b: any) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+  return (
+    <div className="p-6">
+      <SectionTitle sub="Every spare order routed to you, sorted by date. Earnings are tracked through Nguzo, not held here.">Ledger</SectionTitle>
+      <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-3">
+        <KPIStat label="Fulfilled value" value={tzs(earned)} accent="good" />
+        <KPIStat label="In dispatch queue" value={tzs(pending)} accent={pending ? "amber" : undefined} />
+        <KPIStat label="Orders" value={String(orders.length)} />
+      </div>
+      {sorted.length === 0 ? <Empty>No orders yet.</Empty> : (
+        <Card className="overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-navy-600 text-left text-[11px] uppercase tracking-wider text-slate-500">
+                <th className="px-4 py-3">Date</th><th className="px-4 py-3">Item</th><th className="px-4 py-3 text-right">Qty</th>
+                <th className="px-4 py-3 text-right">Value</th><th className="px-4 py-3">EFD</th><th className="px-4 py-3">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((o: any) => (
+                <tr key={o.id} className="border-b border-navy-700">
+                  <td className="px-4 py-3 text-slate-400">{shortDate(o.createdAt)}</td>
+                  <td className="px-4 py-3 text-slate-100">{o.part?.partName ?? "Part"} {o.part?.sku && <span className="text-[11px] font-mono text-slate-500">{o.part.sku}</span>}</td>
+                  <td className="px-4 py-3 text-right tnum text-slate-300">{o.qty ?? 1}</td>
+                  <td className="px-4 py-3 text-right tnum text-slate-200">{tzs(value(o))}</td>
+                  <td className="px-4 py-3 text-[11px] text-slate-500">{o.efdNumber || "—"}</td>
+                  <td className="px-4 py-3"><StatusPill status={o.status} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
       )}
     </div>
   );

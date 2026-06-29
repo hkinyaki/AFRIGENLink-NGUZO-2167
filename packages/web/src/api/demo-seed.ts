@@ -25,11 +25,12 @@ import {
   notifications,
   idCounters,
   kybDocuments,
+  reversals,
 } from "./database/schema";
 import { user as userTable } from "./database/auth-schema";
 import { eq, inArray } from "drizzle-orm";
 import { id, nextUserCode } from "./lib/ids";
-import { checklistFor, computeAmountToFund } from "./lib/engine";
+import { checklistFor, computeAmountToFund, computeReversal } from "./lib/engine";
 
 // date helpers for realistic timing
 const today = new Date();
@@ -114,6 +115,7 @@ async function main() {
   // field agent personal profile + reports to the KAM + yard station;
   // suppliers + parts supplier are assigned to the KAM and get bank details.
   await db.update(profile).set({ agentNumber: "FA-007", managerId: kamId, fieldStation: "yard" }).where(eq(profile.id, fieldId));
+  await db.update(profile).set({ managerId: kamId }).where(eq(profile.id, clientId));
   await db.update(profile).set({ managerId: kamId }).where(eq(profile.id, supplierId));
   await db.update(profile).set({ managerId: kamId }).where(eq(profile.id, supplier2Id));
   await db.update(profile).set({ managerId: kamId }).where(eq(profile.id, partsId));
@@ -124,6 +126,7 @@ async function main() {
   const newClientId = ids["newclient@nguzo.africa"].profileId;
   const newSupplierId = ids["newsupplier@nguzo.africa"].profileId;
   await db.update(profile).set({ managerId: kamId }).where(eq(profile.id, newSupplierId));
+  await db.update(profile).set({ managerId: kamId }).where(eq(profile.id, newClientId));
   await db.delete(kybDocuments).where(inArray(kybDocuments.profileId, [newClientId, newSupplierId]));
   await db.insert(kybDocuments).values([
     { id: id("kyb"), profileId: newClientId, kind: "Registration", label: "certificate-of-incorporation.pdf", fileKey: "" },
@@ -461,6 +464,92 @@ async function main() {
     { id: id("po"), contractId: c1, partId: PARTS[1].id, status: "SentToParts", requestedByProfileId: supplierId, kamId, partsSupplierId: partsId, deliverTo: "MachineSupplier", retailCostTzs: PARTS[1].retailCostTzs, totalCostTzs: PARTS[1].retailCostTzs + PARTS[1].logisticsHandlingFeeTzs, courier: "Shabiby", manifestRef: "AFG-MAN-552031" },
     { id: id("po"), contractId: c1, partId: PARTS[2].id, status: "Dispatched", requestedByProfileId: supplierId, kamId, partsSupplierId: partsId, deliverTo: "MachineSupplier", retailCostTzs: PARTS[2].retailCostTzs, totalCostTzs: PARTS[2].retailCostTzs + PARTS[2].logisticsHandlingFeeTzs, courier: "Super Feo", waybillRef: "SF-90218", manifestRef: "AFG-MAN-118842" },
   ]);
+
+  // ============================================================
+  //  REVERSALS — demo cancel/refund/shorten in each workflow state
+  // ============================================================
+  await db.delete(reversals);
+
+  // (A) SHORTEN — machinery hire, awaiting KAM review (lands in KAM queue)
+  {
+    const rStart = isoIn(-10);
+    const rJobDays = 20;
+    const rEnd = endFrom(rStart, rJobDays);
+    const rDaily = 45_000, rTransfer = 600_000, rUnits = 1;
+    const rValue = rTransfer + rDaily * rJobDays * rUnits; // 1,500,000
+    const rFund = computeAmountToFund(rValue);
+    const revContract = id("ctr");
+    const revTender = id("tnd");
+    await db.insert(tenders).values({
+      id: revTender, clientId, title: "Wheel Loader ×1 — Quarry feed (early finish)",
+      demandType: "Machinery", carrierOrMachineType: "Wheel Loader", cargoOrProjectDesc: "quarry feed loading",
+      unitsNeeded: 1, routeClassification: "Domestic", origin: "Dar es Salaam", destination: "Mkuranga",
+      startDate: rStart, jobDays: rJobDays, endDate: rEnd, estTransferDays: 1,
+      flatFairPriceTzs: rValue, tenderStage: "Executing", status: "Executing",
+    });
+    await db.insert(contracts).values({
+      id: revContract, tenderId: revTender, clientId, supplierId, assetId: "",
+      title: "Wheel Loader ×1 — Quarry feed (early finish)", unitsAwarded: rUnits, agreedPricePerUnitTzs: rValue,
+      contractValueTzs: rValue, clientFeeTzs: rFund.clientFeeTzs, platformFeeTzs: rFund.clientFeeTzs * 2,
+      totalEscrowBalanceTzs: rFund.amountToFundTzs,
+      routeClassification: "Domestic", origin: "Dar es Salaam", destination: "Mkuranga",
+      startDate: rStart, endDate: rEnd, dailyRateTzs: rDaily, transferFeeTzs: rTransfer,
+      contractStage: "Executing", milestoneStatus: "ActiveTransit", cancelStatus: "Requested",
+    });
+    const prevA = computeReversal({
+      reason: "Shorten", stage: "Executing", startDateIso: rStart,
+      contractValueTzs: rValue, clientFeePaidTzs: rFund.clientFeeTzs, emergencyCreditDeductedTzs: 0,
+      transferFeeTzs: rTransfer, dailyRateTzs: rDaily, units: rUnits, bookedDays: rJobDays, actualDays: 10,
+    });
+    await db.insert(reversals).values({
+      id: id("rev"), contractId: revContract, tenderId: revTender, requestedByProfileId: clientId,
+      reason: "Shorten", stageAtRequest: "Executing", actualDays: 10,
+      clientNote: "Quarry feed finished ahead of schedule — releasing the loader after day 10.",
+      status: "Requested",
+      lineItems: { client: prevA.clientLineItems, supplier: prevA.supplierLineItems, nguzo: prevA.nguzoLineItems },
+    });
+    await db.insert(activityEvents).values({ id: id("evt"), contractId: revContract, tenderId: revTender, actorProfileId: clientId, type: "reversal.requested", summary: "Client requested a shorten on \"Wheel Loader ×1\". Awaiting KAM review." });
+  }
+
+  // (B) CANCEL — cargo carrier, KAM-reviewed, awaiting ADMIN approval (lands in admin queue)
+  {
+    const cValue = 2_400_000, cUnits = 3, cPerUnit = 800_000;
+    const cFund = computeAmountToFund(cValue);
+    const revContract = id("ctr");
+    const revTender = id("tnd");
+    await db.insert(tenders).values({
+      id: revTender, clientId, title: "Tippers ×3 — Cancelled before mobilisation",
+      demandType: "CargoCarrier", carrierOrMachineType: "Tipper Truck", cargoOrProjectDesc: "aggregate haul (cancelled)",
+      unitsNeeded: cUnits, routeClassification: "Domestic", origin: "Dar es Salaam", destination: "Dodoma",
+      needByDate: isoIn(4), transitDays: 2,
+      flatFairPriceTzs: cPerUnit, tenderStage: "FieldVerified", status: "FieldVerified",
+    });
+    await db.insert(contracts).values({
+      id: revContract, tenderId: revTender, clientId, supplierId: supplier2Id, assetId: "",
+      title: "Tippers ×3 — Cancelled before mobilisation", unitsAwarded: cUnits, agreedPricePerUnitTzs: cPerUnit,
+      contractValueTzs: cValue, clientFeeTzs: cFund.clientFeeTzs, platformFeeTzs: cFund.clientFeeTzs * 2,
+      totalEscrowBalanceTzs: cFund.amountToFundTzs,
+      routeClassification: "Domestic", origin: "Dar es Salaam", destination: "Dodoma",
+      startDate: isoIn(4), endDate: isoIn(6),
+      contractStage: "FieldVerified", milestoneStatus: "ActiveTransit", cancelStatus: "Requested",
+    });
+    const prevB = computeReversal({
+      reason: "Cancel", stage: "FieldVerified", startDateIso: isoIn(4),
+      contractValueTzs: cValue, clientFeePaidTzs: cFund.clientFeeTzs, emergencyCreditDeductedTzs: 0,
+      transferFeeTzs: 0, dailyRateTzs: 0, units: cUnits, bookedDays: 0,
+    });
+    await db.insert(reversals).values({
+      id: id("rev"), contractId: revContract, tenderId: revTender, requestedByProfileId: clientId,
+      reason: "Cancel", stageAtRequest: "FieldVerified",
+      clientNote: "Project postponed by the site owner — cancelling the haul.",
+      status: "KamReviewed", kamReviewedBy: kamId, kamNote: "Verified client's reason. Fleet inspected but not mobilised — 5% supplier penalty applies. Forwarding for approval.",
+      lineItems: { client: prevB.clientLineItems, supplier: prevB.supplierLineItems, nguzo: prevB.nguzoLineItems },
+    });
+    await db.insert(activityEvents).values([
+      { id: id("evt"), contractId: revContract, tenderId: revTender, actorProfileId: clientId, type: "reversal.requested", summary: "Client requested a cancel on \"Tippers ×3\". Awaiting KAM review." },
+      { id: id("evt"), contractId: revContract, tenderId: revTender, actorProfileId: kamId, type: "reversal.reviewed", summary: "KAM reviewed the cancel request and forwarded it to admin." },
+    ]);
+  }
 
   console.log("✅ Demo seed complete.");
   console.log("Logins (password: " + PASSWORD + "):");

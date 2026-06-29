@@ -6,14 +6,18 @@ import { tzs } from "../lib/format";
 import type { Me } from "../lib/use-me";
 import { TenderAPI, PartsAPI, StaffAPI, KamAPI, AdminAPI, uploadFile } from "../lib/tenders";
 import { AppShell, Icons, type NavItem } from "../components/shell";
-import { Button, Card, Field, Input, SectionTitle, StatusPill, Empty, KPIStat, StageTracker, Timeline, MessageThread, VerifiedBadge } from "../components/ui";
+import { ProfilePage } from "../components/profile-page";
+import { HelpDeskInbox } from "../components/help-desk-inbox";
+import { Button, Card, Field, Input, SectionTitle, StatusPill, Empty, KPIStat, StageTracker, Timeline, MessageThread, VerifiedBadge, PaymentTracker } from "../components/ui";
 
 const nav: NavItem[] = [
   { label: "Jobs & Approvals", href: "/app", icon: Icons.file },
   { label: "My Accounts", href: "/app/accounts", icon: Icons.users },
   { label: "Payments", href: "/app/payments", icon: Icons.vault },
+  { label: "Reversals", href: "/app/reversals", icon: Icons.alert },
   { label: "Parts Routing", href: "/app/parts", icon: Icons.box },
   { label: "Field Agents", href: "/app/agents", icon: Icons.users },
+  { label: "Help Desk", href: "/app/support", icon: Icons.alert },
 ];
 
 export default function KamApp({ me }: { me: Me }) {
@@ -24,8 +28,11 @@ export default function KamApp({ me }: { me: Me }) {
         <Route path="/app/job/:id">{(p) => <JobDetail id={p.id} me={me} />}</Route>
         <Route path="/app/accounts" component={() => <MyAccounts />} />
         <Route path="/app/payments" component={() => <Payments me={me} />} />
+        <Route path="/app/reversals" component={() => <Reversals />} />
         <Route path="/app/parts" component={() => <PartsRouting />} />
         <Route path="/app/agents" component={() => <Agents />} />
+        <Route path="/app/profile" component={() => <ProfilePage me={me} />} />
+        <Route path="/app/support" component={() => <HelpDeskInbox me={me} />} />
       </Switch>
     </AppShell>
   );
@@ -82,38 +89,77 @@ function AccountProfile({ profileId }: { profileId: string }) {
   );
 }
 
+const REVIEW_STAGES = ["MachineDocsUploaded", "PermitsUploaded", "TTUploaded", "TTConfirmed"];
+const STAGE_FILTERS: { v: string; label: string }[] = [
+  { v: "all", label: "All stages" },
+  { v: "review", label: "Needs my review" },
+  { v: "Bidding", label: "Bidding" },
+  { v: "AwardConfirmed", label: "Award confirmed" },
+  { v: "AgreementsSigned", label: "Agreements signed" },
+  { v: "MachineDocsUploaded", label: "Docs uploaded" },
+  { v: "FieldVerified", label: "Field verified" },
+  { v: "PermitsUploaded", label: "Permits uploaded" },
+  { v: "PermitsVerified", label: "Permits verified" },
+  { v: "TTUploaded", label: "Payment uploaded" },
+  { v: "TTConfirmed", label: "Payment confirmed" },
+  { v: "Executing", label: "Executing" },
+];
+
 function Jobs() {
   const [, navigate] = useLocation();
+  const [filter, setFilter] = useState("all");
   const q = useQuery({ queryKey: ["kam-tenders"], queryFn: async () => (await (await api.admin.tenders.$get()).json()).tenders as any[], refetchInterval: 5000 });
   const rows = q.data ?? [];
-  const action = rows.filter((t) => ["MachineDocsUploaded", "PermitsUploaded", "TTUploaded", "TTConfirmed"].includes(t.tenderStage) && t.status !== "Cancelled");
+  const needsReview = (t: any) => REVIEW_STAGES.includes(t.tenderStage) && t.status !== "Cancelled";
+  const action = rows.filter(needsReview);
+
+  const filtered = rows.filter((t) => {
+    if (filter === "all") return true;
+    if (filter === "review") return needsReview(t);
+    return t.tenderStage === filter;
+  });
+  // pin review-needed jobs to the top
+  const sorted = [...filtered].sort((a, b) => Number(needsReview(b)) - Number(needsReview(a)));
+
   return (
     <div className="p-6">
       <SectionTitle sub="Review field reports, verify permits & payment, and approve execution for the accounts you manage.">Jobs & Approvals</SectionTitle>
       {action.length > 0 && (
         <div className="mb-5 rounded-md border border-amber-600 bg-amber-bg p-3 text-sm text-amber-500">
-          {action.length} job{action.length > 1 ? "s" : ""} need your review.
+          {action.length} job{action.length > 1 ? "s" : ""} need your review — pinned to the top.
         </div>
       )}
-      {rows.length === 0 ? <Empty>No jobs yet.</Empty> : (
+      <div className="mb-4 flex items-center gap-2">
+        <span className="text-[11px] uppercase tracking-wider text-slate-500">Filter</span>
+        <select value={filter} onChange={(e) => setFilter(e.target.value)} className="focus-ring rounded-lg border border-navy-600 bg-navy-900 px-3 py-2 text-sm text-slate-100">
+          {STAGE_FILTERS.map((s) => <option key={s.v} value={s.v}>{s.label}</option>)}
+        </select>
+      </div>
+      {sorted.length === 0 ? <Empty>No jobs match this filter.</Empty> : (
         <div className="space-y-3">
-          {rows.map((t) => (
-            <Card key={t.id} lift className="cursor-pointer p-4" >
+          {sorted.map((t) => {
+            const pinned = needsReview(t);
+            return (
+            <Card key={t.id} lift className={`cursor-pointer p-4 ${pinned ? "border-amber-600" : ""}`} >
               <div onClick={() => navigate(`/app/job/${t.id}`)}>
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <div className="font-medium text-slate-100">{t.title}</div>
+                    <div className="flex items-center gap-2 font-medium text-slate-100">
+                      {pinned && <span title="Pinned — awaiting your review" className="text-amber-400">📌</span>}
+                      {t.title}
+                    </div>
                     <div className="text-xs text-slate-500">{t.clientName} · {t.carrierOrMachineType} · {t.unitsNeeded} unit{t.unitsNeeded > 1 ? "s" : ""}</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {["MachineDocsUploaded", "PermitsUploaded", "TTUploaded", "TTConfirmed"].includes(t.tenderStage) && <span className="text-[10px] uppercase tracking-wider text-amber-400">review</span>}
+                    {pinned && <span className="text-[10px] uppercase tracking-wider text-amber-400">review</span>}
                     <StatusPill status={t.status} />
                   </div>
                 </div>
                 <StageTracker current={t.tenderStage} />
               </div>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -254,7 +300,7 @@ function DocList({ docs, onVerify, showAll }: { docs: any[]; onVerify: (id: stri
         <li key={d.id} className="flex items-center justify-between">
           <span className="text-slate-300">{d.label || d.kind} {showAll && <span className="text-[11px] text-slate-500">· {d.kind}</span>}</span>
           <span className="flex items-center gap-2">
-            {d.url && <a href={d.url} target="_blank" rel="noreferrer" className="text-xs text-amber-500 hover:underline">View ↗</a>}
+            {d.url && <OtpDocLink doc={d} />}
             {!d.verifiedBy ? (
               <button onClick={() => onVerify(d.id)} className="text-[11px] text-slate-400 hover:text-good">mark verified</button>
             ) : <span className="text-[11px] text-good">verified</span>}
@@ -265,20 +311,134 @@ function DocList({ docs, onVerify, showAll }: { docs: any[]; onVerify: (id: stri
   );
 }
 
+/**
+ * OTP-gated document view. The KAM requests a one-time code (simulated,
+ * shown on-screen + logged to admin), enters it, and only then is the
+ * document URL opened. Real RFC6238 TOTP drops into the same flow.
+ */
+function OtpDocLink({ doc }: { doc: any }) {
+  const [stage, setStage] = useState<"idle" | "issued">("idle");
+  const [code, setCode] = useState("");
+  const [shown, setShown] = useState("");
+  const [err, setErr] = useState("");
+  const issue = useMutation({
+    mutationFn: () => TenderAPI.otpIssue(doc.id),
+    onSuccess: (r) => { setStage("issued"); setShown(r.simulatedCode); setErr(""); },
+  });
+  const verify = useMutation({
+    mutationFn: () => TenderAPI.otpVerify(doc.id, code),
+    onSuccess: (r) => { if (r.url) window.open(r.url, "_blank", "noopener"); setStage("idle"); setCode(""); setShown(""); },
+    onError: (e) => setErr((e as Error).message),
+  });
+  if (stage === "idle") {
+    return <button onClick={() => issue.mutate()} disabled={issue.isPending} className="text-xs text-amber-500 hover:underline disabled:opacity-40">{issue.isPending ? "…" : "🔒 View (OTP)"}</button>;
+  }
+  return (
+    <span className="flex items-center gap-1">
+      <span className="rounded bg-navy-900 px-1.5 py-0.5 font-mono text-[10px] text-amber-400" title="Simulated code — logged to admin">{shown}</span>
+      <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="code" className="w-16 rounded border border-navy-600 bg-navy-900 px-1.5 py-0.5 text-xs text-slate-100" />
+      <button onClick={() => verify.mutate()} disabled={verify.isPending || code.length < 6} className="text-[11px] text-good hover:underline disabled:opacity-40">open</button>
+      <button onClick={() => { setStage("idle"); setCode(""); setErr(""); }} className="text-[11px] text-slate-500 hover:underline">✕</button>
+      {err && <span className="text-[10px] text-bad">{err}</span>}
+    </span>
+  );
+}
+
 function Payments({ me }: { me: Me }) {
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["kam-payments"], queryFn: async () => (await (await api.contracts.$get()).json()).contracts as any[], refetchInterval: 5000 });
-  const rows = (q.data ?? []).filter((c) => c.payoutStatus === "AwaitingSupplierApproval" || c.signedOffAt);
-  const awaiting = rows.filter((c) => c.payoutStatus === "AwaitingSupplierApproval");
+  const awaiting = (q.data ?? []).filter((c) => c.payoutStatus === "AwaitingKamSubmission");
   return (
     <div className="p-6">
-      <SectionTitle sub="After a client signs off, review the supplier's bank details and upload the TT payment slip. The supplier confirms receipt to lock settlement.">Payments</SectionTitle>
-      {awaiting.length === 0 ? <Empty>No payouts awaiting processing.</Empty> : (
+      <SectionTitle sub="After a client signs off, review the supplier's bank details and submit the payment request for execution. An admin then approves and releases it.">Payments</SectionTitle>
+      {awaiting.length === 0 ? <Empty>No payouts awaiting submission.</Empty> : (
         <div className="space-y-3">
           {awaiting.map((c) => <PayoutCard key={c.id} contract={c} onDone={() => qc.invalidateQueries({ queryKey: ["kam-payments"] })} />)}
         </div>
       )}
     </div>
+  );
+}
+
+function Reversals() {
+  const qc = useQueryClient();
+  const q = useQuery({ queryKey: ["kam-reversals"], queryFn: () => TenderAPI.listReversals().then((r) => r.reversals), refetchInterval: 6000 });
+  const cq = useQuery({ queryKey: ["kam-contracts-rev"], queryFn: async () => (await (await api.contracts.$get()).json()).contracts as any[] });
+  const contracts = cq.data ?? [];
+  const rows = q.data ?? [];
+  const queue = rows.filter((r) => r.status === "Requested");
+  const history = rows.filter((r) => r.status !== "Requested");
+  const refresh = () => { qc.invalidateQueries({ queryKey: ["kam-reversals"] }); };
+  const titleFor = (cid: string) => contracts.find((c) => c.id === cid)?.title || cid;
+  return (
+    <div className="p-6">
+      <SectionTitle sub="Clients can ask to cancel, refund, or shorten a contract. Review the figures and forward to admin for approval — or decline with a reason.">Reversals</SectionTitle>
+      {queue.length === 0 ? <Empty>No reversal requests awaiting review.</Empty> : (
+        <div className="space-y-3">
+          {queue.map((r) => <ReversalReviewCard key={r.id} rev={r} title={titleFor(r.contractId)} onDone={refresh} />)}
+        </div>
+      )}
+      {history.length > 0 && (
+        <div className="mt-8">
+          <div className="mb-2 text-[11px] uppercase tracking-wider text-slate-500">History</div>
+          <div className="space-y-2">
+            {history.map((r) => (
+              <Card key={r.id} className="flex items-center justify-between p-4 text-sm">
+                <span className="text-slate-300">{r.reason} · {titleFor(r.contractId)}</span>
+                <span className="flex items-center gap-3">
+                  {r.clientRefundTzs ? <span className="text-xs text-slate-400">refund {tzs(r.clientRefundTzs)}</span> : null}
+                  <StatusPill status={r.status === "Executed" ? "Verified" : r.status === "Rejected" ? "Declined" : "Pending"} />
+                </span>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ReversalReviewCard({ rev, title, onDone }: { rev: any; title: string; onDone: () => void }) {
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const li = rev.lineItems || { client: [], supplier: [], nguzo: [] };
+  async function act(decision: "Forward" | "Reject") {
+    setBusy(true); setErr("");
+    try { await TenderAPI.reversalReview(rev.id, { decision, note }); onDone(); }
+    catch (e: any) { setErr(e?.message || "Failed"); } finally { setBusy(false); }
+  }
+  return (
+    <Card className="p-5">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="font-medium text-slate-100">{rev.reason} · {title}</div>
+        <StatusPill status="Requested" />
+      </div>
+      <p className="mb-3 text-xs text-slate-500">Stage at request: {rev.stageAtRequest || "—"}{rev.clientNote ? ` · "${rev.clientNote}"` : ""}</p>
+      <div className="grid gap-4 md:grid-cols-3">
+        {(["client", "supplier", "nguzo"] as const).map((k) => (
+          <div key={k} className="rounded-md border border-navy-600 bg-navy-900 p-3 text-xs">
+            <div className="mb-2 text-[11px] uppercase tracking-wider text-slate-500">{k}</div>
+            {(li[k] ?? []).length === 0 ? <p className="text-slate-600">—</p> : (
+              <ul className="space-y-1">
+                {li[k].map((it: any, i: number) => (
+                  <li key={i} className="flex justify-between gap-2">
+                    <span className="text-slate-400">{it.label}</span>
+                    <span className={it.amountTzs < 0 ? "text-bad" : "text-slate-200"}>{it.amountTzs < 0 ? "− " : ""}{tzs(Math.abs(it.amountTzs))}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <input className="flex-1 min-w-[180px] rounded-lg border border-white/10 bg-navy-900 px-3 py-2 text-sm text-slate-200" placeholder="Note for admin / client…" value={note} onChange={(e) => setNote(e.target.value)} />
+        <Button variant="amber" disabled={busy} onClick={() => act("Forward")}>Forward to admin</Button>
+        <Button variant="ghost" disabled={busy} onClick={() => act("Reject")}>Decline</Button>
+      </div>
+      {err && <p className="mt-2 text-xs text-bad">{err}</p>}
+    </Card>
   );
 }
 
@@ -303,6 +463,7 @@ function PayoutCard({ contract, onDone }: { contract: any; onDone: () => void })
         <div className="font-medium text-slate-100">{contract.title}</div>
         <StatusPill status={data?.slipUrl ? "Pending" : "Requested"} />
       </div>
+      <div className="mb-3"><PaymentTracker payoutStatus={contract.payoutStatus} /></div>
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-md border border-navy-600 bg-navy-900 p-3 text-sm">
           <div className="mb-2 text-[11px] uppercase tracking-wider text-slate-500">Supplier bank details</div>
@@ -326,10 +487,10 @@ function PayoutCard({ contract, onDone }: { contract: any; onDone: () => void })
             </div>
           )}
           {data?.slipUrl ? (
-            <div className="text-xs text-good">Slip uploaded — awaiting supplier confirmation. <a href={data.slipUrl} target="_blank" rel="noreferrer" className="text-amber-500 hover:underline">View ↗</a></div>
+            <div className="text-xs text-good">Payment request submitted — awaiting admin approval. <a href={data.slipUrl} target="_blank" rel="noreferrer" className="text-amber-500 hover:underline">View slip ↗</a></div>
           ) : (
             <label className="block">
-              <span className="mb-1 block text-[11px] uppercase tracking-wider text-slate-500">Upload TT slip</span>
+              <span className="mb-1 block text-[11px] uppercase tracking-wider text-slate-500">Submit payment request (upload TT slip)</span>
               <input type="file" accept="image/*,application/pdf" disabled={busy} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadSlip(f); }} className="text-xs text-slate-400" />
             </label>
           )}

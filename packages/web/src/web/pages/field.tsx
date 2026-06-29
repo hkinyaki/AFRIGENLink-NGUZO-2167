@@ -15,6 +15,9 @@ export default function FieldApp({ me }: { me: Me }) {
   const isBorder = me.profile.role === "admin" || station === "border";
   const nav: NavItem[] = [
     { label: "Inspections", href: "/app", icon: Icons.clip },
+    { label: "My Accounts", href: "/app/accounts", icon: Icons.users },
+    { label: "Spare Deliveries", href: "/app/deliveries", icon: Icons.truck },
+    { label: "Job History", href: "/app/history", icon: Icons.clip },
     ...(isYard ? [{ label: "Yard Audits", href: "/app/audits", icon: Icons.truck }] : []),
     ...(isBorder ? [{ label: "Border Log", href: "/app/border", icon: Icons.map }] : []),
     { label: "My Profile", href: "/app/profile", icon: Icons.users },
@@ -23,6 +26,9 @@ export default function FieldApp({ me }: { me: Me }) {
     <AppShell me={me} nav={nav}>
       <Switch>
         <Route path="/app" component={() => <Inspections me={me} />} />
+        <Route path="/app/accounts" component={() => <MyAccounts />} />
+        <Route path="/app/deliveries" component={() => <SpareDeliveries />} />
+        <Route path="/app/history" component={() => <JobHistory me={me} />} />
         <Route path="/app/inspect/:id">{(p) => <InspectJob id={p.id} me={me} />}</Route>
         {isYard && <Route path="/app/audits" component={() => <Audits />} />}
         {isBorder && <Route path="/app/border" component={() => <BorderLog />} />}
@@ -94,10 +100,25 @@ function InspectJob({ id, me }: { id: string; me: Me }) {
   const [vin, setVin] = useState("");
   const [docsChecked, setDocsChecked] = useState(false);
   const [machineInspected, setMachineInspected] = useState(false);
+  const [frontKey, setFrontKey] = useState("");
+  const [backKey, setBackKey] = useState("");
+  const [frontPreview, setFrontPreview] = useState("");
+  const [backPreview, setBackPreview] = useState("");
+  const [photoBusy, setPhotoBusy] = useState<"front" | "back" | "">("");
+
+  async function uploadMachinePhoto(side: "front" | "back", file: File) {
+    setPhotoBusy(side);
+    try {
+      const { uploadFile } = await import("../lib/tenders");
+      const { key } = await uploadFile(file, "machine-photo");
+      if (side === "front") { setFrontKey(key); setFrontPreview(URL.createObjectURL(file)); }
+      else { setBackKey(key); setBackPreview(URL.createObjectURL(file)); }
+    } finally { setPhotoBusy(""); }
+  }
 
   const submit = useMutation({
     mutationFn: async () => {
-      await api.inspections.$post({ json: { tenderId: id, mechanicalNotes: notes, vinPhotos: vin ? [vin] : [], docsChecked, machineInspected, submit: true, legitimacySignedOff: docsChecked && machineInspected } as any });
+      await api.inspections.$post({ json: { tenderId: id, mechanicalNotes: notes, vinPhotos: vin ? [vin] : [], docsChecked, machineInspected, submit: true, legitimacySignedOff: docsChecked && machineInspected, frontPhotoKey: frontKey, backPhotoKey: backKey } as any });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["tender", id] }); qc.invalidateQueries({ queryKey: ["tenders"] }); navigate("/app"); },
   });
@@ -156,12 +177,135 @@ function InspectJob({ id, me }: { id: string; me: Me }) {
               <input type="checkbox" checked={machineInspected} onChange={(e) => setMachineInspected(e.target.checked)} className="h-4 w-4 accent-amber-500" />
               <span className="text-slate-200">Step 2 — Machine inspected on site</span>
             </label>
-            <Button variant="amber" className="w-full" disabled={!docsChecked || !machineInspected || submit.isPending} onClick={() => submit.mutate()}>
+            <Field label="Machine photos — front & back are mandatory">
+              <div className="grid grid-cols-2 gap-3">
+                {([["front", frontKey, frontPreview], ["back", backKey, backPreview]] as const).map(([side, key, preview]) => (
+                  <label key={side} className={`relative grid aspect-square cursor-pointer place-items-center overflow-hidden rounded-lg border ${key ? "border-amber-500/60" : "border-dashed border-navy-500"} bg-navy-900 text-center text-xs`}>
+                    {preview ? (
+                      <img src={preview} alt={`${side} of machine`} className="absolute inset-0 h-full w-full object-cover" />
+                    ) : (
+                      <span className="px-2 text-slate-400">
+                        {photoBusy === side ? "Uploading…" : <>Tap to add<br /><span className="font-semibold capitalize text-slate-200">{side} photo</span></>}
+                      </span>
+                    )}
+                    {key && <span className="absolute right-1 top-1 rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-semibold text-navy-900 capitalize">{side} ✓</span>}
+                    <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadMachinePhoto(side, f); }} />
+                  </label>
+                ))}
+              </div>
+              <p className="mt-1.5 text-[11px] text-slate-500">Both photos are saved to this machine's fleet record.</p>
+            </Field>
+            <Button variant="amber" className="w-full" disabled={!docsChecked || !machineInspected || !frontKey || !backKey || submit.isPending} onClick={() => submit.mutate()}>
               {submit.isPending ? "Submitting…" : "Submit report to Key Account Manager"}
             </Button>
             {submit.error && <p className="text-xs text-bad">{(submit.error as Error).message}</p>}
           </div>
         </Card>
+      )}
+    </div>
+  );
+}
+
+function MyAccounts() {
+  const q = useQuery({ queryKey: ["field-accounts"], queryFn: () => FieldAPI.myAccounts(), refetchInterval: 120000 });
+  const accounts = q.data?.accounts ?? [];
+  return (
+    <div className="mx-auto max-w-3xl p-4 sm:p-6">
+      <SectionTitle sub="Suppliers assigned to you for inspection. Contact numbers stay masked until you reveal them from a specific inspection.">My Accounts</SectionTitle>
+      {accounts.length === 0 ? (
+        <Empty>No suppliers assigned to you yet.</Empty>
+      ) : (
+        <div className="space-y-3">
+          {accounts.map((a: any) => (
+            <Card key={a.supplierId} className="p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="font-semibold text-slate-100">{a.name}</div>
+                  <div className="mt-0.5 text-xs text-slate-500">{a.userCode}{a.yardLocation ? ` · ${a.yardLocation}` : ""}</div>
+                </div>
+                <StatusPill status={a.verificationStatus || "Pending"} />
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-3 text-center text-xs">
+                <div className="rounded-lg bg-navy-900 py-2"><div className="text-base font-semibold text-amber-500">{a.assetCount}</div><div className="text-slate-500">Assets</div></div>
+                <div className="rounded-lg bg-navy-900 py-2"><div className="text-base font-semibold text-amber-500">{a.inspections}</div><div className="text-slate-500">Inspections</div></div>
+                <div className="rounded-lg bg-navy-900 py-2"><div className="text-sm font-medium text-slate-300">{a.contactMasked || "—"}</div><div className="text-slate-500">Contact</div></div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SpareDeliveries() {
+  const qc = useQueryClient();
+  const q = useQuery({ queryKey: ["field-deliveries"], queryFn: () => FieldAPI.partDeliveries(), refetchInterval: 120000 });
+  const received = useMutation({
+    mutationFn: (orderId: string) => FieldAPI.markPartReceived(orderId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["field-deliveries"] }),
+  });
+  const deliveries = q.data?.deliveries ?? [];
+  return (
+    <div className="mx-auto max-w-3xl p-4 sm:p-6">
+      <SectionTitle sub="Emergency spare parts routed to you for hand-off on site. Confirm receipt once the part arrives.">Spare Deliveries</SectionTitle>
+      {deliveries.length === 0 ? (
+        <Empty>No spare parts routed to you.</Empty>
+      ) : (
+        <div className="space-y-3">
+          {deliveries.map((d: any) => (
+            <Card key={d.id} className="p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="font-semibold text-slate-100">{d.partName}{d.partSku ? <span className="ml-2 text-[11px] text-slate-500">{d.partSku}</span> : null}</div>
+                  <div className="mt-0.5 text-xs text-slate-500">Qty {d.qty} · {d.contractTitle || "—"}</div>
+                  {(d.courier || d.waybillRef) && <div className="mt-0.5 text-[11px] text-slate-500">{d.courier}{d.waybillRef ? ` · ${d.waybillRef}` : ""}</div>}
+                </div>
+                <StatusPill status={d.status} />
+              </div>
+              {d.status === "Dispatched" && (
+                <Button variant="amber" className="mt-3 w-full" disabled={received.isPending} onClick={() => received.mutate(d.id)}>
+                  {received.isPending ? "Confirming…" : "Confirm received on site"}
+                </Button>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function JobHistory({ me }: { me: Me }) {
+  const q = useQuery({ queryKey: ["field-inspections-history"], queryFn: () => FieldAPI.inspections(), refetchInterval: 120000 });
+  // Read-only past job cards: documents, machine photos and report status only — no contract/money detail.
+  const rows = (q.data?.inspections ?? []).filter((r: any) => r.tenderId);
+  return (
+    <div className="mx-auto max-w-3xl p-4 sm:p-6">
+      <SectionTitle sub="A read-only record of jobs you have inspected — documents, machine photos and your report status only.">Job History</SectionTitle>
+      {rows.length === 0 ? (
+        <Empty>No past inspections yet.</Empty>
+      ) : (
+        <div className="space-y-3">
+          {rows.map((r: any) => (
+            <Card key={r.id} className="p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="font-semibold text-slate-100">{r.supplierName || "Supplier"}</div>
+                  <div className="mt-0.5 text-xs text-slate-500">{r.supplierCode} · {shortDate(r.createdAt)}</div>
+                </div>
+                <StatusPill status={r.reportStatus} />
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+                <span className={`rounded px-2 py-1 ${r.docsChecked ? "bg-amber-500/15 text-amber-400" : "bg-navy-900 text-slate-500"}`}>Docs {r.docsChecked ? "✓" : "—"}</span>
+                <span className={`rounded px-2 py-1 ${r.machineInspected ? "bg-amber-500/15 text-amber-400" : "bg-navy-900 text-slate-500"}`}>Inspected {r.machineInspected ? "✓" : "—"}</span>
+                <span className={`rounded px-2 py-1 ${r.frontPhotoKey ? "bg-amber-500/15 text-amber-400" : "bg-navy-900 text-slate-500"}`}>Front photo {r.frontPhotoKey ? "✓" : "—"}</span>
+                <span className={`rounded px-2 py-1 ${r.backPhotoKey ? "bg-amber-500/15 text-amber-400" : "bg-navy-900 text-slate-500"}`}>Back photo {r.backPhotoKey ? "✓" : "—"}</span>
+              </div>
+              {r.declineReason && <p className="mt-2 text-xs text-bad">Declined: {r.declineReason}</p>}
+            </Card>
+          ))}
+        </div>
       )}
     </div>
   );
