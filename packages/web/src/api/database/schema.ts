@@ -16,7 +16,7 @@ export const profile = sqliteTable("profile", {
   userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   // admin | key_account | client | supplier | field | parts_supplier
   role: text("role").notNull().default("client"),
-  userCode: text("user_code").default(""), // human-readable ID e.g. NGZ-FA-007 (unique per row)
+  userCode: text("user_code").default(""), // human-readable ID e.g. AGL-FA-007 (unique per row)
   username: text("username").notNull().default(""), // admin-set login username for staff (Field/KAM/Parts/Admin)
   companyName: text("company_name").notNull().default(""),
   // PendingOnboarding | Submitted | SiteVisitScheduled | Verified | Rejected

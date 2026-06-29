@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 
 // ---- Reference helpers ----
-/** Human-readable contract/tender reference, e.g. NGZ-CT-3F9A2 */
+/** Human-readable contract/tender reference, e.g. AGL-CT-3F9A2 */
 export function contractRef(id: string | number, prefix = "CT"): string {
   const s = String(id).replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-  return `NGZ-${prefix}-${s.slice(-5).padStart(5, "0")}`;
+  return `AGL-${prefix}-${s.slice(-5).padStart(5, "0")}`;
 }
 
 // ---- KAM activity status ----

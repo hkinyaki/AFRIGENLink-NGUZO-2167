@@ -28,7 +28,7 @@ export type PayoutPayload = {
 };
 
 function ref(contractId: string) {
-  return `NGZ-PAYOUT-${contractId.slice(-6).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+  return `AGL-PAYOUT-${contractId.slice(-6).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
 }
 
 /** Build the split-payout payload mirroring the real NMB instruction shape. */

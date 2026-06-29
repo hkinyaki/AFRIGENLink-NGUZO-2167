@@ -1613,7 +1613,7 @@ const app = new Hono<{ Variables: Vars }>()
     await db.insert(profile).values({
       id: pid, userId, role: b.role, userCode: code, username: uname,
       companyName: b.name.trim(), fullName: b.name.trim(),
-      phone: b.phone ?? "", agentNumber: b.role === "field" ? code.replace("NGZ-", "") : "",
+      phone: b.phone ?? "", agentNumber: b.role === "field" ? code.replace("AGL-", "") : "",
       managerId: b.managerId ?? "",
       fieldStation: b.role === "field" ? (b.fieldStation === "border" ? "border" : "yard") : "",
       mustChangePassword: true,
@@ -1732,7 +1732,7 @@ const app = new Hono<{ Variables: Vars }>()
     await db.insert(profile).values({
       id: pid, userId, role: "field", userCode: code, username: uname,
       companyName: req.proposedName, fullName: req.proposedName, phone: req.proposedPhone,
-      agentNumber: code.replace("NGZ-", ""), managerId: req.requestedByProfileId,
+      agentNumber: code.replace("AGL-", ""), managerId: req.requestedByProfileId,
       fieldStation: "yard", mustChangePassword: true, onboardingComplete: false,
       verificationStatus: "Submitted",
     });

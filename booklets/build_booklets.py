@@ -117,7 +117,7 @@ def client_booklet():
       <p>Depending on your route, the system seeds the right checklist. <strong>Domestic</strong>: TARURA Heavy Load Permit + Municipal Clearance. <strong>Cross-border</strong>: TRA TANSAD, TBS Clearance, Phytosanitary Certificate, plus origin and destination OSBP entries. Upload them in your dashboard; our admin verifies before money moves.</p>
       <h3 class="sub-sec">Funding the escrow</h3>
       <p>You pay into AFRIGEN Link's facility and upload your <strong>TT payment proof</strong>. The platform previews this as a protected escrow — <strong>funds tracked, not held loosely</strong>. Nothing is disbursed to suppliers until you've approved the completed work.</p>
-      {kpis([("7<small>%</small>","Flat service fee"),("11","Locked gate steps"),("100<small>%</small>","Escrow-backed")])}
+      {kpis([("10<small>%</small>","Flat service fee"),("11","Locked gate steps"),("100<small>%</small>","Escrow-backed")])}
       <h3 class="sub-sec">Tracking &amp; settlement</h3>
       <p>Your job's <strong>activity timeline</strong> logs every action with a timestamp. On sign-off, the system auto-generates an itemized invoice and runs settlement: supplier payout = escrow − our 10% fee − any emergency parts credit used.</p>
     '''))
@@ -223,7 +223,7 @@ def supplier_booklet():
       {callout("YOUR PAYOUT", "<strong>Gross escrow</strong> on your contract <strong>−</strong> AFRIGEN Link's 10% service fee <strong>−</strong> any emergency parts credit you used <strong>=</strong> Final supplier payout.")}
       <h3 class="sub-sec">Emergency parts facility</h3>
       <p>Break down mid-job? Raise it under <strong>Report Breakdown</strong>. If the locked escrow covers the part plus shipping, the system approves the purchase from our Dar wholesale network and dispatches it upcountry by express courier — typically 12–18 hours. The cost is simply deducted at settlement.</p>
-      {kpis([("7<small>%</small>","Flat fee"),("12–18<small>h</small>","Parts delivery"),("0","Chasing clients")])}
+      {kpis([("10<small>%</small>","Flat fee"),("12–18<small>h</small>","Parts delivery"),("0","Chasing clients")])}
     '''))
     return doc("AFRIGEN Link — Supplier Handbook", *p)
 
@@ -468,7 +468,7 @@ def company_booklet():
       <p class="intro">AFRIGEN Link sits inside every transaction with three moats that no software-only competitor can replicate quickly. Money stays simulated — <strong>tracked, not held</strong> — until a licensed escrow partner is integrated.</p>
       {cards(
         card("🛡️","Collateralized escrow","Full contract value funded before execution; auto split-settlement with a flat 10% fee on sign-off."),
-        card("👷","Ground Force","Field inspectors verify every asset on-site; border liaison agents resolve OSBP stalls in person."),
+        card("👷","Ground Force","Field inspectors verify every asset on-site and border liaison agents resolve OSBP stalls in person — each report signed off by a Key Account Manager before a deal can advance."),
         card("🔧","Escrow-as-credit parts","Mid-job breakdowns are kept moving by collateralizing emergency spares against the locked escrow."),
         card("🧭","Three corridors","Southern (Tunduma/Zambia), Central (Rwanda/Burundi), Northern (Namanga/Kenya)."))}
       {band("assets/corridor.webp","The corridor network","Dar es Salaam HQ · three EAC corridors")}
@@ -478,17 +478,21 @@ def company_booklet():
       {sec_head("How it works", "One flywheel, eleven locked steps")}
       <p class="intro">A client posts a quantity demand. Suppliers bid. The system auto-fills the cheapest at a single fair price. Then a strict gate carries the deal to completion — every step blocking the next.</p>
       {gate(GATE)}
-      {kpis([("7<small>%</small>","Flat service fee"),("3","EAC corridors"),("11","Locked gate steps"),("4","Stakeholder roles")])}
+      {kpis([("10<small>%</small>","Flat service fee"),("3","EAC corridors"),("11","Locked gate steps"),("6","Stakeholder roles")])}
       <p style="margin-top:14px">Each step is owned by a specific party — client, supplier, field agent or admin — and enforced in software. There is no way to skip ahead, which is precisely what lets a buyer in another country fund a deal with confidence.</p>
     '''))
 
     p.append(content_page("Company Overview", FOOT, "05", f'''
-      {sec_head("Who we serve", "A four-sided market")}
+      {sec_head("Who we serve", "Two-sided market, six-role operation")}
+      <p class="intro">Two external sides meet in the middle — and four internal roles make every deal trustworthy. Six roles in all, each with its own dashboard and a unique <strong>AGL</strong> partner ID.</p>
       {cards(
-        card("🏗️","Clients &amp; shippers","Construction, mining and trading firms needing certified equipment or cargo transport with zero performance risk."),
-        card("🚛","Fleet &amp; machinery owners","Asset owners seeking guaranteed payment and protection from predatory terms."),
-        card("👷","Ground Force","Our own field inspectors and border liaison agents — the physical moat."),
-        card("🏛️","Admin / HQ","The orchestration layer that verifies, confirms and settles every deal."))}
+        card("🏗️","Clients &amp; shippers","Construction, mining and trading firms needing certified equipment or cargo transport with zero performance risk. Verified remotely on documents and office address before they transact."),
+        card("🚛","Fleet &amp; machinery owners","Asset owners seeking guaranteed payment and protection from predatory terms. Verified by a mandatory physical site-visit — we only deal with direct owners, never brokers."),
+        card("🤝","Key Account Managers","Each supplier's dedicated relationship owner — the maker in our maker-checker controls. They visit, vet and shepherd every account they hold."),
+        card("👷","Field Agents","Our boots on the ground — yard inspectors and border liaison agents. The physical moat that no software-only rival can copy."))}
+      {cards(
+        card("🔧","Parts Suppliers","Vetted spare-part merchants with an inventory and dispatch dashboard — the engine behind same-day emergency parts on a live job."),
+        card("🏛️","Admin / HQ","The orchestration and checker layer that verifies compliance, confirms money and releases every settlement."))}
       {note("MARKET", "Tanzania core, expanding along EAC transit corridors. Demand is structural — infrastructure, mining and trade volumes are growing while trusted coordination remains scarce.")}
     '''))
 
@@ -496,30 +500,32 @@ def company_booklet():
       {sec_head("Business model", "Flat, aligned, scalable")}
       <p class="intro">One transparent revenue line, charged on value delivered — not buried in supplier quotes.</p>
       {table(["Revenue","Mechanism"],[
-        ["Service fee","Flat <strong>10%</strong> of contract value on every deal, both cargo and machinery"],
-        ["Settlement","Auto-calculated: supplier payout = escrow − 10% fee − parts credit used"],
+        ["Service fee","Flat <strong>10%</strong> of contract value on every deal — split <strong>5% client</strong> (added on top of the quote) and <strong>5% supplier</strong> (deducted at settlement). Same for cargo and machinery."],
+        ["Settlement","Client funds contract value + 5%; on sign-off, supplier payout = contract value − 5% − any parts credit used"],
         ["Parts facility","Emergency spares collateralized against escrow — sticky, defensible, value-add"],
       ])}
       {cards(
         card("📈","Aligned incentives","We earn only when a deal completes and the client signs off — fully aligned with both sides."),
         card("🔒","Defensible","The moats — ground force, escrow, parts credit — compound with every corridor and every verified supplier."))}
-      {callout("THE NAME", "<strong>AFRIGEN Link</strong> is Swahili for <em>pillar</em> — the foundation that holds everything up. That's the role we play in every deal: the pillar behind it.")}
+      {callout("THE NAME", "<strong>AFRIGEN Link</strong> is exactly what we are — the trusted <em>link</em> between everyone who needs equipment moved and everyone who can move it. We are the connection that holds every deal together.")}
     '''))
 
     p.append(content_page("Company Overview", FOOT, "07", f'''
       {sec_head("Status &amp; roadmap", "Built, and building")}
       <h3 class="sub-sec">Live today</h3>
       {bul([
-        "Full platform: marketing site + four role dashboards (client, supplier, field, admin).",
-        "Quantity-demand tender engine with auto-fill awarding at a flat fair price.",
+        "Full platform: marketing site + six role dashboards — client, supplier, field agent, Key Account Manager, parts supplier and admin.",
+        "Quantity-demand tender engine with auto-fill awarding at a single flat fair price.",
         "Strict 11-step approval gate enforced end-to-end across all roles.",
-        "Verified-badge KYB/KYC gate; internal-only admin &amp; field access controls.",
-        "Auto-generated agreements &amp; itemized invoices; activity timelines on every job.",
-        "Notifications logged on-record (email live via Resend; SMS/WhatsApp staged).",
+        "Two-tier KYC/KYB verification — clients verified remotely on documents; suppliers verified by mandatory physical site-visit. Every account carries a unique AGL partner ID.",
+        "KAM relationship layer with auto-assignment and maker-checker controls; field reports approved by a KAM before a deal advances.",
+        "Parts-supplier POS &amp; inventory: emergency spares drawn against locked escrow and dispatched on a live job.",
+        "Four-step payment activation chain (supplier → client sign-off → KAM submit → admin release) and a full reversals/refunds &amp; cancellation engine.",
+        "Auto-generated agreements &amp; itemized invoices; activity timelines on every job; notifications logged on-record (email live via Resend; SMS/WhatsApp staged).",
       ])}
       <h3 class="sub-sec">Staged next</h3>
       {bul([
-        "Licensed escrow partner (moving from tracked to held).",
+        "Licensed escrow partner via the NMB bank rail (orchestrator model — funds moving from tracked to held).",
         "Live SMS / WhatsApp gateway and real courier API integration.",
         "Automated permit assembly (TANSAD) and AI coordination copilot.",
         "Mobile app for field and supplier on phone browsers.",
@@ -534,7 +540,7 @@ def combined_booklet():
     p = []
     p.append(cover(
         "Platform Guide · All Roles",
-        "One platform. Four roles. Every step.",
+        "One platform. Six roles. Every step.",
         "The complete operating guide to AFRIGEN Link — for clients, suppliers, field agents and administrators. The single reference for how the whole system works together.",
         "Master platform guide", "Edition 2026.1",
         hero="assets/hero.webp",
@@ -544,7 +550,7 @@ def combined_booklet():
       {sec_head("Contents", "The whole system, end to end")}
       {toc([
         ("01","The big picture","What AFRIGEN Link is and why it works"),
-        ("02","The four roles","Who does what"),
+        ("02","The six roles","Who does what"),
         ("03","The staged gate","Eleven steps, end to end"),
         ("04","Clients","Post, award, fund, track"),
         ("05","Suppliers","List, bid, win, get paid"),
@@ -566,14 +572,16 @@ def combined_booklet():
     '''))
 
     p.append(content_page("Platform Guide", FOOT, "04", f'''
-      {sec_head("02 · The four roles", "Who does what")}
+      {sec_head("02 · The six roles", "Who does what")}
       {table(["Role","Owns","Key screens"],[
-        ["<strong>Client</strong>","Posts demand, awards, funds escrow, signs off","My Jobs · Post a Job · job detail"],
-        ["<strong>Supplier</strong>","Lists assets, bids, signs agreement, performs work","Open Tenders · My Awards · Fleet · Vault · Breakdown"],
-        ["<strong>Field</strong>","Inspects assets on-site, logs borders","Inspections · Yard Audits · Border Log"],
-        ["<strong>Admin</strong>","Verifies permits, confirms escrow, approves, settles","Overview · Jobs · Ground Force · Verification · Team · Notifications · Ledger"],
+        ["<strong>Client</strong>","Posts demand, awards, funds escrow, signs off","My Jobs · Post a Job · job detail · Ledger"],
+        ["<strong>Supplier</strong>","Lists assets, bids, signs agreement, performs work","Open Tenders · My Awards · Fleet · Vault · Breakdown · Ledger"],
+        ["<strong>Field Agent</strong>","Inspects assets on-site, logs borders","My Accounts · Inspections · Yard Audits · Border Log"],
+        ["<strong>Key Account Manager</strong>","Owns supplier relationships; approves field reports; maker in payments","Jobs &amp; Approvals · Payments · Parts Routing · Field Agents"],
+        ["<strong>Parts Supplier</strong>","Holds spare inventory; dispatches emergency parts","POS Dispatch · Inventory · History"],
+        ["<strong>Admin</strong>","Verifies, confirms escrow, releases, settles; manages team","Overview · Jobs · Ground Force · Verification · Team · Notifications · Ledger"],
       ])}
-      {note("ACCESS", "Public signup offers Client and Supplier only. Field and Admin are internal-only, granted by an existing admin — never self-assigned.")}
+      {note("ACCESS", "Public signup offers Client and Supplier (and Parts Supplier) only. Field Agents and Key Account Managers are internal — created by an admin with a username and temp credentials, never self-assigned. Every account carries a unique AGL partner ID.")}
     '''))
 
     p.append(content_page("Platform Guide", FOOT, "05", f'''
@@ -631,10 +639,10 @@ def combined_booklet():
       <h3 class="sub-sec">Escrow</h3>
       <p>The full contract value is funded before execution. The platform previews it as protected escrow — <strong>funds tracked, not held</strong> — until a licensed escrow partner is integrated. Money moves only on the client's sign-off.</p>
       <h3 class="sub-sec">Fee &amp; settlement</h3>
-      {callout("THE FORMULA", "Supplier payout = <strong>Gross escrow</strong> − <strong>AFRIGEN Link 10% service fee</strong> − <strong>emergency parts credit used</strong>. Itemized invoices are generated automatically for both parties.")}
+      {callout("THE FORMULA", "Client funds <strong>contract value + 5%</strong>. On sign-off, supplier payout = <strong>contract value</strong> − <strong>5%</strong> − <strong>emergency parts credit used</strong> — AFRIGEN Link's flat 10% (5% client + 5% supplier). Itemized invoices are generated automatically for both parties.")}
       <h3 class="sub-sec">Emergency parts facility</h3>
       <p>If a supplier breaks down mid-job, the spare can be collateralized against the locked escrow. The system checks coverage, approves the purchase from the Dar wholesale network, and dispatches upcountry by express courier in 12–18 hours. The cost is deducted at settlement.</p>
-      {kpis([("7<small>%</small>","Flat fee"),("100<small>%</small>","Escrow-backed"),("11","Gate steps"),("3","Corridors")])}
+      {kpis([("10<small>%</small>","Flat fee"),("100<small>%</small>","Escrow-backed"),("11","Gate steps"),("3","Corridors")])}
       {callout("AFRIGEN LINK", "The coordination layer behind every deal — a brand of AFRIGEN Holdings Ltd. <strong>Cargo &amp; Machinery Coordination — Secured.</strong>")}
     '''))
     return doc("AFRIGEN Link — Platform Guide", *p)
