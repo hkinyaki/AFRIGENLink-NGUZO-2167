@@ -155,7 +155,7 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
               <SectionTitle sub={adminAction.hint}>Action required</SectionTitle>
               {stage === "TTUploaded" && (
                 <div className="mb-3 flex items-center justify-between rounded-md border border-navy-600 bg-navy-900 p-3 text-sm">
-                  <span className="text-slate-400">Escrow to confirm (held by AFRIGEN Link)</span>
+                  <span className="text-slate-400">Escrow to confirm (monitored by AFRIGEN Link)</span>
                   <span className="tnum font-display font-semibold text-amber-500">{tzs(escrowAmt)}</span>
                 </div>
               )}
@@ -207,7 +207,7 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
                     <span className="text-slate-300">{d.label || d.kind} <span className="text-[11px] text-slate-500">· {d.kind}</span></span>
                     <span className="flex items-center gap-2">
                       {d.url && <a href={d.url} target="_blank" rel="noreferrer" className="text-xs text-amber-500 hover:underline">View ↗</a>}
-                      {!d.verifiedBy && d.kind === "Permit" && (
+                      {!d.verifiedBy && (d.kind === "Permit" || d.kind === "TTProof") && (
                         <button onClick={() => verifyDoc.mutate(d.id)} className="text-[11px] text-slate-400 hover:text-good">mark verified</button>
                       )}
                       {d.verifiedBy && <span className="text-[11px] text-good">verified</span>}
@@ -392,10 +392,11 @@ function Team() {
 
       {show && (
         <Card className="mb-5 p-5">
-          <p className="mb-3 text-xs text-slate-400">Create an internal staff account. They sign in with the <b>username</b> below and a temporary password, then must change it and complete KYC on first login.</p>
+          <p className="mb-3 text-xs text-slate-400">Create an internal staff account. We email the sign-in instructions, <b>username</b> and temporary password to the contact email. They sign in with the username, then must change the password, secure the account with an authenticator app, and complete KYC on first login. Sign-in codes and notifications go to this email.</p>
           <div className="grid gap-3 md:grid-cols-2">
             <Field label="Full name"><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
             <Field label="Username"><Input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value.toLowerCase() })} placeholder="e.g. amina.k" /></Field>
+            <Field label="Contact email"><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="staff@company.co.tz" /></Field>
             <Field label="Temporary password"><Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="min 8 chars (or auto-generated)" /></Field>
             <Field label="Phone"><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>
             <Field label="Role">
@@ -412,7 +413,7 @@ function Team() {
               </Field>
             )}
           </div>
-          <Button className="mt-3" variant="amber" disabled={create.isPending || !form.name.trim() || !form.username.trim()} onClick={() => create.mutate(form)}>{create.isPending ? "Creating…" : "Create staff account"}</Button>
+          <Button className="mt-3" variant="amber" disabled={create.isPending || !form.name.trim() || !form.username.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email.trim())} onClick={() => create.mutate(form)}>{create.isPending ? "Creating…" : "Create & email invite"}</Button>
           {create.error && <p className="mt-2 text-xs text-bad">{(create.error as Error).message}</p>}
         </Card>
       )}
@@ -550,7 +551,7 @@ function Team() {
   );
 }
 
-const BLANK_USER = { name: "", username: "", password: "", phone: "", role: "key_account", fieldStation: "yard" };
+const BLANK_USER = { name: "", username: "", email: "", password: "", phone: "", role: "key_account", fieldStation: "yard" };
 
 function Overview() {
   const [, navigate] = useLocation();
@@ -769,6 +770,44 @@ function MyProfile({ me }: { me: Me }) {
         <SectionTitle sub="Change your password.">Security</SectionTitle>
         <Card className="p-5"><ChangePasswordForm requireCurrent /></Card>
       </div>
+      <div>
+        <SectionTitle sub="Your second seal on money leaving the platform. Every payout release requires this PIN plus your authenticator code. Funds are monitored, not held.">Payout master PIN</SectionTitle>
+        <Card className="p-5"><MasterPinForm hasPin={!!me.profile.hasMasterPin} /></Card>
+      </div>
+    </div>
+  );
+}
+
+function MasterPinForm({ hasPin }: { hasPin: boolean }) {
+  const [currentPin, setCurrentPin] = useState("");
+  const [newPin, setNewPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+  const [err, setErr] = useState("");
+  const [done, setDone] = useState(false);
+  const save = useMutation({
+    mutationFn: async () => {
+      setErr("");
+      if (!/^\d{6,12}$/.test(newPin)) throw new Error("PIN must be 6–12 digits.");
+      if (newPin !== confirmPin) throw new Error("PINs do not match.");
+      const { ProfileAPI } = await import("../lib/tenders");
+      return ProfileAPI.setMasterPin(newPin, hasPin ? currentPin : undefined);
+    },
+    onSuccess: () => { setDone(true); setCurrentPin(""); setNewPin(""); setConfirmPin(""); },
+    onError: (e: any) => setErr(e?.message || "Could not set PIN."),
+  });
+  return (
+    <div className="space-y-3">
+      <div className="text-xs text-slate-500">
+        Status: {hasPin
+          ? <span className="text-good">A master PIN is set.</span>
+          : <span className="text-amber-500">No master PIN yet — set one to enable payout release.</span>}
+      </div>
+      {hasPin && <Field label="Current PIN"><Input type="password" inputMode="numeric" value={currentPin} onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, ""))} placeholder="••••••" /></Field>}
+      <Field label="New PIN (6–12 digits)"><Input type="password" inputMode="numeric" value={newPin} onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ""))} placeholder="••••••" /></Field>
+      <Field label="Confirm new PIN"><Input type="password" inputMode="numeric" value={confirmPin} onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ""))} placeholder="••••••" /></Field>
+      {err && <p className="text-xs text-bad">{err}</p>}
+      {done && <p className="text-xs text-good">✓ Master PIN {hasPin ? "changed" : "set"}.</p>}
+      <Button variant="amber" disabled={save.isPending} onClick={() => save.mutate()}>{save.isPending ? "Saving…" : hasPin ? "Change PIN" : "Set PIN"}</Button>
     </div>
   );
 }
@@ -807,17 +846,18 @@ function AdminPayoutCard({ contract, me, onDone }: { contract: any; me: Me; onDo
           <div className="tnum text-good">{tzs(data?.preview?.supplierPayoutTzs ?? contract.supplierPayoutTzs ?? 0)}</div>
         </div>
         <div className="rounded-md border border-navy-600 bg-navy-900 p-3">
-          <div className="mb-1 text-[11px] uppercase tracking-wider text-slate-500">TT slip</div>
-          {data?.slipUrl ? <a href={data.slipUrl} target="_blank" rel="noreferrer" className="text-amber-500 hover:underline">View ↗</a> : <span className="text-slate-500">—</span>}
+          <div className="mb-1 text-[11px] uppercase tracking-wider text-slate-500">TT proof</div>
+          {data?.proofUrl ? <a href={data.proofUrl} target="_blank" rel="noreferrer" className="text-amber-500 hover:underline">View ↗</a> : <span className="text-slate-500">Upload at release</span>}
         </div>
       </div>
-      <Button variant="amber" onClick={() => setOpen(true)} disabled={!data}>Approve &amp; release payment</Button>
+      <Button variant="amber" onClick={() => setOpen(true)} disabled={!data}>Instruct transfer &amp; release</Button>
       {open && data && (
         <PayoutGatewayModal
           contract={data.contract}
           bank={data.bank}
           makerName="Key Account Manager"
           checkerName={me.profile.fullName || me.user.name || "Admin"}
+          canRelease={!!data.canRelease}
           onClose={() => setOpen(false)}
           onReleased={onDone}
         />

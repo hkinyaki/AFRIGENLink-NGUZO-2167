@@ -4,7 +4,7 @@ import { Page, PageHeroImage, CTASection, Reveal } from "../../components/site-u
 const FAQS: { q: string; a: string }[] = [
   {
     q: "Do you actually hold my money?",
-    a: "Right now, funds are tracked, not held — we ledger every transaction transparently and show both parties exactly where the money stands, but we're still onboarding a licensed escrow partner before we hold client funds directly. We'd rather tell you that plainly than overstate it.",
+    a: "Your money is monitored, not held by us — by design. A licensed escrow partner holds the funds while we ledger every transaction transparently and show both parties exactly where the money stands. Keeping custody out of our hands is what keeps your money safeguarded and our incentives clean — we'd rather tell you that plainly than overstate our role.",
   },
   {
     q: "What does AFRIGEN Link charge?",

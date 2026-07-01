@@ -85,7 +85,7 @@ export default function HowItWorks() {
             {[
               ["100% in escrow", "The full project value is secured before any work starts. The supplier knows it's there; the client knows it won't release early."],
               ["Flat 10%, every deal", "One transparent fee on every transaction — both cargo and machinery. No hidden markups, no per-side games."],
-              ["Tracked, not held — for now", "We're onboarding a licensed escrow partner. Until then, funds are tracked and ledgered transparently, never quietly pooled."],
+              ["Monitored, not held", "A licensed escrow partner holds the funds; we monitor, ledger and instruct transparently. We never take custody ourselves — never quietly pooled."],
             ].map(([t, b], i) => (
               <Reveal key={t} delay={i * 80}>
                 <div className="card-lite card-lift h-full p-7">

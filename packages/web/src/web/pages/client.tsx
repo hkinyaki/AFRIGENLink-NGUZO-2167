@@ -286,6 +286,7 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
   const clientFee = Math.round(baseValue * 0.05);
   const escrowAmt = baseValue + clientFee; // what the client funds = value + 5%
   const permitDocs = documents.filter((d: any) => d.kind === "Permit");
+  const ttProofDocs = documents.filter((d: any) => d.kind === "TTProof");
 
   return (
     <div className="p-6">
@@ -401,9 +402,17 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
                 </div>
                 <p className="text-[11px] text-slate-500">Funds tracked and monitored, not held. Suppliers are paid on completion, less their own 5% fee. Once we confirm your payment, a payment proof is generated and emailed to you automatically.</p>
               </div>
-              <Button variant="amber" disabled={advance.isPending} onClick={() => advance.mutate("tt-uploaded")}>
-                {advance.isPending ? "Submitting…" : "I have cleared the payment"}
+              <div className="mb-3 space-y-2 rounded-md border border-navy-600 bg-navy-900 p-3">
+                <p className="text-xs text-slate-300">Bank transfer only. After you send the transfer, upload a copy of the TT (bank transfer) slip so we can confirm it against the account.</p>
+                <FileUpload label="TT transfer copy" kind="TTProof" tenderId={id} onUploaded={refresh} buttonLabel="Upload TT copy" />
+                {ttProofDocs.length > 0 && (
+                  <div className="text-[11px] text-good">{ttProofDocs.length} TT copy uploaded — you can now submit for confirmation.</div>
+                )}
+              </div>
+              <Button variant="amber" disabled={advance.isPending || ttProofDocs.length === 0} onClick={() => advance.mutate("tt-uploaded")}>
+                {advance.isPending ? "Submitting…" : "Submit payment proof for confirmation"}
               </Button>
+              {ttProofDocs.length === 0 && <p className="mt-2 text-[11px] text-slate-500">Upload your TT copy to enable submission.</p>}
               {advance.error && <p className="mt-2 text-xs text-bad">{(advance.error as Error).message}</p>}
             </Card>
           )}

@@ -19,6 +19,12 @@ export const profile = sqliteTable("profile", {
   userCode: text("user_code").default(""), // human-readable ID e.g. AGL-FA-007 (unique per row)
   username: text("username").notNull().default(""), // admin-set login username for staff (Field/KAM/Parts/Admin)
   companyName: text("company_name").notNull().default(""),
+  // Real contact inbox for staff (KAM/Field/Admin) whose login is a synth username email.
+  // Invites, notifications and email OTP are delivered here for staff accounts.
+  contactEmail: text("contact_email").notNull().default(""),
+  // Hashed Master PIN — set ONLY on the owner/super-admin profile. Required (with a
+  // fresh TOTP code) to release a payout. Never exposed; blank for everyone else.
+  masterPinHash: text("master_pin_hash").notNull().default(""),
   // PendingOnboarding | Submitted | SiteVisitScheduled | Verified | Rejected
   verificationStatus: text("verification_status").notNull().default("PendingOnboarding"),
   physicalVerificationNotes: text("physical_verification_notes").default(""),
@@ -220,7 +226,11 @@ export const contracts = sqliteTable("contracts", {
   extensionStatus: text("extension_status").notNull().default("None"), // None | Requested | AwaitingPayment | Extended | PaymentOverdue
   removalRight: integer("removal_right").notNull().default(0), // 1 = supplier may recover machine (unpaid extension past end date)
   // --- Payout chain (replaces silent auto-settle) ---
-  payoutSlipKey: text("payout_slip_key").notNull().default(""), // KAM-uploaded TT slip to supplier (S3 key)
+  payoutSlipKey: text("payout_slip_key").notNull().default(""), // legacy KAM slip key (kept for old rows)
+  // Admin-uploaded TT proof of the outbound bank transfer to the supplier (S3 key).
+  // Manual bank-only settlement bridge: admin instructs the transfer, attaches the
+  // TT copy, then releases (gated by TOTP + Master PIN). Money "monitored, not held".
+  payoutProofKey: text("payout_proof_key").notNull().default(""),
   // 4-step activation chain: None → TaskComplete (supplier) → AwaitingKamSubmission (client sign-off)
   //   → PendingAdminApproval (KAM submits) → AwaitingSupplierApproval (admin releases) → Approved (supplier confirms)
   payoutStatus: text("payout_status").notNull().default("None"),

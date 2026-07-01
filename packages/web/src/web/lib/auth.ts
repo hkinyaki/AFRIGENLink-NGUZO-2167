@@ -1,4 +1,5 @@
 import { createAuthClient } from "better-auth/react";
+import { twoFactorClient } from "better-auth/client/plugins";
 
 export const TOKEN_KEY = "bearer_token";
 
@@ -9,6 +10,7 @@ export function getToken(): string {
 export const authClient = createAuthClient({
   baseURL: window.location.origin,
   basePath: "/api/auth",
+  plugins: [twoFactorClient()],
   fetchOptions: {
     auth: {
       type: "Bearer",

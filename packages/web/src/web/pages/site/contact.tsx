@@ -60,9 +60,9 @@ export default function Contact() {
             </div>
             <div className="mt-8 card-lite p-6">
               <p className="text-sm leading-relaxed text-[#5A6473]">
-                Funds are currently <span className="font-mono text-amber-600">tracked, not held</span> while
-                we onboard a licensed escrow partner. Flat 10% on every completed deal. No owned fleet, no
-                unsecured lending.
+                Funds are <span className="font-mono text-amber-600">monitored, not held</span> by us — a
+                licensed escrow partner holds them while we oversee. Flat 10% on every completed deal. No
+                owned fleet, no unsecured lending.
               </p>
             </div>
             <div className="mt-6 overflow-hidden rounded-[1.25rem] border border-[#E5E2DA] shadow-[0_20px_50px_-30px_rgba(20,27,46,0.4)]">

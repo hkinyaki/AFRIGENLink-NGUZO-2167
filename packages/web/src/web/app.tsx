@@ -1,13 +1,7 @@
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, useLocation, Redirect } from "wouter";
 import { useMe } from "./lib/use-me";
 import { Logo } from "./components/brand";
 import Home from "./pages/site/home";
-import HowItWorks from "./pages/site/how-it-works";
-import ForClients from "./pages/site/for-clients";
-import ForOwners from "./pages/site/for-owners";
-import Security from "./pages/site/security";
-import About from "./pages/site/about";
-import FAQ from "./pages/site/faq";
 import Contact from "./pages/site/contact";
 import Blog from "./pages/site/blog";
 import BlogPost from "./pages/site/blog-post";
@@ -19,7 +13,7 @@ import FieldApp from "./pages/field";
 import AdminApp from "./pages/admin";
 import KamApp from "./pages/kam";
 import PartsApp from "./pages/parts";
-import { ForcePasswordChange, OnboardingWizard } from "./pages/onboarding";
+import { ForcePasswordChange, OnboardingWizard, EnrollTwoFactor } from "./pages/onboarding";
 import { AgentFeedback } from "@runablehq/website-runtime";
 import ScrollToTop from "./components/scroll-to-top";
 
@@ -36,13 +30,16 @@ function MarketingSite() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/how-it-works" component={HowItWorks} />
-      <Route path="/for-clients" component={ForClients} />
-      <Route path="/for-owners" component={ForOwners} />
-      <Route path="/security" component={Security} />
-      <Route path="/about" component={About} />
-      <Route path="/faq" component={FAQ} />
+      {/* old marketing routes now live as sections on the one-page home */}
+      <Route path="/how-it-works">{() => <Redirect to="/#how-it-works" />}</Route>
+      <Route path="/for-clients">{() => <Redirect to="/#for-clients" />}</Route>
+      <Route path="/for-owners">{() => <Redirect to="/#for-owners" />}</Route>
+      <Route path="/security">{() => <Redirect to="/#security" />}</Route>
+      <Route path="/about">{() => <Redirect to="/#about" />}</Route>
+      <Route path="/faq">{() => <Redirect to="/#faq" />}</Route>
+      {/* contact keeps its own form page */}
       <Route path="/contact" component={Contact} />
+      {/* real routes */}
       <Route path="/blog" component={Blog} />
       <Route path="/blog/:slug" component={BlogPost} />
       <Route path="/legal/:doc" component={Legal} />
@@ -56,7 +53,9 @@ function MarketingSite() {
 function Dashboard({ me }: { me: NonNullable<ReturnType<typeof useMe>["me"]> }) {
   // 1) admin-created staff must set their own password first
   if (me.profile.mustChangePassword) return <ForcePasswordChange />;
-  // 2) everyone (except already-onboarded admin) must complete the KYC/KYB gate
+  // 2) every account must enable two-step verification before reaching a dashboard
+  if (!me.user.twoFactorEnabled) return <EnrollTwoFactor />;
+  // 3) everyone (except already-onboarded admin) must complete the KYC/KYB gate
   if (!me.profile.onboardingComplete && me.profile.role !== "admin") {
     return <OnboardingWizard me={me} />;
   }

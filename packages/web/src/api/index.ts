@@ -36,7 +36,9 @@ import { checklistFor, evaluateBreakdown, runSettlement, computeAmountToFund, CL
 import { presignPut, presignGet } from "./lib/s3";
 import { computeAward } from "./lib/award";
 import { isNextStage, STAGE_ACTOR, STAGE_LABEL } from "./lib/stages";
-import { logEvent, logNotification, notifyMany } from "./lib/events";
+import { logEvent, logNotification, notifyMany, sendStaffInviteEmail } from "./lib/events";
+import { verifyStepUpTotp } from "./lib/step-up";
+import { hashPin, verifyPin } from "./lib/pin";
 import { issuePaymentProofs, issueInvoice, issueExtensionContract, issueExtensionProofs } from "./lib/proofs";
 import {
   corsOrigin,
@@ -180,11 +182,6 @@ async function advanceStage(c: import("hono").Context<{ Variables: Vars }>, targ
   return c.json({ ok: true, stage: target, stageLabel: label }, 200);
 }
 
-// Simulated document-view OTP store (in-memory, short TTL). A real RFC6238
-// TOTP via an external authenticator would replace this map without changing
-// the issue/verify route surface.
-const docOtpStore = new Map<string, { code: string; expires: number }>();
-
 const app = new Hono<{ Variables: Vars }>()
   .use(securityHeaders)
   .use(cors({ origin: (origin) => corsOrigin(origin), credentials: true, exposeHeaders: ["set-auth-token"] }))
@@ -238,7 +235,19 @@ const app = new Hono<{ Variables: Vars }>()
       await db.update(profile).set({ lastSeenAt: now }).where(eq(profile.id, p.id));
       p = { ...p, lastSeenAt: now };
     }
-    return c.json({ user, profile: p }, 200);
+    // Never leak the master PIN hash to the client; expose only a boolean.
+    const { masterPinHash, ...safeProfile } = p as typeof p & { masterPinHash?: string };
+    return c.json(
+      {
+        user: {
+          ...user,
+          // Surface the 2FA enrollment flag so the client can force TOTP setup.
+          twoFactorEnabled: (user as { twoFactorEnabled?: boolean }).twoFactorEnabled ?? false,
+        },
+        profile: { ...safeProfile, hasMasterPin: !!masterPinHash },
+      },
+      200
+    );
   })
   // KAM sets manual activity override (online | offline | meeting | standby).
   .post("/me/activity", requireAuth, async (c) => {
@@ -392,6 +401,27 @@ const app = new Hono<{ Variables: Vars }>()
     await db.update(profile).set({ mustChangePassword: false }).where(eq(profile.id, p.id));
     return c.json({ ok: true }, 200);
   })
+  // ---- owner: set / change the master PIN used to release payouts ----
+  // The master PIN is the owner's second seal on money leaving the platform.
+  // It lives only on the owner (allowlisted super-admin) profile.
+  .post("/me/master-pin", requireAuth, requireRole("admin"), rateLimit({ windowMs: 60_000, max: 6, bucket: "pin" }), async (c) => {
+    const p = c.get("profile")!;
+    const user = c.get("user")!;
+    if (!isAllowlistedAdmin(user.email)) return c.json({ error: "Only the platform owner can set the master PIN." }, 403);
+    const b = await c.req.json<{ currentPin?: string; newPin: string }>().catch(() => ({ newPin: "" }));
+    const newPin = String(b.newPin || "");
+    if (!/^\d{6,12}$/.test(newPin)) return c.json({ error: "PIN must be 6–12 digits." }, 400);
+    // if a PIN is already set, require the current one
+    if (p.masterPinHash) {
+      if (!b.currentPin || !(await verifyPin(String(b.currentPin), p.masterPinHash))) {
+        return c.json({ error: "Current PIN is incorrect." }, 401);
+      }
+    }
+    const hash = await hashPin(newPin);
+    await db.update(profile).set({ masterPinHash: hash }).where(eq(profile.id, p.id));
+    await logEvent({ actorProfileId: p.id, type: "master_pin.set", summary: `${p.companyName || "Owner"} ${p.masterPinHash ? "changed" : "set"} the payout master PIN.` });
+    return c.json({ ok: true, hasPin: true }, 200);
+  })
   // ---- self: edit profile (name / phone / photo) — used by admin & all roles ----
   .post("/me/profile", requireAuth, async (c) => {
     const p = c.get("profile")!;
@@ -540,48 +570,30 @@ const app = new Hono<{ Variables: Vars }>()
   })
 
   // ============================================================
-  //  KAM — document-view OTP (simulated TOTP, logged to admin)
-  //  A KAM must request a one-time code before opening a sensitive
-  //  document. The code is shown on-screen now (simulated), and the
-  //  access attempt is logged to Admin notifications. Real RFC6238
-  //  TOTP via an external authenticator drops into this same seam.
+  //  KAM/Admin — document-view step-up (real authenticator TOTP)
+  //  Before opening a sensitive document, the staff member must enter a
+  //  live 6-digit code from their authenticator app. The code is verified
+  //  against their enrolled TOTP secret (no simulated codes), and every
+  //  access attempt is logged to Admin notifications + the audit trail.
   // ============================================================
-  .post("/chat/doc-otp/issue", requireAuth, requireRole("key_account", "admin"), async (c) => {
+  .post("/chat/doc-otp/verify", requireAuth, requireRole("key_account", "admin"), rateLimit({ windowMs: 60_000, max: 8, bucket: "docotp" }), async (c) => {
     const me = c.get("profile")!;
-    const { docId } = await c.req.json().catch(() => ({}));
-    if (!docId) return c.json({ error: "docId required" }, 400);
-    const [doc] = await db.select().from(documents).where(eq(documents.id, docId)).limit(1);
-    if (!doc) return c.json({ error: "Document not found." }, 404);
-    // 6-digit simulated code, 5-minute TTL, keyed per KAM+doc
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-    docOtpStore.set(`${me.id}:${docId}`, { code, expires: Date.now() + 5 * 60_000 });
-    // log the access request to every admin
-    const admins = await db.select().from(profile).where(eq(profile.role, "admin"));
-    await notifyMany(admins.map((a) => a.id), {
-      subject: "Document access — OTP issued",
-      body: `${me.fullName || me.companyName || "A KAM"} (${me.userCode}) requested a one-time code to view document "${doc.label || doc.kind}". Access logged.`,
-    });
-    await logEvent({ actorProfileId: me.id, type: "doc_otp_issued", summary: `${me.fullName || "KAM"} (${me.userCode}) requested an OTP to view "${doc.label || doc.kind}".`, meta: { docId } });
-    // simulated channel: return the code so the UI can show it. Real TOTP would NOT return it.
-    return c.json({ ok: true, simulatedCode: code, expiresInSec: 300 }, 200);
-  })
-  .post("/chat/doc-otp/verify", requireAuth, requireRole("key_account", "admin"), async (c) => {
-    const me = c.get("profile")!;
+    const user = c.get("user")!;
     const { docId, code } = await c.req.json().catch(() => ({}));
     if (!docId || !code) return c.json({ error: "docId and code required" }, 400);
-    const key = `${me.id}:${docId}`;
-    const rec = docOtpStore.get(key);
-    if (!rec || rec.expires < Date.now()) return c.json({ error: "Code expired — request a new one." }, 401);
-    if (rec.code !== String(code).trim()) return c.json({ error: "Incorrect code." }, 401);
-    docOtpStore.delete(key);
     const [doc] = await db.select().from(documents).where(eq(documents.id, docId)).limit(1);
     if (!doc) return c.json({ error: "Document not found." }, 404);
+    const ok = await verifyStepUpTotp(user.id, String(code));
+    if (!ok) {
+      await logEvent({ actorProfileId: me.id, type: "doc_open_denied", summary: `${me.fullName || "Staff"} (${me.userCode}) entered an invalid authenticator code trying to open "${doc.label || doc.kind}".`, meta: { docId } });
+      return c.json({ error: "Incorrect authenticator code." }, 401);
+    }
     const admins = await db.select().from(profile).where(eq(profile.role, "admin"));
     await notifyMany(admins.map((a) => a.id), {
       subject: "Document opened",
-      body: `${me.fullName || me.companyName || "A KAM"} (${me.userCode}) verified OTP and opened "${doc.label || doc.kind}".`,
+      body: `${me.fullName || me.companyName || "A staff member"} (${me.userCode}) confirmed with their authenticator and opened "${doc.label || doc.kind}".`,
     });
-    await logEvent({ actorProfileId: me.id, type: "doc_opened", summary: `${me.fullName || "KAM"} (${me.userCode}) opened "${doc.label || doc.kind}" after OTP.`, meta: { docId } });
+    await logEvent({ actorProfileId: me.id, type: "doc_opened", summary: `${me.fullName || "Staff"} (${me.userCode}) opened "${doc.label || doc.kind}" after authenticator verification.`, meta: { docId } });
     return c.json({ ok: true, url: doc.url ?? null }, 200);
   })
   // ---- public-ish: a single profile (contact card) — scoped ----
@@ -804,18 +816,20 @@ const app = new Hono<{ Variables: Vars }>()
           supplierName: supplier.companyName, userCode: supplier.userCode,
         }
       : null;
-    const slipUrl = contract.payoutSlipKey ? await presignGet(contract.payoutSlipKey) : "";
+    const proofUrl = contract.payoutProofKey ? await presignGet(contract.payoutProofKey) : "";
     // settlement preview
     const baseValue = contract.contractValueTzs || contract.totalEscrowBalanceTzs;
     const preview = runSettlement(baseValue, contract.emergencyCreditDeductedTzs);
-    return c.json({ contract, bank: isStaff ? bank : null, slipUrl, payoutStatus: contract.payoutStatus, preview }, 200);
+    // does the current admin hold a master PIN (i.e. can they release)?
+    const canRelease = p.role === "admin" && !!p.masterPinHash;
+    return c.json({ contract, bank: isStaff ? bank : null, proofUrl, payoutStatus: contract.payoutStatus, preview, canRelease }, 200);
   })
-  // STEP 3 — KAM submits the payment request for execution (uploads TT slip) → admin queue
+  // STEP 3 — KAM submits the payment request for execution (NO upload) → admin queue.
+  // The KAM is the maker: they confirm the sign-off and supplier bank details are
+  // in order, then hand the actual bank instruction + proof to the admin (checker).
   .post("/contracts/:id/payout-slip", requireAuth, requireRole("key_account", "admin"), async (c) => {
     const cid = c.req.param("id");
     const p = c.get("profile")!;
-    const b = await c.req.json<{ slipKey: string }>();
-    if (!b.slipKey) return c.json({ error: "slipKey required" }, 400);
     const [contract] = await db.select().from(contracts).where(eq(contracts.id, cid)).limit(1);
     if (!contract) return c.json({ message: "Not found" }, 404);
     if (contract.payoutStatus !== "AwaitingKamSubmission") {
@@ -823,21 +837,40 @@ const app = new Hono<{ Variables: Vars }>()
     }
     await db
       .update(contracts)
-      .set({ payoutSlipKey: b.slipKey, payoutStatus: "PendingAdminApproval", kamSubmittedAt: new Date() })
+      .set({ payoutStatus: "PendingAdminApproval", kamSubmittedAt: new Date() })
       .where(eq(contracts.id, cid));
     await logEvent({ contractId: cid, tenderId: contract.tenderId ?? "", actorProfileId: p.id, type: "payout.submitted", summary: `${p.companyName || "KAM"} submitted the payment request for "${contract.title}" for admin approval.` });
     const admins = await db.select().from(profile).where(eq(profile.role, "admin"));
-    await notifyMany(admins.map((a) => a.id), { tenderId: contract.tenderId ?? "", subject: "Payment request awaiting approval", body: `A payment request for "${contract.title}" is ready for your approval and release.` });
+    await notifyMany(admins.map((a) => a.id), { tenderId: contract.tenderId ?? "", subject: "Payment request awaiting approval", body: `A payment request for "${contract.title}" is ready for you to instruct the bank transfer, upload proof, and release.` });
     return c.json({ ok: true }, 200);
   })
-  // STEP 4 — admin approves & releases → run settlement, lock invoices/ledger
+  // STEP 4 — admin instructs the bank transfer, uploads the TT proof, and releases.
+  // Release requires a fresh authenticator code (TOTP) + the owner's master PIN.
+  // Only the owner (super-admin holding a master PIN) can release funds.
   .post("/contracts/:id/approve-release", requireAuth, requireRole("admin"), async (c) => {
     const cid = c.req.param("id");
     const p = c.get("profile")!;
+    const user = c.get("user")!;
+    const b = await c.req.json<{ payoutProofKey?: string; totp?: string; pin?: string }>().catch(() => ({}));
     const [contract] = await db.select().from(contracts).where(eq(contracts.id, cid)).limit(1);
     if (!contract) return c.json({ message: "Not found" }, 404);
     if (contract.payoutStatus !== "PendingAdminApproval") return c.json({ error: "Nothing to release. The KAM must submit the payment request first." }, 400);
-    if (!contract.payoutSlipKey) return c.json({ error: "No payment slip has been uploaded yet." }, 400);
+
+    // Bank-transfer proof is mandatory — every payment out is evidenced by an uploaded TT copy.
+    if (!b.payoutProofKey) return c.json({ error: "Upload the bank transfer (TT) proof before releasing." }, 400);
+
+    // Master PIN is set on the owner profile only. Verify it belongs to this admin.
+    if (!p.masterPinHash) return c.json({ error: "You are not authorised to release payments. A master PIN must be set by the platform owner." }, 403);
+    if (!b.pin || !(await verifyPin(String(b.pin), p.masterPinHash))) {
+      await logEvent({ contractId: cid, tenderId: contract.tenderId ?? "", actorProfileId: p.id, type: "payout.denied", summary: `${p.companyName || "Admin"} entered an incorrect master PIN attempting to release "${contract.title}".` });
+      return c.json({ error: "Incorrect master PIN." }, 401);
+    }
+    // Fresh authenticator (TOTP) step-up.
+    const totpOk = await verifyStepUpTotp(user.id, String(b.totp || ""));
+    if (!totpOk) {
+      await logEvent({ contractId: cid, tenderId: contract.tenderId ?? "", actorProfileId: p.id, type: "payout.denied", summary: `${p.companyName || "Admin"} entered an invalid authenticator code attempting to release "${contract.title}".` });
+      return c.json({ error: "Incorrect authenticator code." }, 401);
+    }
 
     const baseValue = contract.contractValueTzs || contract.totalEscrowBalanceTzs;
     const s = runSettlement(baseValue, contract.emergencyCreditDeductedTzs);
@@ -846,6 +879,7 @@ const app = new Hono<{ Variables: Vars }>()
       .set({
         platformFeeTzs: s.platformFeeTzs,
         supplierPayoutTzs: s.supplierPayoutTzs,
+        payoutProofKey: b.payoutProofKey,
         milestoneStatus: "FundsDisbursed",
         payoutStatus: "Approved",
         adminApprovedAt: new Date(),
@@ -1588,10 +1622,13 @@ const app = new Hono<{ Variables: Vars }>()
   // Staff log in with an admin-set USERNAME + temp password, and are forced to
   // change the password on first login, then complete KYC onboarding.
   .post("/admin/staff/create", requireAuth, requireRole("admin"), async (c) => {
-    const b = await c.req.json<{ username: string; password?: string; name: string; role: string; phone?: string; managerId?: string; fieldStation?: string }>();
+    const b = await c.req.json<{ username: string; password?: string; name: string; role: string; phone?: string; email?: string; managerId?: string; fieldStation?: string }>();
     const uname = (b.username ?? "").trim().toLowerCase().replace(/[^a-z0-9._-]/g, "");
     if (!uname || !b.name?.trim()) return c.json({ error: "Username and full name are required." }, 400);
     if (uname.length < 3) return c.json({ error: "Username must be at least 3 characters." }, 400);
+    // A real contact email is required — the invite + login codes + notifications go there.
+    const contactEmail = (b.email ?? "").trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contactEmail)) return c.json({ error: "A valid contact email is required — the invite and sign-in codes are sent there." }, 400);
     // Staff are internal roles only.
     if (!["admin", "key_account", "field"].includes(b.role)) return c.json({ error: "Only Admin, Key Account Manager and Field Agent staff can be created here." }, 400);
     // username must be unique across profiles
@@ -1614,6 +1651,7 @@ const app = new Hono<{ Variables: Vars }>()
     await db.insert(profile).values({
       id: pid, userId, role: b.role, userCode: code, username: uname,
       companyName: b.name.trim(), fullName: b.name.trim(),
+      contactEmail,
       phone: b.phone ?? "", agentNumber: b.role === "field" ? code.replace("AGL-", "") : "",
       managerId: b.managerId ?? "",
       fieldStation: b.role === "field" ? (b.fieldStation === "border" ? "border" : "yard") : "",
@@ -1622,7 +1660,17 @@ const app = new Hono<{ Variables: Vars }>()
       // Staff identity is trusted (admin-created) but KYC still required before live work.
       verificationStatus: "Submitted",
     });
-    return c.json({ ok: true, profileId: pid, username: uname, tempPassword, userCode: code }, 200);
+    // Email the invite (username + temp password + instructions) to the contact inbox.
+    const origin = new URL(c.req.url).origin;
+    const emailed = await sendStaffInviteEmail({
+      to: contactEmail,
+      name: b.name.trim(),
+      role: b.role,
+      username: uname,
+      tempPassword,
+      loginUrl: `${origin}/app`,
+    });
+    return c.json({ ok: true, profileId: pid, username: uname, tempPassword, userCode: code, emailed }, 200);
   })
   // Admin: delete a user (and their profile)
   .post("/admin/staff/:profileId/delete", requireAuth, requireRole("admin"), async (c) => {
@@ -1648,7 +1696,7 @@ const app = new Hono<{ Variables: Vars }>()
     const me = c.get("profile")!;
     if (pid === me.id) return c.json({ error: "Use your own profile to change your password." }, 403);
     const [target] = await db
-      .select({ id: profile.id, userId: profile.userId, email: authUser.email })
+      .select({ id: profile.id, userId: profile.userId, email: authUser.email, username: profile.username, name: profile.fullName, role: profile.role, contactEmail: profile.contactEmail })
       .from(profile)
       .leftJoin(authUser, eq(profile.userId, authUser.id))
       .where(eq(profile.id, pid))
@@ -1673,7 +1721,20 @@ const app = new Hono<{ Variables: Vars }>()
       return c.json({ error: "Could not reset password: " + (e as Error).message }, 400);
     }
     await db.update(profile).set({ mustChangePassword: true }).where(eq(profile.id, pid));
-    return c.json({ ok: true, tempPassword }, 200);
+    // Email the new temporary password to the staff member's contact inbox (if set).
+    let emailed = false;
+    if (target.contactEmail && target.contactEmail.includes("@") && target.username) {
+      const origin = new URL(c.req.url).origin;
+      emailed = await sendStaffInviteEmail({
+        to: target.contactEmail,
+        name: target.name || target.username,
+        role: target.role,
+        username: target.username,
+        tempPassword,
+        loginUrl: `${origin}/app`,
+      });
+    }
+    return c.json({ ok: true, tempPassword, emailed }, 200);
   })
   // ---- staff requests (KAM → Admin field-agent add) ----
   .get("/staff-requests", requireAuth, async (c) => {
@@ -2134,16 +2195,29 @@ const app = new Hono<{ Variables: Vars }>()
     }
     return advanceStage(c, "PermitsVerified");
   })
-  // Client confirms they have cleared the payment (no file upload — funding is
-  // back-office). Advances to "Payment pending confirmation".
+  // INBOUND FUNDING (bank transfer only): the client transfers to the AFRIGEN Link
+  // account shown on their bank-details PDF, then uploads the TT (bank transfer)
+  // copy as proof. Every payment in is evidenced by an uploaded proof image.
+  // GATE LOCK: at least one TTProof document must be uploaded before advancing.
   .post("/tenders/:id/advance/tt-uploaded", requireAuth, requireRole("client"), async (c) => {
+    const tid = c.req.param("id");
+    const ttDocs = await db.select().from(documents).where(and(eq(documents.tenderId, tid), eq(documents.kind, "TTProof")));
+    if (!ttDocs.length) {
+      return c.json({ error: "Upload your bank transfer (TT) copy before confirming payment." }, 400);
+    }
     return advanceStage(c, "TTUploaded");
   })
-  // Admin/KAM confirms escrow is secured (simulates the bank notification arriving).
-  // Generates + persists + emails payment proofs to the client and each supplier,
-  // then advances. No client-uploaded proof is required (fully back-office).
+  // Admin/KAM reviews the uploaded TT copy and confirms the funds are monitored
+  // (mirrors the bank notification arriving). Generates + persists + emails payment
+  // proofs to the client and each supplier, then advances.
+  // GATE LOCK: every uploaded TTProof must be verified before this step.
   .post("/tenders/:id/advance/tt-confirmed", requireAuth, requireRole("key_account", "admin"), async (c) => {
     const tid = c.req.param("id");
+    const ttDocs = await db.select().from(documents).where(and(eq(documents.tenderId, tid), eq(documents.kind, "TTProof")));
+    if (!ttDocs.length) return c.json({ error: "No bank transfer (TT) proof has been uploaded by the client." }, 400);
+    if (ttDocs.some((d) => !d.verifiedBy)) {
+      return c.json({ error: "Verify the client's bank transfer (TT) proof before confirming payment." }, 400);
+    }
     const res = await advanceStage(c, "TTConfirmed");
     // Only issue proofs when the advance actually succeeded (200).
     if (res.status === 200) {

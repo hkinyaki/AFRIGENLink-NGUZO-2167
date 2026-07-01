@@ -67,9 +67,9 @@ export const TenderAPI = {
   // payout chain — 4 gated steps: supplier mark-complete → client sign-off → KAM submit → admin release
   markComplete: (contractId: string, remarks?: string) => authFetch(`/api/contracts/${contractId}/mark-complete`, { method: "POST", body: JSON.stringify({ remarks }) }),
   signOff: (contractId: string) => authFetch(`/api/contracts/${contractId}/sign-off`, { method: "POST", body: JSON.stringify({}) }),
-  getPayout: (contractId: string) => authFetch(`/api/contracts/${contractId}/payout`) as Promise<{ contract: any; bank: any; slipUrl: string; payoutStatus: string; preview: any }>,
-  uploadPayoutSlip: (contractId: string, slipKey: string) => authFetch(`/api/contracts/${contractId}/payout-slip`, { method: "POST", body: JSON.stringify({ slipKey }) }),
-  approveRelease: (contractId: string) => authFetch(`/api/contracts/${contractId}/approve-release`, { method: "POST", body: JSON.stringify({}) }),
+  getPayout: (contractId: string) => authFetch(`/api/contracts/${contractId}/payout`) as Promise<{ contract: any; bank: any; proofUrl: string; payoutStatus: string; preview: any; canRelease: boolean }>,
+  submitPayout: (contractId: string) => authFetch(`/api/contracts/${contractId}/payout-slip`, { method: "POST", body: JSON.stringify({}) }),
+  approveRelease: (contractId: string, args: { payoutProofKey: string; totp: string; pin: string }) => authFetch(`/api/contracts/${contractId}/approve-release`, { method: "POST", body: JSON.stringify(args) }),
 
   // --- reversals (cancel / refund / shorten) ---
   reversalRequest: (
@@ -115,8 +115,8 @@ export const PartsAPI = {
 export const StaffAPI = {
   list: () => authFetch("/api/admin/staff") as Promise<{ staff: any[] }>,
   setRole: (profileId: string, role: string) => authFetch(`/api/admin/staff/${profileId}/role`, { method: "POST", body: JSON.stringify({ role }) }),
-  // Staff are created with an admin-set USERNAME (not email) + optional temp password.
-  create: (body: { username: string; password?: string; name: string; role: string; phone?: string; managerId?: string; fieldStation?: string }) =>
+  // Staff are created with an admin-set USERNAME (not email) + real contact email + optional temp password.
+  create: (body: { username: string; email: string; password?: string; name: string; role: string; phone?: string; managerId?: string; fieldStation?: string }) =>
     authFetch("/api/admin/staff/create", { method: "POST", body: JSON.stringify(body) }) as Promise<{ ok: boolean; profileId: string; username: string; tempPassword: string; userCode: string }>,
   remove: (profileId: string) => authFetch(`/api/admin/staff/${profileId}/delete`, { method: "POST", body: JSON.stringify({}) }),
   resetPassword: (profileId: string) =>
@@ -135,6 +135,9 @@ export const ProfileAPI = {
     authFetch("/api/me/profile", { method: "POST", body: JSON.stringify(body) }),
   changePassword: (currentPassword: string, newPassword: string) =>
     authFetch("/api/me/password", { method: "POST", body: JSON.stringify({ currentPassword, newPassword }) }),
+  // owner-only: set / change the master PIN that seals payout release
+  setMasterPin: (newPin: string, currentPin?: string) =>
+    authFetch("/api/me/master-pin", { method: "POST", body: JSON.stringify({ newPin, currentPin }) }) as Promise<{ ok: boolean; hasPin: boolean }>,
   get: (profileId: string) => authFetch(`/api/profile/${profileId}`) as Promise<{ profile: any }>,
 };
 
@@ -187,8 +190,7 @@ export const DocAPI = {
   save: (body: { tenderId?: string; contractId?: string; kind: string; label?: string; fileKey: string; mimeType?: string }) =>
     authFetch("/api/documents", { method: "POST", body: JSON.stringify(body) }),
   verify: (id: string) => authFetch(`/api/documents/${id}/verify`, { method: "POST", body: JSON.stringify({}) }),
-  // simulated doc-view OTP (logged to admin)
-  otpIssue: (docId: string) => authFetch("/api/chat/doc-otp/issue", { method: "POST", body: JSON.stringify({ docId }) }) as Promise<{ ok: boolean; simulatedCode: string; expiresInSec: number }>,
+  // doc-view step-up: verify a live authenticator (TOTP) code, logged to admin
   otpVerify: (docId: string, code: string) => authFetch("/api/chat/doc-otp/verify", { method: "POST", body: JSON.stringify({ docId, code }) }) as Promise<{ ok: boolean; url: string | null }>,
 };
 

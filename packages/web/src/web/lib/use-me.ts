@@ -3,7 +3,7 @@ import { api } from "./api";
 import { authClient } from "./auth";
 
 export type Me = {
-  user: { id: string; email: string; name: string };
+  user: { id: string; email: string; name: string; twoFactorEnabled?: boolean };
   profile: {
     id: string;
     role: string;
@@ -29,6 +29,8 @@ export type Me = {
     logoKey?: string | null;
     kamActivityStatus?: string | null;
     lastSeenAt?: number | null;
+    contactEmail?: string | null;
+    hasMasterPin?: boolean | null;
   };
 };
 

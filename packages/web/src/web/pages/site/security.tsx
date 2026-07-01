@@ -40,10 +40,10 @@ export default function Security() {
           <h2 className="mt-3 font-display text-2xl font-bold md:text-3xl">Where we are honest with you.</h2>
           <div className="mt-8 space-y-6 text-base leading-relaxed text-slate-300">
             <p>
-              Right now, funds are <span className="font-mono text-amber-400">tracked, not held</span>.
-              We ledger every shilling transparently and show both parties exactly where the money stands —
-              but we are still onboarding a licensed escrow partner before we hold client funds directly.
-              We'd rather tell you that plainly than pretend otherwise.
+              Funds are <span className="font-mono text-amber-400">monitored, not held</span> — by design.
+              A licensed escrow partner holds the funds while we ledger every shilling transparently and show
+              both parties exactly where the money stands. We deliberately never take custody of your money —
+              keeping it out of our hands is what keeps it safeguarded and our incentives clean.
             </p>
             <p>
               We don't own trucks or machinery, and we don't lend money unsecured. Our only revenue is the

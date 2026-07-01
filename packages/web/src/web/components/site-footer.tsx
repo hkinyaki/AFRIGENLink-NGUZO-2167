@@ -1,28 +1,29 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { scrollToId } from "../lib/motion";
 
-const COLS: { title: string; links: { label: string; href: string }[] }[] = [
+const COLS: { title: string; links: { label: string; id?: string; href?: string }[] }[] = [
   {
     title: "Platform",
     links: [
-      { label: "How it works", href: "/how-it-works" },
-      { label: "Security & Trust", href: "/security" },
+      { label: "How it works", id: "how-it-works" },
+      { label: "Security & Trust", id: "security" },
       { label: "Get started", href: "/app" },
     ],
   },
   {
     title: "Who it's for",
     links: [
-      { label: "For Clients", href: "/for-clients" },
-      { label: "For Owners", href: "/for-owners" },
+      { label: "For Clients", id: "for-clients" },
+      { label: "For Owners", id: "for-owners" },
     ],
   },
   {
     title: "Company",
     links: [
-      { label: "About", href: "/about" },
+      { label: "About", id: "about" },
       { label: "Insights", href: "/blog" },
-      { label: "Contact", href: "/contact" },
-      { label: "FAQ", href: "/faq" },
+      { label: "Contact", id: "contact" },
+      { label: "FAQ", id: "faq" },
     ],
   },
   {
@@ -35,17 +36,33 @@ const COLS: { title: string; links: { label: string; href: string }[] }[] = [
 ];
 
 export function SiteFooter() {
+  const [loc, navigate] = useLocation();
+  const onHome = loc === "/";
+
+  function goTo(id: string) {
+    if (onHome) {
+      scrollToId(id);
+      history.replaceState(null, "", `/#${id}`);
+    } else {
+      navigate(`/#${id}`);
+    }
+  }
+
   return (
     <footer className="bg-navy-900 text-slate-100">
       <div className="mx-auto max-w-6xl px-5 py-14">
         <div className="grid gap-10 md:grid-cols-[1.4fr_repeat(4,1fr)]">
           <div>
-            <Link href="/" className="flex items-center gap-2.5">
+            <a
+              href="/#top"
+              onClick={(e) => { e.preventDefault(); goTo("top"); }}
+              className="flex items-center gap-2.5"
+            >
               <img src="/logo-icon.png" alt="" className="h-9 w-auto" />
               <span className="font-display text-sm font-extrabold tracking-tight text-slate-100">
                 AFRIGEN <span className="text-amber-400">Link</span>
               </span>
-            </Link>
+            </a>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-slate-400">
               Cargo &amp; machinery coordination, secured. We keep the money safe, the equipment real,
               and a person on the ground when it matters.
@@ -61,17 +78,27 @@ export function SiteFooter() {
             <div key={c.title}>
               <div className="font-mono text-xs uppercase tracking-widest text-slate-500">{c.title}</div>
               <div className="mt-4 flex flex-col gap-2.5">
-                {c.links.map((l) => (
-                  <Link key={l.href} href={l.href} className="text-sm text-slate-300 hover:text-slate-100">
-                    {l.label}
-                  </Link>
-                ))}
+                {c.links.map((l) =>
+                  l.href ? (
+                    <Link key={l.label} href={l.href} className="text-sm text-slate-300 hover:text-slate-100">
+                      {l.label}
+                    </Link>
+                  ) : (
+                    <button
+                      key={l.label}
+                      onClick={() => goTo(l.id!)}
+                      className="text-left text-sm text-slate-300 hover:text-slate-100"
+                    >
+                      {l.label}
+                    </button>
+                  )
+                )}
               </div>
             </div>
           ))}
         </div>
         <div className="mt-12 flex flex-col gap-3 border-t border-navy-600 pt-6 text-xs text-slate-500 md:flex-row md:items-center md:justify-between">
-          <p className="font-mono">Dar es Salaam, Tanzania · Central &amp; Southern corridors</p>
+          <p className="font-mono">Dar es Salaam, Tanzania · Southern, Central &amp; Northern corridors</p>
           <p className="font-mono">© {new Date().getFullYear()} AFRIGEN Link — a brand of AFRIGEN Holdings Ltd</p>
         </div>
       </div>

@@ -44,7 +44,7 @@ export default function About() {
           <div className="mt-12 grid gap-5 md:grid-cols-3">
             {[
               ["Software can be cloned. People can't.", "Anyone can copy a dashboard. Nobody can copy a trusted inspector in the yard or an agent who knows the officers at Tunduma by name."],
-              ["Be honest about where we are.", "We tell you plainly: funds are tracked, not held, until our escrow licence lands. Trust starts with not overstating."],
+              ["Be honest about where we are.", "We tell you plainly: funds are monitored, not held by us — a licensed partner holds them while we oversee. Trust starts with not overstating our role."],
               ["Win only when both sides win.", "We take a flat 10% on completed deals — nothing else. We don't profit unless the job is genuinely done."],
             ].map(([t, b], i) => (
               <Reveal key={t} delay={i * 80}>

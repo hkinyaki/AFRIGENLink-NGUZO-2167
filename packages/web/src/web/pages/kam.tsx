@@ -182,6 +182,8 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
   const baseValue = t.flatFairPriceTzs * t.unitsNeeded;
   const escrowAmt = baseValue + Math.round(baseValue * 0.05);
   const permitDocs = documents.filter((d: any) => d.kind === "Permit");
+  const ttProofDocs = documents.filter((d: any) => d.kind === "TTProof");
+  const ttAllVerified = ttProofDocs.length > 0 && ttProofDocs.every((d: any) => d.verifiedBy);
   const pendingReport = (inspections ?? []).find((i: any) => i.reportStatus === "Submitted");
 
   const permitsAllVerified = permitDocs.length > 0 && permitDocs.every((d: any) => d.verifiedBy);
@@ -233,14 +235,19 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
           )}
           {stage === "TTUploaded" && (
             <Card className="border-amber-600 p-5">
-              <SectionTitle sub="The client cleared the payment. Confirm escrow is secured — we generate and email payment proofs to both parties, and the job advances.">Confirm escrow secured</SectionTitle>
+              <SectionTitle sub="The client sent a bank transfer and uploaded the TT copy. Review the TT copy against the account, mark it verified, then confirm escrow is secured — we generate and email payment proofs to both parties, and the job advances.">Confirm escrow secured</SectionTitle>
               <div className="mb-3 flex items-center justify-between rounded-md border border-navy-600 bg-navy-900 p-3 text-sm">
                 <span className="text-slate-400">Escrow to confirm (monitored by AFRIGEN Link)</span>
                 <span className="tnum font-display font-semibold text-amber-500">{tzs(escrowAmt)}</span>
               </div>
-              <Button className="mt-3" variant="amber" disabled={advance.isPending} onClick={() => advance.mutate("tt-confirmed")}>
+              <div className="mb-3">
+                <div className="mb-1.5 text-[11px] uppercase tracking-wider text-slate-500">TT transfer copy</div>
+                <DocList docs={ttProofDocs} onVerify={(d) => verifyDoc.mutate(d)} />
+              </div>
+              <Button className="mt-1" variant="amber" disabled={advance.isPending || !ttAllVerified} onClick={() => advance.mutate("tt-confirmed")}>
                 {advance.isPending ? "Working…" : "Confirm escrow secured"}
               </Button>
+              {!ttAllVerified && <p className="mt-2 text-[11px] text-slate-500">Verify the TT copy above before confirming.</p>}
               {advance.error && <p className="mt-2 text-xs text-bad">{(advance.error as Error).message}</p>}
             </Card>
           )}
@@ -351,32 +358,34 @@ function DocList({ docs, onVerify, showAll }: { docs: any[]; onVerify: (id: stri
 }
 
 /**
- * OTP-gated document view. The KAM requests a one-time code (simulated,
- * shown on-screen + logged to admin), enters it, and only then is the
- * document URL opened. Real RFC6238 TOTP drops into the same flow.
+ * Step-up document view. Before a sensitive document opens, the staff member
+ * enters a live 6-digit code from their authenticator app. It's verified
+ * server-side against their enrolled TOTP secret (no simulated codes) and every
+ * access is logged to admin.
  */
 function OtpDocLink({ doc }: { doc: any }) {
-  const [stage, setStage] = useState<"idle" | "issued">("idle");
+  const [stage, setStage] = useState<"idle" | "prompt">("idle");
   const [code, setCode] = useState("");
-  const [shown, setShown] = useState("");
   const [err, setErr] = useState("");
-  const issue = useMutation({
-    mutationFn: () => TenderAPI.otpIssue(doc.id),
-    onSuccess: (r) => { setStage("issued"); setShown(r.simulatedCode); setErr(""); },
-  });
   const verify = useMutation({
     mutationFn: () => TenderAPI.otpVerify(doc.id, code),
-    onSuccess: (r) => { if (r.url) window.open(r.url, "_blank", "noopener"); setStage("idle"); setCode(""); setShown(""); },
+    onSuccess: (r) => { if (r.url) window.open(r.url, "_blank", "noopener"); setStage("idle"); setCode(""); setErr(""); },
     onError: (e) => setErr((e as Error).message),
   });
   if (stage === "idle") {
-    return <button onClick={() => issue.mutate()} disabled={issue.isPending} className="text-xs text-amber-500 hover:underline disabled:opacity-40">{issue.isPending ? "…" : "🔒 View (OTP)"}</button>;
+    return <button onClick={() => { setStage("prompt"); setErr(""); }} className="text-xs text-amber-500 hover:underline">🔒 View (verify)</button>;
   }
   return (
-    <span className="flex items-center gap-1">
-      <span className="rounded bg-navy-900 px-1.5 py-0.5 font-mono text-[10px] text-amber-400" title="Simulated code — logged to admin">{shown}</span>
-      <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="code" className="w-16 rounded border border-navy-600 bg-navy-900 px-1.5 py-0.5 text-xs text-slate-100" />
-      <button onClick={() => verify.mutate()} disabled={verify.isPending || code.length < 6} className="text-[11px] text-good hover:underline disabled:opacity-40">open</button>
+    <span className="flex items-center gap-1" title="Enter the 6-digit code from your authenticator app">
+      <input
+        value={code}
+        onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+        placeholder="auth code"
+        inputMode="numeric"
+        autoFocus
+        className="w-20 rounded border border-navy-600 bg-navy-900 px-1.5 py-0.5 font-mono text-xs text-slate-100"
+      />
+      <button onClick={() => verify.mutate()} disabled={verify.isPending || code.length < 6} className="text-[11px] text-good hover:underline disabled:opacity-40">{verify.isPending ? "…" : "open"}</button>
       <button onClick={() => { setStage("idle"); setCode(""); setErr(""); }} className="text-[11px] text-slate-500 hover:underline">✕</button>
       {err && <span className="text-[10px] text-bad">{err}</span>}
     </span>
@@ -487,20 +496,20 @@ function PayoutCard({ contract, onDone }: { contract: any; onDone: () => void })
   const [err, setErr] = useState("");
   const data = q.data;
   const bank = data?.bank;
-  async function uploadSlip(file: File) {
+  const submitted = data?.payoutStatus === "PendingAdminApproval" || data?.payoutStatus === "Approved";
+  async function submit() {
     setBusy(true); setErr("");
     try {
-      const { key } = await uploadFile(file, "payout-slip");
-      await TenderAPI.uploadPayoutSlip(contract.id, key);
+      await TenderAPI.submitPayout(contract.id);
       q.refetch(); onDone();
-    } catch (e) { setErr(e instanceof Error ? e.message : "Upload failed"); }
+    } catch (e) { setErr(e instanceof Error ? e.message : "Could not submit"); }
     finally { setBusy(false); }
   }
   return (
     <Card className="p-5">
       <div className="mb-2 flex items-center justify-between">
         <div className="font-medium text-slate-100">{contract.title}</div>
-        <StatusPill status={data?.slipUrl ? "Pending" : "Requested"} />
+        <StatusPill status={submitted ? "Pending" : "Requested"} />
       </div>
       <div className="mb-3"><PaymentTracker payoutStatus={contract.payoutStatus} /></div>
       <div className="grid gap-4 md:grid-cols-2">
@@ -521,17 +530,17 @@ function PayoutCard({ contract, onDone }: { contract: any; onDone: () => void })
           <div className="mb-2 text-[11px] uppercase tracking-wider text-slate-500">Payout</div>
           {data?.preview && (
             <div className="mb-3 space-y-1 text-slate-300">
-              <Row k="Contract value" v={tzs(data.preview ? (contract.contractValueTzs || 0) : 0)} />
+              <Row k="Contract value" v={tzs(contract.contractValueTzs || 0)} />
               <Row k="Supplier net" v={tzs(data.preview.supplierPayoutTzs)} />
             </div>
           )}
-          {data?.slipUrl ? (
-            <div className="text-xs text-good">Payment request submitted — awaiting admin approval. <a href={data.slipUrl} target="_blank" rel="noreferrer" className="text-amber-500 hover:underline">View slip ↗</a></div>
+          {submitted ? (
+            <div className="text-xs text-good">Payment request submitted — awaiting admin approval, bank transfer & release.</div>
           ) : (
-            <label className="block">
-              <span className="mb-1 block text-[11px] uppercase tracking-wider text-slate-500">Submit payment request (upload TT slip)</span>
-              <input type="file" accept="image/*,application/pdf" disabled={busy} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadSlip(f); }} className="text-xs text-slate-400" />
-            </label>
+            <div>
+              <p className="mb-2 text-[11px] text-slate-500">Confirm the sign-off and bank details are correct, then submit for an admin to instruct the transfer and release.</p>
+              <Button variant="amber" disabled={busy || !bank} onClick={submit}>{busy ? "Submitting…" : "Submit payment request"}</Button>
+            </div>
           )}
           {err && <p className="mt-2 text-xs text-bad">{err}</p>}
         </div>
