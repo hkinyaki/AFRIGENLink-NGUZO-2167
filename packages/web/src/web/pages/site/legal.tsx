@@ -16,8 +16,8 @@ const PRIVACY: { h: string; p: string }[] = [
   { h: "2. How we use it", p: "We use your information to verify identities, coordinate and document deals, process settlements, communicate with you, and improve the service. We do not sell your personal data." },
   { h: "3. Sharing", p: "We share the information necessary to complete a deal with the counterparty (for example, an owner's verified status with a client) and with the field agents, border liaison agents and service partners involved in fulfilling a job. We may share information where required by law." },
   { h: "4. Storage & security", p: "We store data securely and restrict internal access by role. Internal roles such as inspectors, border agents and administrators are provisioned by us and never self-assignable." },
-  { h: "5. Your rights", p: "You may request access to, correction of, or deletion of your personal data by contacting us at hello@afrigen.link, subject to legal and operational record-keeping requirements." },
-  { h: "6. Contact", p: "Questions about privacy? Email us at hello@afrigen.link and a real person will respond." },
+  { h: "5. Your rights", p: "You may request access to, correction of, or deletion of your personal data by contacting us at hello@afrigenlink.com, subject to legal and operational record-keeping requirements." },
+  { h: "6. Contact", p: "Questions about privacy? Email us at hello@afrigenlink.com and a real person will respond." },
 ];
 
 export default function Legal() {

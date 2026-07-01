@@ -581,7 +581,7 @@ function Agents() {
         <div className="mb-3 text-[11px] uppercase tracking-wider text-slate-500">Request a new field agent</div>
         <div className="grid gap-3 md:grid-cols-3">
           <Field label="Full name"><Input value={form.proposedName} onChange={(e) => setForm({ ...form, proposedName: e.target.value })} placeholder="e.g. John Mushi" /></Field>
-          <Field label="Email"><Input value={form.proposedEmail} onChange={(e) => setForm({ ...form, proposedEmail: e.target.value })} placeholder="agent@afrigen.link" /></Field>
+          <Field label="Email"><Input value={form.proposedEmail} onChange={(e) => setForm({ ...form, proposedEmail: e.target.value })} placeholder="agent@afrigenlink.com" /></Field>
           <Field label="Phone"><Input value={form.proposedPhone} onChange={(e) => setForm({ ...form, proposedPhone: e.target.value })} placeholder="+255…" /></Field>
         </div>
         <Button className="mt-3" variant="amber" disabled={create.isPending || !form.proposedName.trim() || !form.proposedEmail.trim()} onClick={() => create.mutate(form)}>

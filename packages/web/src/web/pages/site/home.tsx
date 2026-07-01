@@ -244,8 +244,8 @@ export default function Home() {
                 lending. Tanzania HQ, serving the Southern, Central and Northern corridors. Reach out and we'll walk
                 you through it.
               </p>
-              <a href="mailto:hello@afrigen.link" className="mt-4 inline-block font-mono text-sm text-amber-600 hover:text-amber-500">
-                hello@afrigen.link
+              <a href="mailto:hello@afrigenlink.com" className="mt-4 inline-block font-mono text-sm text-amber-600 hover:text-amber-500">
+                hello@afrigenlink.com
               </a>
             </div>
             <Link

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect, Fragment } from "react";
 import { Route, Switch, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
@@ -306,6 +306,23 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
 
 const ASSET_TYPES = ["Excavator", "Prime Mover", "Tipper Truck", "Bulldozer", "Cargo Truck"];
 
+const FLEET_SORTS: Record<string, string> = {
+  newest: "Newest first",
+  type: "Type A–Z",
+  brand: "Brand A–Z",
+  yard: "Yard A–Z",
+  rateHigh: "Day-rate high → low",
+  rateLow: "Day-rate low → high",
+  status: "Status",
+};
+
+function statusBucket(a: any): string {
+  if (a.onLiveJob) return "On live job";
+  if (a.operationalStatus === "Breakdown") return "Breakdown";
+  if (a.operationalStatus === "Available") return "Available";
+  return "Unavailable";
+}
+
 function Fleet() {
   const q = useQuery({
     queryKey: ["my-assets"],
@@ -313,81 +330,314 @@ function Fleet() {
     refetchInterval: 120000,
   });
   const [openId, setOpenId] = useState("");
-  const rows = q.data ?? [];
+  const rows: any[] = q.data ?? [];
+
+  // ---- controls ----
+  const [search, setSearch] = useState("");
+  const [fType, setFType] = useState("");
+  const [fBrand, setFBrand] = useState("");
+  const [fYard, setFYard] = useState("");
+  const [fStatus, setFStatus] = useState("");
+  const [sort, setSort] = useState("newest");
+  const [groupBy, setGroupBy] = useState("");
+  const [view, setView] = useState<"card" | "table">(() => {
+    if (typeof localStorage === "undefined") return "card";
+    return (localStorage.getItem("fleet-view") as "card" | "table") || "card";
+  });
+  // Default large fleets to the dense table view (once, on first load).
+  const [autoViewSet, setAutoViewSet] = useState(false);
+  useEffect(() => {
+    if (!autoViewSet && rows.length > 20 && !localStorage.getItem("fleet-view")) {
+      setView("table");
+    }
+    if (rows.length > 0) setAutoViewSet(true);
+  }, [rows.length, autoViewSet]);
+  useEffect(() => {
+    if (typeof localStorage !== "undefined") localStorage.setItem("fleet-view", view);
+  }, [view]);
+
+  const distinct = (key: string) => Array.from(new Set(rows.map((r) => r[key]).filter(Boolean))).sort() as string[];
+  const types = useMemo(() => distinct("assetType"), [rows]);
+  const brands = useMemo(() => distinct("manufacturer"), [rows]);
+  const yards = useMemo(() => distinct("yardLocation"), [rows]);
+
+  const hasFilter = !!(search || fType || fBrand || fYard || fStatus);
+  const clearFilters = () => { setSearch(""); setFType(""); setFBrand(""); setFYard(""); setFStatus(""); };
+
+  const visible = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    let out = rows.filter((a) => {
+      if (fType && a.assetType !== fType) return false;
+      if (fBrand && a.manufacturer !== fBrand) return false;
+      if (fYard && a.yardLocation !== fYard) return false;
+      if (fStatus && statusBucket(a) !== fStatus) return false;
+      if (term) {
+        const hay = `${a.assetType} ${a.manufacturer} ${a.model} ${a.vinChassis} ${a.yardLocation}`.toLowerCase();
+        if (!hay.includes(term)) return false;
+      }
+      return true;
+    });
+    const byStr = (k: string) => (x: any, y: any) => String(x[k] || "").localeCompare(String(y[k] || ""));
+    out = [...out].sort((a, b) => {
+      switch (sort) {
+        case "type": return byStr("assetType")(a, b);
+        case "brand": return byStr("manufacturer")(a, b) || byStr("model")(a, b);
+        case "yard": return byStr("yardLocation")(a, b);
+        case "rateHigh": return (b.dayRateTzs || 0) - (a.dayRateTzs || 0);
+        case "rateLow": return (a.dayRateTzs || 0) - (b.dayRateTzs || 0);
+        case "status": return statusBucket(a).localeCompare(statusBucket(b));
+        default: return 0; // newest = keep server order (already desc by createdAt)
+      }
+    });
+    return out;
+  }, [rows, search, fType, fBrand, fYard, fStatus, sort]);
+
+  // Grouping (table view only)
+  const groups = useMemo(() => {
+    if (!groupBy) return [{ key: "", label: "", items: visible }];
+    const keyFn = (a: any) => (groupBy === "yard" ? a.yardLocation : groupBy === "type" ? a.assetType : a.manufacturer) || "Unspecified";
+    const map = new Map<string, any[]>();
+    visible.forEach((a) => { const k = keyFn(a); if (!map.has(k)) map.set(k, []); map.get(k)!.push(a); });
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([key, items]) => ({ key, label: key, items }));
+  }, [visible, groupBy]);
 
   return (
     <div className="p-6">
       <div className="mb-4">
-        <SectionTitle sub="Your fleet is built and verified by AFRIGEN Link field agents during inspection — you cannot edit or remove assets here. Each machine shows its live status and job history.">My Fleet</SectionTitle>
+        <SectionTitle
+          sub="Your fleet is built and verified by AFRIGEN Link field agents during inspection — you cannot edit or remove assets here. Each machine shows its live status and job history."
+          action={
+            <div className="flex overflow-hidden rounded-lg border border-navy-600">
+              <button
+                onClick={() => setView("card")}
+                className={`grid h-8 w-9 place-items-center ${view === "card" ? "bg-navy-700 text-amber-500" : "text-slate-500 hover:text-slate-300"}`}
+                title="Card view"
+              >{Icons.grid}</button>
+              <button
+                onClick={() => setView("table")}
+                className={`grid h-8 w-9 place-items-center border-l border-navy-600 ${view === "table" ? "bg-navy-700 text-amber-500" : "text-slate-500 hover:text-slate-300"}`}
+                title="Table view"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              </button>
+            </div>
+          }
+        >My Fleet</SectionTitle>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         <KPIStat label="Assets" value={String(rows.length)} />
-        <KPIStat label="Available" value={String(rows.filter((r: any) => r.operationalStatus === "Available").length)} accent="good" />
-        <KPIStat label="On live job" value={String(rows.filter((r: any) => r.onLiveJob).length)} />
-        <KPIStat label="Breakdown" value={String(rows.filter((r: any) => r.operationalStatus === "Breakdown").length)} accent="amber" />
+        <KPIStat label="Available" value={String(rows.filter((r) => r.operationalStatus === "Available").length)} accent="good" />
+        <KPIStat label="On live job" value={String(rows.filter((r) => r.onLiveJob).length)} />
+        <KPIStat label="Breakdown" value={String(rows.filter((r) => r.operationalStatus === "Breakdown").length)} accent="amber" />
       </div>
 
       {rows.length === 0 ? (
         <Empty>No assets yet. Your fleet appears here once an AFRIGEN Link field agent inspects and verifies a machine.</Empty>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {rows.map((a: any) => {
-            const photos: string[] = a.photos ?? [];
-            return (
-              <Card key={a.id} className={`overflow-hidden p-0 ${a.doubleEntry ? "ring-1 ring-bad" : ""}`}>
-                {photos.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-px bg-navy-600">
-                    {photos.slice(0, 2).map((src, i) => (
-                      <img key={i} src={src} alt={`${a.assetType} ${i === 0 ? "front" : "back"}`} className="aspect-video w-full object-cover" />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid aspect-video place-items-center bg-navy-900 text-xs text-slate-600">No inspection photos yet</div>
-                )}
-                <div className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="font-display font-semibold text-slate-100">{a.assetType}</div>
-                      <div className="text-sm text-slate-400">{a.manufacturer} {a.model}</div>
-                    </div>
-                    <StatusPill status={a.operationalStatus} />
-                  </div>
-                  {a.doubleEntry && (
-                    <div className="mt-2 flex items-center gap-2 rounded-md border border-bad/50 bg-bad/10 px-2 py-1.5 text-[11px] text-bad">
-                      {Icons.alert}<span>Double-entry: committed to {a.liveJobCount} live jobs at once.</span>
+        <>
+          {/* ---- controls ---- */}
+          <Card className="mb-4 p-4">
+            <div className="grid gap-3 md:grid-cols-6">
+              <div className="md:col-span-2">
+                <Input placeholder="Search brand, model, type, VIN, yard…" value={search} onChange={(e) => setSearch(e.target.value)} />
+              </div>
+              <Select value={fType} onChange={(e) => setFType(e.target.value)}>
+                <option value="">All types</option>
+                {types.map((t) => <option key={t} value={t}>{t}</option>)}
+              </Select>
+              <Select value={fBrand} onChange={(e) => setFBrand(e.target.value)}>
+                <option value="">All brands</option>
+                {brands.map((t) => <option key={t} value={t}>{t}</option>)}
+              </Select>
+              <Select value={fYard} onChange={(e) => setFYard(e.target.value)}>
+                <option value="">All locations</option>
+                {yards.map((t) => <option key={t} value={t}>{t}</option>)}
+              </Select>
+              <Select value={fStatus} onChange={(e) => setFStatus(e.target.value)}>
+                <option value="">All statuses</option>
+                {["Available", "On live job", "Breakdown", "Unavailable"].map((t) => <option key={t} value={t}>{t}</option>)}
+              </Select>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-slate-500">
+                Sort
+                <Select value={sort} onChange={(e) => setSort(e.target.value)} className="!w-auto">
+                  {Object.entries(FLEET_SORTS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </Select>
+              </label>
+              {view === "table" && (
+                <label className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-slate-500">
+                  Group by
+                  <Select value={groupBy} onChange={(e) => setGroupBy(e.target.value)} className="!w-auto">
+                    <option value="">None</option>
+                    <option value="yard">Yard</option>
+                    <option value="type">Type</option>
+                    <option value="brand">Brand</option>
+                  </Select>
+                </label>
+              )}
+              <span className="ml-auto text-xs text-slate-500">
+                Showing <span className="text-slate-300 tnum">{visible.length}</span> of <span className="tnum">{rows.length}</span> assets
+              </span>
+              {hasFilter && (
+                <button onClick={clearFilters} className="text-xs text-amber-500 hover:underline">Clear filters</button>
+              )}
+            </div>
+          </Card>
+
+          {visible.length === 0 ? (
+            <Empty>No assets match your filters. <button onClick={clearFilters} className="text-amber-500 hover:underline">Clear filters</button></Empty>
+          ) : view === "card" ? (
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {visible.map((a) => <FleetCard key={a.id} a={a} openId={openId} setOpenId={setOpenId} />)}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {groups.map((g) => (
+                <div key={g.key || "all"}>
+                  {g.label && (
+                    <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                      {g.label} <span className="rounded bg-navy-700 px-1.5 py-0.5 text-slate-500 tnum">{g.items.length}</span>
                     </div>
                   )}
-                  <div className="mt-3 space-y-1 text-xs text-slate-500">
-                    <div>Engine: {a.engineSerial || "—"}</div>
-                    <div>VIN/Chassis: {a.vinChassis || "—"}</div>
-                    <div>Yard: {a.yardLocation || "—"}</div>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between border-t border-navy-600 pt-3">
-                    <button className="text-xs text-amber-500 hover:underline" onClick={() => setOpenId(openId === a.id ? "" : a.id)}>
-                      {openId === a.id ? "Hide" : "View"} jobs ({a.jobs?.length ?? 0})
-                    </button>
-                    <span className="font-display font-semibold text-slate-100 tnum">{tzs(a.dayRateTzs)}/day</span>
-                  </div>
-                  {openId === a.id && (
-                    <div className="mt-2 space-y-1.5 border-t border-navy-600 pt-2">
-                      {(a.jobs ?? []).length === 0 ? (
-                        <p className="text-[11px] text-slate-500">No jobs yet.</p>
-                      ) : (a.jobs as any[]).map((j) => (
-                        <div key={j.id} className="flex items-center justify-between text-[11px]">
-                          <span className="text-slate-300">{j.title || "Job"}{j.destination ? ` → ${j.destination}` : ""}</span>
-                          <StatusPill status={j.status} />
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <FleetTable rows={g.items} openId={openId} setOpenId={setOpenId} />
                 </div>
-              </Card>
-            );
-          })}
-        </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
+  );
+}
+
+function FleetCard({ a, openId, setOpenId }: { a: any; openId: string; setOpenId: (v: string) => void }) {
+  const photos: string[] = a.photos ?? [];
+  return (
+    <Card className={`overflow-hidden p-0 ${a.doubleEntry ? "ring-1 ring-bad" : ""}`}>
+      {photos.length > 0 ? (
+        <div className="grid grid-cols-2 gap-px bg-navy-600">
+          {photos.slice(0, 2).map((src, i) => (
+            <img key={i} src={src} alt={`${a.assetType} ${i === 0 ? "front" : "back"}`} className="aspect-video w-full object-cover" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid aspect-video place-items-center bg-navy-900 text-xs text-slate-600">No inspection photos yet</div>
+      )}
+      <div className="p-4">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="font-display font-semibold text-slate-100">{a.assetType}</div>
+            <div className="text-sm text-slate-400">{a.manufacturer} {a.model}</div>
+          </div>
+          <StatusPill status={a.operationalStatus} />
+        </div>
+        {a.doubleEntry && (
+          <div className="mt-2 flex items-center gap-2 rounded-md border border-bad/50 bg-bad/10 px-2 py-1.5 text-[11px] text-bad">
+            {Icons.alert}<span>Double-entry: committed to {a.liveJobCount} live jobs at once.</span>
+          </div>
+        )}
+        <div className="mt-3 space-y-1 text-xs text-slate-500">
+          <div>Engine: {a.engineSerial || "—"}</div>
+          <div>VIN/Chassis: {a.vinChassis || "—"}</div>
+          <div>Yard: {a.yardLocation || "—"}</div>
+        </div>
+        <div className="mt-3 flex items-center justify-between border-t border-navy-600 pt-3">
+          <button className="text-xs text-amber-500 hover:underline" onClick={() => setOpenId(openId === a.id ? "" : a.id)}>
+            {openId === a.id ? "Hide" : "View"} jobs ({a.jobs?.length ?? 0})
+          </button>
+          <span className="font-display font-semibold text-slate-100 tnum">{tzs(a.dayRateTzs)}/day</span>
+        </div>
+        {openId === a.id && (
+          <div className="mt-2 space-y-1.5 border-t border-navy-600 pt-2">
+            {(a.jobs ?? []).length === 0 ? (
+              <p className="text-[11px] text-slate-500">No jobs yet.</p>
+            ) : (a.jobs as any[]).map((j) => (
+              <div key={j.id} className="flex items-center justify-between text-[11px]">
+                <span className="text-slate-300">{j.title || "Job"}{j.destination ? ` → ${j.destination}` : ""}</span>
+                <StatusPill status={j.status} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function FleetTable({ rows, openId, setOpenId }: { rows: any[]; openId: string; setOpenId: (v: string) => void }) {
+  return (
+    <Card className="overflow-hidden p-0">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-navy-600 text-left text-[11px] uppercase tracking-wider text-slate-500">
+              <th className="px-3 py-2 font-medium">Machine</th>
+              <th className="px-3 py-2 font-medium">Brand / Model</th>
+              <th className="px-3 py-2 font-medium">VIN / Chassis</th>
+              <th className="px-3 py-2 font-medium">Yard</th>
+              <th className="px-3 py-2 font-medium">Status</th>
+              <th className="px-3 py-2 text-right font-medium">Day-rate</th>
+              <th className="px-3 py-2 font-medium">Jobs</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((a) => {
+              const photos: string[] = a.photos ?? [];
+              const open = openId === a.id;
+              return (
+                <Fragment key={a.id}>
+                  <tr className={`border-b border-navy-700/60 hover:bg-navy-800/40 ${a.doubleEntry ? "bg-bad/5" : ""}`}>
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        {photos[0] ? (
+                          <img src={photos[0]} alt="" className="h-9 w-14 shrink-0 rounded object-cover" />
+                        ) : (
+                          <div className="grid h-9 w-14 shrink-0 place-items-center rounded bg-navy-900 text-[9px] text-slate-600">no photo</div>
+                        )}
+                        <div>
+                          <div className="font-medium text-slate-100">{a.assetType}</div>
+                          {a.doubleEntry && <div className="flex items-center gap-1 text-[10px] text-bad">{Icons.alert}<span>double-entry ×{a.liveJobCount}</span></div>}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2 text-slate-300">{a.manufacturer} {a.model}</td>
+                    <td className="px-3 py-2 font-mono text-xs text-slate-400">{a.vinChassis || "—"}</td>
+                    <td className="px-3 py-2 text-slate-300">{a.yardLocation || "—"}</td>
+                    <td className="px-3 py-2"><StatusPill status={a.operationalStatus} /></td>
+                    <td className="px-3 py-2 text-right font-display font-semibold text-slate-100 tnum">{tzs(a.dayRateTzs)}<span className="text-[10px] text-slate-500">/day</span></td>
+                    <td className="px-3 py-2">
+                      <button className="text-xs text-amber-500 hover:underline" onClick={() => setOpenId(open ? "" : a.id)}>
+                        {open ? "Hide" : "View"} ({a.jobs?.length ?? 0})
+                      </button>
+                    </td>
+                  </tr>
+                  {open && (
+                    <tr className="border-b border-navy-700/60 bg-navy-900/40">
+                      <td colSpan={7} className="px-3 py-2">
+                        {(a.jobs ?? []).length === 0 ? (
+                          <p className="text-[11px] text-slate-500">No jobs yet.</p>
+                        ) : (
+                          <div className="space-y-1">
+                            {(a.jobs as any[]).map((j) => (
+                              <div key={j.id} className="flex items-center justify-between text-[11px]">
+                                <span className="text-slate-300">{j.title || "Job"}{j.destination ? ` → ${j.destination}` : ""}</span>
+                                <StatusPill status={j.status} />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </Card>
   );
 }
 

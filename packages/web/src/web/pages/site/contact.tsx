@@ -21,7 +21,7 @@ export default function Contact() {
       if (!res.ok) throw new Error("Failed");
       setSent(true);
     } catch {
-      setError("Something went wrong. Please email us directly at hello@afrigen.link.");
+      setError("Something went wrong. Please email us directly at hello@afrigenlink.com.");
     } finally {
       setLoading(false);
     }
@@ -45,8 +45,8 @@ export default function Contact() {
             <div className="mt-6 space-y-5">
               <div>
                 <div className="font-mono text-xs uppercase tracking-widest text-amber-600">Email</div>
-                <a href="mailto:hello@afrigen.link" className="mt-1 block text-base text-[#141B2E] hover:text-amber-600">
-                  hello@afrigen.link
+                <a href="mailto:hello@afrigenlink.com" className="mt-1 block text-base text-[#141B2E] hover:text-amber-600">
+                  hello@afrigenlink.com
                 </a>
               </div>
               <div>

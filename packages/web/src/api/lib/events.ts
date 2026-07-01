@@ -14,7 +14,7 @@ import { user as authUser } from "../database/auth-schema";
 import { id } from "./ids";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "";
-const RESEND_FROM = process.env.RESEND_FROM ?? "AFRIGEN Link <notifications@afrigen.link>";
+const RESEND_FROM = process.env.RESEND_FROM ?? "AFRIGEN Link <notifications@afrigenlink.com>";
 
 let resendClient: { emails: { send: (a: unknown) => Promise<unknown> } } | null = null;
 async function getResend() {

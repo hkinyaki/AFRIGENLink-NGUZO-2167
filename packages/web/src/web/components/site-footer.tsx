@@ -51,10 +51,10 @@ export function SiteFooter() {
               and a person on the ground when it matters.
             </p>
             <a
-              href="mailto:hello@afrigen.link"
+              href="mailto:hello@afrigenlink.com"
               className="mt-4 inline-block font-mono text-sm text-amber-400 hover:text-amber-500"
             >
-              hello@afrigen.link
+              hello@afrigenlink.com
             </a>
           </div>
           {COLS.map((c) => (
