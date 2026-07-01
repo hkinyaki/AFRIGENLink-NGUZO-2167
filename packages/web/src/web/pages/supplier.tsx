@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { tzs } from "../lib/format";
 import type { Me } from "../lib/use-me";
-import { TenderAPI, PartsAPI, generateAgreementPDF, generateInvoicePDF } from "../lib/tenders";
+import { TenderAPI, PartsAPI, DocAPI, generateAgreementPDF, generateInvoicePDF } from "../lib/tenders";
 import { AppShell, Icons, type NavItem } from "../components/shell";
 import { HelpDesk } from "../components/help-desk";
 import {
@@ -157,6 +157,8 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
   const myBid = (q.data.bids || []).find((b: any) => b.supplierId === me.profile.id);
   const signedDoc = documents.find((d: any) => d.kind === "SignedAgreement");
   const machineDoc = documents.find((d: any) => d.kind === "MachineDoc");
+  const operatorIdDoc = documents.find((d: any) => d.kind === "OperatorId");
+  const operatorLicenceDoc = documents.find((d: any) => d.kind === "OperatorLicence");
 
   return (
     <div className="p-6">
@@ -257,13 +259,18 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
 
               {stage === "AgreementsSigned" && (
                 <div className="space-y-3">
-                  <p className="text-sm text-slate-400">Upload your machine / fleet documents (registration, inspection certs, insurance) for field verification.</p>
+                  <p className="text-sm text-slate-400">Upload your machine / fleet documents plus the operator's National ID and driving licence. These feed the field inspection and the client's permit stage.</p>
                   <FileUpload label="Machine / fleet docs" kind="MachineDoc" tenderId={id} contractId={myContract.id} onUploaded={refresh} buttonLabel="Upload fleet documents" />
-                  {machineDoc && (
-                    <Button variant="amber" disabled={advance.isPending} onClick={() => advance.mutate("machine-docs")}>
-                      {advance.isPending ? "Submitting…" : "Submit documents for inspection"}
-                    </Button>
-                  )}
+                  <FileUpload label="Operator / driver National ID" kind="OperatorId" tenderId={id} contractId={myContract.id} onUploaded={refresh} buttonLabel="Upload operator National ID" />
+                  <FileUpload label="Driving licence" kind="OperatorLicence" tenderId={id} contractId={myContract.id} onUploaded={refresh} buttonLabel="Upload driving licence" />
+                  <div className="rounded-md border border-navy-600 bg-navy-900 p-3 text-[11px] text-slate-400">
+                    <div className="flex items-center justify-between"><span>Fleet documents</span><span className={machineDoc ? "text-good" : "text-slate-500"}>{machineDoc ? "✓ uploaded" : "required"}</span></div>
+                    <div className="flex items-center justify-between"><span>Operator National ID</span><span className={operatorIdDoc ? "text-good" : "text-slate-500"}>{operatorIdDoc ? "✓ uploaded" : "required"}</span></div>
+                    <div className="flex items-center justify-between"><span>Driving licence</span><span className={operatorLicenceDoc ? "text-good" : "text-slate-500"}>{operatorLicenceDoc ? "✓ uploaded" : "required"}</span></div>
+                  </div>
+                  <Button variant="amber" disabled={advance.isPending || !(machineDoc && operatorIdDoc && operatorLicenceDoc)} onClick={() => advance.mutate("machine-docs")}>
+                    {advance.isPending ? "Submitting…" : machineDoc && operatorIdDoc && operatorLicenceDoc ? "Submit documents for inspection" : "Upload all three documents first"}
+                  </Button>
                 </div>
               )}
 
@@ -273,6 +280,10 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
             </Card>
             );
           })()}
+
+          {myContract && myContract.dailyRateTzs > 0 && (
+            <SupplierExtensions contract={myContract} me={me} onDone={refresh} />
+          )}
 
           {documents.length > 0 && (
             <Card className="p-5">
@@ -301,6 +312,74 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/** Supplier view of hire extensions — Accept/Decline + e-sign. */
+function SupplierExtensions({ contract, me, onDone }: { contract: any; me: Me; onDone: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [declineText, setDeclineText] = useState("");
+  const exq = useQuery({ queryKey: ["sup-extensions", contract.id], queryFn: () => TenderAPI.getExtensions(contract.id).then((r) => r.extensions), refetchInterval: 4000 });
+  const docq = useQuery({ queryKey: ["sup-contract-docs", contract.id], queryFn: () => DocAPI.list({ contractId: contract.id }).then((r) => r.documents) });
+  const exts = exq.data ?? [];
+  const active = exts.find((e: any) => !["Declined", "Lapsed", "Paid"].includes(e.status));
+  const refresh = () => { exq.refetch(); docq.refetch(); onDone(); };
+  const run = async (fn: () => Promise<any>) => {
+    setBusy(true); setErr("");
+    try { await fn(); refresh(); }
+    catch (e) { setErr((e as Error).message); }
+    finally { setBusy(false); }
+  };
+  if (!active) return null;
+  const extDoc = active.contractDocId ? (docq.data ?? []).find((d: any) => d.id === active.contractDocId) : null;
+  const net = active.extraAmountTzs - Math.round(active.extraAmountTzs * 0.05);
+
+  return (
+    <Card className="p-5">
+      <SectionTitle sub="The client asked to keep your machine on site beyond its end date.">Hire extension</SectionTitle>
+      <div className="rounded-md border border-navy-600 bg-navy-900 p-3 text-sm">
+        <div className="mb-2 space-y-1">
+          <div className="flex justify-between text-slate-400"><span>Additional days</span><span className="tnum text-slate-200">{active.addedDays} × {contract.unitsAwarded} unit{contract.unitsAwarded > 1 ? "s" : ""}</span></div>
+          <div className="flex justify-between text-slate-400"><span>New end date</span><span className="tnum text-slate-200">{active.newEndDate}</span></div>
+          <div className="flex justify-between border-t border-navy-700 pt-1 font-medium text-slate-100"><span>Your net payout (after 5% fee)</span><span className="tnum text-good">{tzs(net)}</span></div>
+        </div>
+
+        {active.status === "PendingSupplierAcceptance" && (
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <Button variant="amber" disabled={busy} onClick={() => run(() => TenderAPI.extendRespond(contract.id, active.id, { accept: true }))}>{busy ? "Working…" : "Accept extension"}</Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Input value={declineText} onChange={(e) => setDeclineText(e.target.value)} placeholder="Decline reason (optional)" />
+              <Button variant="ghost" disabled={busy} onClick={() => run(() => TenderAPI.extendRespond(contract.id, active.id, { accept: false, declineReason: declineText }))}>Decline</Button>
+            </div>
+          </div>
+        )}
+
+        {active.status === "AwaitingSignatures" && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between rounded border border-navy-700 bg-navy-800 p-2 text-xs">
+              <span className="text-slate-300">Extension contract</span>
+              {extDoc?.url ? <a href={extDoc.url} target="_blank" rel="noreferrer" className="text-amber-500 hover:underline">View ↗</a> : <span className="text-slate-500">generating…</span>}
+            </div>
+            <div className="text-[11px] text-slate-500">Client: {active.clientSignedAt ? <span className="text-good">signed</span> : "pending"} · You: {active.supplierSignedAt ? <span className="text-good">signed as {active.supplierSignedName}</span> : "not signed"}</div>
+            {!active.supplierSignedAt ? (
+              <label className="flex items-center gap-2 text-xs text-slate-300">
+                <input type="checkbox" className="h-4 w-4 accent-amber-500" disabled={busy} onChange={() => run(() => TenderAPI.extendSign(contract.id, active.id))} />
+                I agree &amp; e-sign this extension contract
+              </label>
+            ) : (
+              <div className="text-xs text-good">You signed — awaiting the client's signature.</div>
+            )}
+          </div>
+        )}
+
+        {active.status === "AwaitingKamActivation" && <div className="text-xs text-slate-400">Both parties signed — awaiting manager activation of the payment gateway.</div>}
+        {(active.status === "PendingPayment" || active.status === "PaymentPendingConfirmation") && <div className="text-xs text-slate-400">Signed — awaiting the client's payment and AFRIGEN Link confirmation.</div>}
+      </div>
+      {err && <p className="mt-2 text-xs text-bad">{err}</p>}
+    </Card>
   );
 }
 

@@ -28,8 +28,8 @@ export const STAGE_LABEL: Record<TenderStage, string> = {
   FieldVerified: "Field inspection verified",
   PermitsUploaded: "Permits uploaded",
   PermitsVerified: "Permits verified",
-  TTUploaded: "Payment proof uploaded",
-  TTConfirmed: "Escrow confirmed",
+  TTUploaded: "Payment pending confirmation",
+  TTConfirmed: "Escrow secured",
   Executing: "Approved — executing",
   Completed: "Completed",
 };

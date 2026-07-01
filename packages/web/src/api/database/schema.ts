@@ -283,8 +283,18 @@ export const extensions = sqliteTable("extensions", {
   extraAmountTzs: integer("extra_amount_tzs").notNull().default(0), // dailyRate * addedDays * units (fee-exclusive)
   clientFeeTzs: integer("client_fee_tzs").notNull().default(0), // 5% on extra
   amountToFundTzs: integer("amount_to_fund_tzs").notNull().default(0), // extra + clientFee
-  status: text("status").notNull().default("PendingPayment"), // PendingPayment | Paid | Lapsed
-  paymentProofUrl: text("payment_proof_url").notNull().default(""),
+  // status machine:
+  //   PendingSupplierAcceptance → Declined
+  //     | → AwaitingSignatures → AwaitingKamActivation → PendingPayment → Paid | Lapsed
+  status: text("status").notNull().default("PendingSupplierAcceptance"),
+  supplierResponse: text("supplier_response").notNull().default("Pending"), // Pending | Accepted | Declined
+  declineReason: text("decline_reason").notNull().default(""),
+  clientSignedName: text("client_signed_name").notNull().default(""),
+  clientSignedAt: integer("client_signed_at", { mode: "timestamp_ms" }),
+  supplierSignedName: text("supplier_signed_name").notNull().default(""),
+  supplierSignedAt: integer("supplier_signed_at", { mode: "timestamp_ms" }),
+  contractDocId: text("contract_doc_id").notNull().default(""), // persisted ExtensionContract documents.id
+  paymentProofUrl: text("payment_proof_url").notNull().default(""), // legacy; back-office proofs now persisted as documents
   dueDate: text("due_date").notNull().default(""), // ISO = contract's current end date (must clear before this)
   createdAt: integer("created_at", { mode: "timestamp_ms" }).default(nowMs).notNull(),
 });
@@ -426,7 +436,9 @@ export const contactMessages = sqliteTable("contact_messages", {
 
 /**
  * documents — uploaded files scoped to a tender/contract.
- * kind: SignedAgreement | MachineDoc | Permit | TTProof | VINPhoto | Other
+ * kind: SignedAgreement | MachineDoc | Permit | TTProof (legacy) | VINPhoto | Other
+ *     | Invoice | PaymentProofClient | PayoutProofSupplier | ExtensionContract
+ *     | OperatorId | OperatorLicence
  */
 export const documents = sqliteTable("documents", {
   id: text("id").primaryKey(),

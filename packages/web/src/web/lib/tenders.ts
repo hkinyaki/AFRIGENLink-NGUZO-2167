@@ -47,8 +47,21 @@ export const TenderAPI = {
       ok: boolean;
       extension: { id: string; addedDays: number; newEndDate: string; extraAmountTzs: number; clientFeeTzs: number; amountToFundTzs: number; dueDate: string };
     }>,
-  payExtension: (contractId: string, extId: string, paymentProofUrl?: string) =>
-    authFetch(`/api/contracts/${contractId}/extend/${extId}/pay`, { method: "POST", body: JSON.stringify({ paymentProofUrl }) }),
+  // supplier accepts/declines an extension request
+  extendRespond: (contractId: string, extId: string, body: { accept: boolean; declineReason?: string }) =>
+    authFetch(`/api/contracts/${contractId}/extend/${extId}/respond`, { method: "POST", body: JSON.stringify(body) }),
+  // client or supplier e-signs (ticks) the extension contract
+  extendSign: (contractId: string, extId: string) =>
+    authFetch(`/api/contracts/${contractId}/extend/${extId}/sign`, { method: "POST", body: JSON.stringify({}) }) as Promise<{ ok: boolean; bothSigned: boolean }>,
+  // KAM/admin activates the payment gateway for a signed extension
+  extendActivate: (contractId: string, extId: string) =>
+    authFetch(`/api/contracts/${contractId}/extend/${extId}/activate`, { method: "POST", body: JSON.stringify({}) }),
+  // client funds the extension (back-office, no upload)
+  payExtension: (contractId: string, extId: string) =>
+    authFetch(`/api/contracts/${contractId}/extend/${extId}/pay`, { method: "POST", body: JSON.stringify({}) }),
+  // admin/KAM confirms extension escrow secured
+  confirmExtension: (contractId: string, extId: string) =>
+    authFetch(`/api/contracts/${contractId}/extend/${extId}/confirm`, { method: "POST", body: JSON.stringify({}) }),
   getExtensions: (contractId: string) =>
     authFetch(`/api/contracts/${contractId}/extensions`) as Promise<{ extensions: any[] }>,
   // payout chain — 4 gated steps: supplier mark-complete → client sign-off → KAM submit → admin release

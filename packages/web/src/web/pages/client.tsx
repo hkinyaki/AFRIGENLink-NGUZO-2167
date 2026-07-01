@@ -3,7 +3,7 @@ import { Route, Switch, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { tzs } from "../lib/format";
 import type { Me } from "../lib/use-me";
-import { TenderAPI, generateAgreementPDF, generateInvoicePDF, generateBankPDF } from "../lib/tenders";
+import { TenderAPI, DocAPI, generateAgreementPDF, generateInvoicePDF, generateBankPDF } from "../lib/tenders";
 import { api } from "../lib/api";
 import { DEMAND_TYPES, typeOptions, ROUTE_OPTIONS, type DemandType } from "../constants/asset-types";
 import { AppShell, Icons, type NavItem } from "../components/shell";
@@ -285,7 +285,6 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
   const baseValue = t.flatFairPriceTzs * t.unitsNeeded;
   const clientFee = Math.round(baseValue * 0.05);
   const escrowAmt = baseValue + clientFee; // what the client funds = value + 5%
-  const ttDoc = documents.find((d: any) => d.kind === "TTProof");
   const permitDocs = documents.filter((d: any) => d.kind === "Permit");
 
   return (
@@ -380,10 +379,10 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
             </Card>
           )}
 
-          {/* Client action: TT payment proof = escrow funding */}
+          {/* Client action: clear payment = escrow funding (back-office, no upload) */}
           {stage === "PermitsVerified" && (
             <Card className="border-amber-600 p-5">
-              <SectionTitle sub="Permits verified. Upload your TT payment proof — this funds the escrow monitored by AFRIGEN Link.">Your step — Payment proof</SectionTitle>
+              <SectionTitle sub="Permits verified. Clear your payment into the AFRIGEN Link coordination account — this funds the escrow we monitor for you.">Your step — Clear payment</SectionTitle>
               <div className="mb-3">
                 <Button variant="ghost" onClick={() => generateBankPDF({ contractTitle: t.title, amountToFundTzs: escrowAmt, reference: t.id })}>
                   Download AFRIGEN Link bank details (PDF)
@@ -400,16 +399,12 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
                   <span>Total to fund (escrow preview)</span>
                   <span className="tnum font-display font-semibold text-amber-500">{tzs(escrowAmt)}</span>
                 </div>
-                <p className="text-[11px] text-slate-500">Funds tracked and monitored, not held. Suppliers are paid on completion, less their own 5% fee.</p>
+                <p className="text-[11px] text-slate-500">Funds tracked and monitored, not held. Suppliers are paid on completion, less their own 5% fee. Once we confirm your payment, a payment proof is generated and emailed to you automatically.</p>
               </div>
-              <div className="space-y-3">
-                <FileUpload label="TT payment proof" kind="TTProof" tenderId={id} onUploaded={refresh} buttonLabel="Upload TT proof" />
-                {ttDoc && (
-                  <Button variant="amber" disabled={advance.isPending} onClick={() => advance.mutate("tt-uploaded")}>
-                    {advance.isPending ? "Submitting…" : "Submit payment proof"}
-                  </Button>
-                )}
-              </div>
+              <Button variant="amber" disabled={advance.isPending} onClick={() => advance.mutate("tt-uploaded")}>
+                {advance.isPending ? "Submitting…" : "I have cleared the payment"}
+              </Button>
+              {advance.error && <p className="mt-2 text-xs text-bad">{(advance.error as Error).message}</p>}
             </Card>
           )}
 
@@ -417,7 +412,7 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
             <Card className="p-5">
               <div className="mb-2 text-[11px] uppercase tracking-wider text-slate-500">Escrow</div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">{stage === "TTUploaded" ? "Awaiting AFRIGEN Link confirmation" : "Monitored in escrow by AFRIGEN Link"}</span>
+                <span className="text-sm text-slate-400">{stage === "TTUploaded" ? "Payment sent — awaiting AFRIGEN Link confirmation" : "Monitored in escrow by AFRIGEN Link"}</span>
                 <span className="tnum font-display text-lg font-semibold text-amber-500">{tzs(escrowAmt)}</span>
               </div>
               <p className="mt-2 text-[11px] text-slate-500">Funds are tracked end-to-end (includes 5% client fee) and released to suppliers on completion, less their 5% supplier fee.</p>
@@ -630,14 +625,14 @@ function ReversalRow({ contract, tender, isMachinery, onDone }: { contract: any;
   );
 }
 
-/** Machinery hire extension — request +N days, preview cost, fund via TT proof. */
+/** Machinery hire extension — full lifecycle: request → supplier accept → both e-sign → KAM activate → client fund. */
 function ExtensionPanel({ contracts, onDone }: { contracts: any[]; onDone: () => void }) {
   // Each awarded supplier line is its own contract; extend per contract.
   const machineryContracts = contracts.filter((c) => c.dailyRateTzs > 0);
   if (machineryContracts.length === 0) return null;
   return (
     <Card className="p-5">
-      <SectionTitle sub="Keep a machine on site beyond its end date. Same daily rate, +5% fee. Pay before the current end date.">Extend a hire</SectionTitle>
+      <SectionTitle sub="Keep a machine on site beyond its end date. Same daily rate, +5% fee. The supplier accepts, both parties e-sign, then you fund it — before the current end date.">Extend a hire</SectionTitle>
       <div className="space-y-3">
         {machineryContracts.map((c) => (
           <ExtensionRow key={c.id} contract={c} onDone={onDone} />
@@ -649,30 +644,24 @@ function ExtensionPanel({ contracts, onDone }: { contracts: any[]; onDone: () =>
 
 function ExtensionRow({ contract, onDone }: { contract: any; onDone: () => void }) {
   const [days, setDays] = useState(7);
-  const [pending, setPending] = useState<null | { id: string; addedDays: number; newEndDate: string; extraAmountTzs: number; clientFeeTzs: number; amountToFundTzs: number; dueDate: string }>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const [paid, setPaid] = useState(false);
-
+  const exq = useQuery({ queryKey: ["extensions", contract.id], queryFn: () => TenderAPI.getExtensions(contract.id).then((r) => r.extensions), refetchInterval: 4000 });
+  const docq = useQuery({ queryKey: ["contract-docs", contract.id], queryFn: () => DocAPI.list({ contractId: contract.id }).then((r) => r.documents) });
+  const exts = exq.data ?? [];
+  // active = the most recent extension not declined/lapsed/paid-and-done
+  const active = exts.find((e: any) => !["Declined", "Lapsed", "Paid"].includes(e.status));
   const overdue = contract.extensionStatus === "PaymentOverdue" || contract.removalRight === 1;
+  const refresh = () => { exq.refetch(); docq.refetch(); onDone(); };
 
-  const request = async () => {
+  const run = async (fn: () => Promise<any>) => {
     setBusy(true); setErr("");
-    try {
-      const r = await TenderAPI.extend(contract.id, days);
-      setPending(r.extension);
-    } catch (e) { setErr((e as Error).message); }
+    try { await fn(); refresh(); }
+    catch (e) { setErr((e as Error).message); }
     finally { setBusy(false); }
   };
-  const pay = async () => {
-    if (!pending) return;
-    setBusy(true); setErr("");
-    try {
-      await TenderAPI.payExtension(contract.id, pending.id);
-      setPaid(true); setPending(null); onDone();
-    } catch (e) { setErr((e as Error).message); }
-    finally { setBusy(false); }
-  };
+
+  const extDoc = active?.contractDocId ? (docq.data ?? []).find((d: any) => d.id === active.contractDocId) : null;
 
   return (
     <div className="rounded-md border border-navy-600 bg-navy-900 p-3">
@@ -685,28 +674,63 @@ function ExtensionRow({ contract, onDone }: { contract: any; onDone: () => void 
         <div className="rounded border border-bad/40 bg-bad/10 p-2 text-xs text-bad">
           Extension lapsed — payment not received by the due date. The supplier may recover the machine.
         </div>
-      ) : paid ? (
-        <div className="rounded border border-good/40 bg-good/10 p-2 text-xs text-good">Extension confirmed. Hire extended.</div>
-      ) : !pending ? (
+      ) : !active ? (
         <div className="flex items-end gap-2">
           <Field label="Extra days">
             <Input type="number" min={1} value={days || ""} onChange={(e) => setDays(Math.max(1, Number(e.target.value)))} />
           </Field>
-          <Button disabled={busy} onClick={request}>{busy ? "Calculating…" : "Request extension"}</Button>
+          <Button disabled={busy} onClick={() => run(() => TenderAPI.extend(contract.id, days))}>{busy ? "Requesting…" : "Request extension"}</Button>
         </div>
       ) : (
         <div className="space-y-2 text-sm">
           <div className="space-y-1">
-            <div className="flex justify-between text-slate-400"><span>New end date</span><span className="tnum text-slate-200">{pending.newEndDate}</span></div>
-            <div className="flex justify-between text-slate-400"><span>Extra ({pending.addedDays} days × {contract.unitsAwarded} unit{contract.unitsAwarded > 1 ? "s" : ""})</span><span className="tnum">{tzs(pending.extraAmountTzs)}</span></div>
-            <div className="flex justify-between text-slate-400"><span>Service fee (5%)</span><span className="tnum">+ {tzs(pending.clientFeeTzs)}</span></div>
-            <div className="flex justify-between border-t border-navy-700 pt-1 font-medium text-slate-100"><span>Total to fund</span><span className="tnum text-amber-500">{tzs(pending.amountToFundTzs)}</span></div>
+            <div className="flex justify-between text-slate-400"><span>New end date</span><span className="tnum text-slate-200">{active.newEndDate}</span></div>
+            <div className="flex justify-between text-slate-400"><span>Extra ({active.addedDays} days × {contract.unitsAwarded} unit{contract.unitsAwarded > 1 ? "s" : ""})</span><span className="tnum">{tzs(active.extraAmountTzs)}</span></div>
+            <div className="flex justify-between text-slate-400"><span>Service fee (5%)</span><span className="tnum">+ {tzs(active.clientFeeTzs)}</span></div>
+            <div className="flex justify-between border-t border-navy-700 pt-1 font-medium text-slate-100"><span>Total to fund</span><span className="tnum text-amber-500">{tzs(active.amountToFundTzs)}</span></div>
           </div>
-          <p className="text-[11px] text-amber-500/80">Must be funded before {pending.dueDate} (current end date), or the supplier may recover the machine.</p>
-          <div className="flex gap-2">
-            <Button variant="amber" disabled={busy} onClick={pay}>{busy ? "Funding…" : "Fund extension (TT)"}</Button>
-            <Button disabled={busy} onClick={() => setPending(null)}>Cancel</Button>
-          </div>
+
+          {active.status === "PendingSupplierAcceptance" && (
+            <div className="rounded border border-navy-700 bg-navy-800 p-2 text-xs text-slate-400">Awaiting supplier acceptance…</div>
+          )}
+
+          {active.status === "AwaitingSignatures" && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between rounded border border-navy-700 bg-navy-800 p-2 text-xs">
+                <span className="text-slate-300">Extension contract</span>
+                {extDoc?.url ? <a href={extDoc.url} target="_blank" rel="noreferrer" className="text-amber-500 hover:underline">View ↗</a> : <span className="text-slate-500">generating…</span>}
+              </div>
+              <div className="text-[11px] text-slate-500">
+                Client: {active.clientSignedAt ? <span className="text-good">signed by {active.clientSignedName}</span> : "not signed"} · Supplier: {active.supplierSignedAt ? <span className="text-good">signed</span> : "pending"}
+              </div>
+              {!active.clientSignedAt ? (
+                <label className="flex items-center gap-2 text-xs text-slate-300">
+                  <input type="checkbox" className="h-4 w-4 accent-amber-500" disabled={busy} onChange={() => run(() => TenderAPI.extendSign(contract.id, active.id))} />
+                  I agree &amp; e-sign this extension contract
+                </label>
+              ) : (
+                <div className="text-xs text-good">You signed — awaiting the supplier's signature.</div>
+              )}
+            </div>
+          )}
+
+          {active.status === "AwaitingKamActivation" && (
+            <div className="rounded border border-navy-700 bg-navy-800 p-2 text-xs text-slate-400">Both parties signed — awaiting manager activation of the payment gateway.</div>
+          )}
+
+          {active.status === "PendingPayment" && (
+            <div className="space-y-2">
+              <p className="text-[11px] text-amber-500/80">Must be funded before {active.dueDate} (current end date), or the supplier may recover the machine.</p>
+              <div className="flex gap-2">
+                <Button variant="ghost" onClick={() => generateBankPDF({ contractTitle: contract.title, amountToFundTzs: active.amountToFundTzs, reference: active.id })}>Bank details (PDF)</Button>
+                <Button variant="amber" disabled={busy} onClick={() => run(() => TenderAPI.payExtension(contract.id, active.id))}>{busy ? "Submitting…" : "I have cleared the payment"}</Button>
+              </div>
+            </div>
+          )}
+
+          {active.status === "PaymentPendingConfirmation" && (
+            <div className="rounded border border-navy-700 bg-navy-800 p-2 text-xs text-slate-400">Payment sent — awaiting AFRIGEN Link confirmation.</div>
+          )}
         </div>
       )}
       {err && <p className="mt-2 text-xs text-bad">{err}</p>}

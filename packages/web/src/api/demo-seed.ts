@@ -26,6 +26,7 @@ import {
   idCounters,
   kybDocuments,
   reversals,
+  extensions,
 } from "./database/schema";
 import { user as userTable } from "./database/auth-schema";
 import { eq, inArray } from "drizzle-orm";
@@ -97,8 +98,37 @@ async function ensureUser(d: (typeof DEMO)[number]) {
   return { userId, profileId: pid };
 }
 
+/** Upload a small placeholder PDF once so seeded document rows have a working View link. */
+async function seedPlaceholderPdf(): Promise<string> {
+  try {
+    const { jsPDF } = await import("jspdf");
+    const { uploadBuffer } = await import("./lib/s3");
+    const doc = new jsPDF();
+    doc.setFillColor("#141B2E");
+    doc.rect(0, 0, 210, 26, "F");
+    doc.setTextColor("#D99A2B");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(15);
+    doc.text("AFRIGEN LINK", 14, 13);
+    doc.setTextColor("#333333");
+    doc.setFontSize(11);
+    doc.text("Sample document (demo data)", 14, 44);
+    doc.setFontSize(9);
+    doc.text("This is a placeholder document included in the demo seed so every", 14, 54);
+    doc.text("job-card document has a working View link. Figures are illustrative.", 14, 60);
+    const bytes = new Uint8Array(doc.output("arraybuffer") as ArrayBuffer);
+    const key = `docs/demo/placeholder-${Date.now()}.pdf`;
+    await uploadBuffer(key, bytes, "application/pdf");
+    return key;
+  } catch (err) {
+    console.warn("[seed] placeholder PDF upload failed (View links will be empty):", (err as Error)?.message);
+    return "";
+  }
+}
+
 async function main() {
   console.log("Seeding demo accounts…");
+  const DEMO_KEY = await seedPlaceholderPdf();
   // reset id counters so demo userCodes are clean + sequential
   await db.delete(idCounters);
   const ids: Record<string, { userId: string; profileId: string }> = {};
@@ -282,9 +312,12 @@ async function main() {
     contractStage: "FieldVerified", milestoneStatus: "AwaitingEscrowDeposit",
   });
   await db.insert(documents).values([
-    { id: id("doc"), ownerId: supplierId, tenderId: t2, contractId: t2c1, kind: "SignedAgreement", label: "Signed agreement", fileKey: "", mimeType: "application/pdf" },
-    { id: id("doc"), ownerId: supplierId, tenderId: t2, contractId: t2c1, kind: "MachineDoc", label: "Fleet registration + insurance", fileKey: "", mimeType: "application/pdf" },
-    { id: id("doc"), ownerId: clientId, tenderId: t2, kind: "Permit", label: "TARURA heavy-load permit", fileKey: "", mimeType: "application/pdf" },
+    { id: id("doc"), ownerId: clientId, tenderId: t2, contractId: t2c1, kind: "Invoice", label: "Settlement invoice", fileKey: DEMO_KEY, mimeType: "application/pdf" },
+    { id: id("doc"), ownerId: supplierId, tenderId: t2, contractId: t2c1, kind: "SignedAgreement", label: "Signed agreement", fileKey: DEMO_KEY, mimeType: "application/pdf" },
+    { id: id("doc"), ownerId: supplierId, tenderId: t2, contractId: t2c1, kind: "MachineDoc", label: "Fleet registration + insurance", fileKey: DEMO_KEY, mimeType: "application/pdf" },
+    { id: id("doc"), ownerId: supplierId, tenderId: t2, contractId: t2c1, kind: "OperatorId", label: "Operator National ID", fileKey: DEMO_KEY, mimeType: "application/pdf" },
+    { id: id("doc"), ownerId: supplierId, tenderId: t2, contractId: t2c1, kind: "OperatorLicence", label: "Driving licence", fileKey: DEMO_KEY, mimeType: "application/pdf" },
+    { id: id("doc"), ownerId: clientId, tenderId: t2, kind: "Permit", label: "TARURA heavy-load permit", fileKey: DEMO_KEY, mimeType: "application/pdf" },
   ]);
   await db.insert(inspections).values({ id: id("insp"), tenderId: t2, contractId: t2c1, inspectorId: fieldId, mechanicalNotes: "Both excavators inspected on-site at Vingunguti yard. Serials matched, hydraulics good. Verified.", legitimacySignedOff: true });
   await db.insert(messages).values([
@@ -320,8 +353,9 @@ async function main() {
     { id: id("ctr"), tenderId: t3, clientId, supplierId: supplier2Id, assetId: "", title: "Flatbeds ×6 — Equipment relocation to Mwanza", unitsAwarded: 2, agreedPricePerUnitTzs: flat3, contractValueTzs: t3v2, clientFeeTzs: t3f2.clientFeeTzs, platformFeeTzs: t3f2.clientFeeTzs * 2, totalEscrowBalanceTzs: t3f2.amountToFundTzs, routeClassification: "Domestic", origin: "Dar es Salaam", destination: "Mwanza", contractStage: "Executing", milestoneStatus: "ActiveTransit" },
   ]);
   await db.insert(documents).values([
-    { id: id("doc"), ownerId: clientId, tenderId: t3, kind: "Permit", label: "Transit permits", fileKey: "", mimeType: "application/pdf", verifiedBy: adminId, verifiedAt: new Date() },
-    { id: id("doc"), ownerId: clientId, tenderId: t3, kind: "TTProof", label: "TT payment proof", fileKey: "", mimeType: "image/png", verifiedBy: adminId, verifiedAt: new Date() },
+    { id: id("doc"), ownerId: clientId, tenderId: t3, kind: "Permit", label: "Transit permits", fileKey: DEMO_KEY, mimeType: "application/pdf", verifiedBy: adminId, verifiedAt: new Date() },
+    { id: id("doc"), ownerId: clientId, tenderId: t3, kind: "PaymentProofClient", label: "Payment proof (client)", fileKey: DEMO_KEY, mimeType: "application/pdf" },
+    { id: id("doc"), ownerId: supplierId, tenderId: t3, kind: "PayoutProofSupplier", label: "Payout proof (supplier)", fileKey: DEMO_KEY, mimeType: "application/pdf" },
   ]);
   await db.insert(activityEvents).values([
     { id: id("evt"), tenderId: t3, actorProfileId: clientId, type: "tender.awarded", summary: "Award confirmed: 2 suppliers, 6/6 units at flat fair TZS 880,000/unit." },
@@ -349,18 +383,37 @@ async function main() {
   });
   const t4Value = flat4;
   const t4Fund = computeAmountToFund(t4Value);
+  const t4c = id("ctr");
   await db.insert(contracts).values({
-    id: id("ctr"), tenderId: t4, clientId, supplierId: supplier2Id, assetId: "",
+    id: t4c, tenderId: t4, clientId, supplierId: supplier2Id, assetId: "",
     title: "Motor Grader ×1 — Access road grading", unitsAwarded: 1, agreedPricePerUnitTzs: flat4,
     contractValueTzs: t4Value, clientFeeTzs: t4Fund.clientFeeTzs, platformFeeTzs: t4Fund.clientFeeTzs * 2,
     totalEscrowBalanceTzs: t4Fund.amountToFundTzs,
     routeClassification: "Domestic", origin: "Dar es Salaam", destination: "Morogoro",
     startDate: t4Start, endDate: t4End, dailyRateTzs: t4Daily, transferFeeTzs: t4Transfer,
     contractStage: "Executing", milestoneStatus: "ActiveTransit",
+    extensionStatus: "Requested",
+  });
+  // demo extension in AwaitingSignatures (system-generated contract doc, supplier accepted)
+  const t4ExtId = id("ext");
+  const t4ExtDoc = id("doc");
+  const t4ExtDays = 7;
+  const t4ExtExtra = t4Daily * t4ExtDays * 1;
+  const t4ExtClientFee = Math.round(t4ExtExtra * 0.05);
+  await db.insert(documents).values({ id: t4ExtDoc, ownerId: clientId, tenderId: t4, contractId: t4c, kind: "ExtensionContract", label: `Extension contract (+${t4ExtDays}d)`, fileKey: DEMO_KEY, mimeType: "application/pdf" });
+  await db.insert(extensions).values({
+    id: t4ExtId, contractId: t4c, addedDays: t4ExtDays, newEndDate: endFrom(t4End, t4ExtDays),
+    extraAmountTzs: t4ExtExtra, clientFeeTzs: t4ExtClientFee, amountToFundTzs: t4ExtExtra + t4ExtClientFee,
+    status: "AwaitingSignatures", supplierResponse: "Accepted", contractDocId: t4ExtDoc, dueDate: t4End,
   });
   await db.insert(documents).values([
-    { id: id("doc"), ownerId: clientId, tenderId: t4, kind: "Permit", label: "TARURA permit", fileKey: "", mimeType: "application/pdf", verifiedBy: adminId, verifiedAt: new Date() },
-    { id: id("doc"), ownerId: clientId, tenderId: t4, kind: "TTProof", label: "TT payment proof", fileKey: "", mimeType: "image/png", verifiedBy: adminId, verifiedAt: new Date() },
+    { id: id("doc"), ownerId: clientId, tenderId: t4, contractId: t4c, kind: "Invoice", label: "Settlement invoice", fileKey: DEMO_KEY, mimeType: "application/pdf" },
+    { id: id("doc"), ownerId: supplier2Id, tenderId: t4, contractId: t4c, kind: "SignedAgreement", label: "Signed agreement", fileKey: DEMO_KEY, mimeType: "application/pdf" },
+    { id: id("doc"), ownerId: supplier2Id, tenderId: t4, contractId: t4c, kind: "OperatorId", label: "Operator National ID", fileKey: DEMO_KEY, mimeType: "application/pdf" },
+    { id: id("doc"), ownerId: supplier2Id, tenderId: t4, contractId: t4c, kind: "OperatorLicence", label: "Driving licence", fileKey: DEMO_KEY, mimeType: "application/pdf" },
+    { id: id("doc"), ownerId: clientId, tenderId: t4, kind: "Permit", label: "TARURA permit", fileKey: DEMO_KEY, mimeType: "application/pdf", verifiedBy: adminId, verifiedAt: new Date() },
+    { id: id("doc"), ownerId: clientId, tenderId: t4, kind: "PaymentProofClient", label: "Payment proof (client)", fileKey: DEMO_KEY, mimeType: "application/pdf" },
+    { id: id("doc"), ownerId: supplier2Id, tenderId: t4, kind: "PayoutProofSupplier", label: "Payout proof (supplier)", fileKey: DEMO_KEY, mimeType: "application/pdf" },
   ]);
   await db.insert(activityEvents).values([
     { id: id("evt"), tenderId: t4, actorProfileId: clientId, type: "tender.awarded", summary: "Award confirmed: 1 supplier, 1/1 unit at flat fair TZS 1,750,000/unit." },
@@ -393,8 +446,11 @@ async function main() {
     contractStage: "MachineDocsUploaded", milestoneStatus: "AwaitingEscrowDeposit",
   });
   await db.insert(documents).values([
-    { id: id("doc"), ownerId: supplierId, tenderId: t5, contractId: t5c, kind: "SignedAgreement", label: "Signed agreement", fileKey: "", mimeType: "application/pdf" },
-    { id: id("doc"), ownerId: supplierId, tenderId: t5, contractId: t5c, kind: "MachineDoc", label: "Fleet registration + insurance", fileKey: "", mimeType: "application/pdf" },
+    { id: id("doc"), ownerId: clientId, tenderId: t5, contractId: t5c, kind: "Invoice", label: "Settlement invoice", fileKey: DEMO_KEY, mimeType: "application/pdf" },
+    { id: id("doc"), ownerId: supplierId, tenderId: t5, contractId: t5c, kind: "SignedAgreement", label: "Signed agreement", fileKey: DEMO_KEY, mimeType: "application/pdf" },
+    { id: id("doc"), ownerId: supplierId, tenderId: t5, contractId: t5c, kind: "MachineDoc", label: "Fleet registration + insurance", fileKey: DEMO_KEY, mimeType: "application/pdf" },
+    { id: id("doc"), ownerId: supplierId, tenderId: t5, contractId: t5c, kind: "OperatorId", label: "Operator National ID", fileKey: DEMO_KEY, mimeType: "application/pdf" },
+    { id: id("doc"), ownerId: supplierId, tenderId: t5, contractId: t5c, kind: "OperatorLicence", label: "Driving licence", fileKey: DEMO_KEY, mimeType: "application/pdf" },
   ]);
   await db.insert(inspections).values({
     id: id("insp"), tenderId: t5, contractId: t5c, inspectorId: fieldId,

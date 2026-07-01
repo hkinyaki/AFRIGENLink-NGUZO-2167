@@ -37,6 +37,7 @@ import { presignPut, presignGet } from "./lib/s3";
 import { computeAward } from "./lib/award";
 import { isNextStage, STAGE_ACTOR, STAGE_LABEL } from "./lib/stages";
 import { logEvent, logNotification, notifyMany } from "./lib/events";
+import { issuePaymentProofs, issueInvoice, issueExtensionContract, issueExtensionProofs } from "./lib/proofs";
 import {
   corsOrigin,
   securityHeaders,
@@ -2080,6 +2081,14 @@ const app = new Hono<{ Variables: Vars }>()
         id: id("comp"), contractId: cid, permitType, verificationStatus: "Pending",
       }));
       if (items.length) await db.insert(complianceItems).values(items);
+      // Generate + persist a settlement invoice server-side so the supplier's
+      // job card shows a viewable Invoice link (client-side download alone never
+      // created a document row).
+      try {
+        await issueInvoice(cid);
+      } catch (err) {
+        console.warn("[confirm-award] issueInvoice failed:", (err as Error)?.message);
+      }
       await logNotification({
         recipientProfileId: line.supplierId, tenderId: tid,
         subject: "You've been awarded a job",
@@ -2125,18 +2134,26 @@ const app = new Hono<{ Variables: Vars }>()
     }
     return advanceStage(c, "PermitsVerified");
   })
+  // Client confirms they have cleared the payment (no file upload — funding is
+  // back-office). Advances to "Payment pending confirmation".
   .post("/tenders/:id/advance/tt-uploaded", requireAuth, requireRole("client"), async (c) => {
     return advanceStage(c, "TTUploaded");
   })
-  // GATE LOCK: a TTProof document must exist and be verified before tt-confirmed.
+  // Admin/KAM confirms escrow is secured (simulates the bank notification arriving).
+  // Generates + persists + emails payment proofs to the client and each supplier,
+  // then advances. No client-uploaded proof is required (fully back-office).
   .post("/tenders/:id/advance/tt-confirmed", requireAuth, requireRole("key_account", "admin"), async (c) => {
     const tid = c.req.param("id");
-    const ttDocs = await db.select().from(documents).where(and(eq(documents.tenderId, tid), eq(documents.kind, "TTProof")));
-    if (!ttDocs.length) return c.json({ error: "No payment proof has been uploaded." }, 400);
-    if (ttDocs.some((d) => !d.verifiedBy)) {
-      return c.json({ error: "Verify the payment proof before confirming escrow." }, 400);
+    const res = await advanceStage(c, "TTConfirmed");
+    // Only issue proofs when the advance actually succeeded (200).
+    if (res.status === 200) {
+      try {
+        await issuePaymentProofs(tid);
+      } catch (err) {
+        console.warn("[tt-confirmed] issuePaymentProofs failed:", (err as Error)?.message);
+      }
     }
-    return advanceStage(c, "TTConfirmed");
+    return res;
   })
   .post("/tenders/:id/advance/execute", requireAuth, requireRole("key_account", "admin"), async (c) => {
     return advanceStage(c, "Executing");
@@ -2175,49 +2192,162 @@ const app = new Hono<{ Variables: Vars }>()
       extraAmountTzs,
       clientFeeTzs,
       amountToFundTzs,
-      status: "PendingPayment",
+      status: "PendingSupplierAcceptance",
+      supplierResponse: "Pending",
       dueDate: contract.endDate, // must clear before current end date
     });
-    await db.update(contracts).set({ extensionStatus: "AwaitingPayment" }).where(eq(contracts.id, cid));
+    await db.update(contracts).set({ extensionStatus: "Requested" }).where(eq(contracts.id, cid));
     const staff = await db.select().from(profile).where(inArray(profile.role, ["key_account", "admin"]));
     await notifyMany([contract.supplierId, ...staff.map((s) => s.id)], {
       tenderId: contract.tenderId ?? "",
       subject: "Hire extension requested",
-      body: `The client requested a ${addedDays}-day extension on "${contract.title}". New end date ${newEndDate} pending payment of TZS ${amountToFundTzs.toLocaleString()} (incl. 5% fee).`,
+      body: `The client requested a ${addedDays}-day extension on "${contract.title}". New end date ${newEndDate}. Awaiting supplier acceptance.`,
     });
     return c.json({ ok: true, extension: { id: extId, addedDays, newEndDate, extraAmountTzs, clientFeeTzs, amountToFundTzs, dueDate: contract.endDate } }, 200);
   })
-  // client uploads TT proof for an extension → marks Paid, extends contract end date
+  // supplier accepts/declines the extension request. On accept, generate the
+  // extension-contract PDF and move to signatures.
+  .post("/contracts/:id/extend/:extId/respond", requireAuth, requireRole("supplier"), async (c) => {
+    const cid = c.req.param("id");
+    const extId = c.req.param("extId");
+    const p = c.get("profile")!;
+    const b = await c.req.json<{ accept: boolean; declineReason?: string }>();
+    const [contract] = await db.select().from(contracts).where(eq(contracts.id, cid)).limit(1);
+    if (!contract) return c.json({ error: "Contract not found" }, 404);
+    if (contract.supplierId !== p.id) return c.json({ error: "Forbidden" }, 403);
+    const [ext] = await db.select().from(extensions).where(and(eq(extensions.id, extId), eq(extensions.contractId, cid))).limit(1);
+    if (!ext) return c.json({ error: "Extension not found" }, 404);
+    if (ext.status !== "PendingSupplierAcceptance") return c.json({ error: "This extension is no longer awaiting your response." }, 400);
+
+    if (!b.accept) {
+      await db.update(extensions).set({ status: "Declined", supplierResponse: "Declined", declineReason: b.declineReason ?? "" }).where(eq(extensions.id, extId));
+      await db.update(contracts).set({ extensionStatus: "None" }).where(eq(contracts.id, cid));
+      await logNotification({
+        recipientProfileId: contract.clientId, tenderId: contract.tenderId ?? "",
+        subject: "Hire extension declined",
+        body: `The supplier declined your ${ext.addedDays}-day extension on "${contract.title}".${b.declineReason ? ` Reason: ${b.declineReason}` : ""}`,
+      });
+      return c.json({ ok: true }, 200);
+    }
+
+    // accept → generate the extension contract, persist as a document, await signatures
+    const doc = await issueExtensionContract({
+      contractId: cid, extensionId: extId, addedDays: ext.addedDays, newEndDate: ext.newEndDate,
+      extraAmountTzs: ext.extraAmountTzs, clientFeeTzs: ext.clientFeeTzs, amountToFundTzs: ext.amountToFundTzs, dueDate: ext.dueDate,
+    });
+    await db.update(extensions).set({ status: "AwaitingSignatures", supplierResponse: "Accepted", contractDocId: doc.id }).where(eq(extensions.id, extId));
+    await notifyMany([contract.clientId, contract.supplierId], {
+      tenderId: contract.tenderId ?? "",
+      subject: "Extension accepted — please sign",
+      body: `The extension contract for "${contract.title}" is ready. Both parties must e-sign (tick to agree) to proceed.`,
+    });
+    return c.json({ ok: true, contractDocId: doc.id }, 200);
+  })
+  // client OR supplier e-signs (ticks) the extension contract. When both signed,
+  // move to KAM activation.
+  .post("/contracts/:id/extend/:extId/sign", requireAuth, requireRole("client", "supplier"), async (c) => {
+    const cid = c.req.param("id");
+    const extId = c.req.param("extId");
+    const p = c.get("profile")!;
+    const [contract] = await db.select().from(contracts).where(eq(contracts.id, cid)).limit(1);
+    if (!contract) return c.json({ error: "Contract not found" }, 404);
+    const isClient = contract.clientId === p.id;
+    const isSupplier = contract.supplierId === p.id;
+    if (!isClient && !isSupplier) return c.json({ error: "Forbidden" }, 403);
+    const [ext] = await db.select().from(extensions).where(and(eq(extensions.id, extId), eq(extensions.contractId, cid))).limit(1);
+    if (!ext) return c.json({ error: "Extension not found" }, 404);
+    if (ext.status !== "AwaitingSignatures") return c.json({ error: "This extension is not awaiting signatures." }, 400);
+
+    const name = p.fullName || p.companyName || "Signatory";
+    const now = new Date();
+    const patch: Partial<typeof extensions.$inferInsert> = isClient
+      ? { clientSignedName: name, clientSignedAt: now }
+      : { supplierSignedName: name, supplierSignedAt: now };
+    await db.update(extensions).set(patch).where(eq(extensions.id, extId));
+
+    const clientDone = isClient ? true : !!ext.clientSignedAt;
+    const supplierDone = isSupplier ? true : !!ext.supplierSignedAt;
+    if (clientDone && supplierDone) {
+      await db.update(extensions).set({ status: "AwaitingKamActivation" }).where(eq(extensions.id, extId));
+      const staff = await db.select().from(profile).where(inArray(profile.role, ["key_account", "admin"]));
+      await notifyMany(staff.map((s) => s.id), {
+        tenderId: contract.tenderId ?? "",
+        subject: "Extension signed — activate payment",
+        body: `Both parties signed the extension on "${contract.title}". Activate the payment gateway to let the client fund it.`,
+      });
+    }
+    return c.json({ ok: true, bothSigned: clientDone && supplierDone }, 200);
+  })
+  // KAM/admin activates the payment gateway for a signed extension.
+  .post("/contracts/:id/extend/:extId/activate", requireAuth, requireRole("key_account", "admin"), async (c) => {
+    const cid = c.req.param("id");
+    const extId = c.req.param("extId");
+    const [contract] = await db.select().from(contracts).where(eq(contracts.id, cid)).limit(1);
+    if (!contract) return c.json({ error: "Contract not found" }, 404);
+    const [ext] = await db.select().from(extensions).where(and(eq(extensions.id, extId), eq(extensions.contractId, cid))).limit(1);
+    if (!ext) return c.json({ error: "Extension not found" }, 404);
+    if (ext.status !== "AwaitingKamActivation") return c.json({ error: "This extension is not ready for activation." }, 400);
+    await db.update(extensions).set({ status: "PendingPayment" }).where(eq(extensions.id, extId));
+    await db.update(contracts).set({ extensionStatus: "AwaitingPayment" }).where(eq(contracts.id, cid));
+    await logNotification({
+      recipientProfileId: contract.clientId, tenderId: contract.tenderId ?? "",
+      subject: "Extension payment open",
+      body: `The payment gateway for your extension on "${contract.title}" is open. Fund TZS ${ext.amountToFundTzs.toLocaleString()} before ${ext.dueDate}.`,
+    });
+    return c.json({ ok: true }, 200);
+  })
+  // client funds the extension (back-office, no upload) → pending confirmation.
+  // Admin/KAM then confirms escrow secured via the confirm-extension route.
   .post("/contracts/:id/extend/:extId/pay", requireAuth, requireRole("client"), async (c) => {
     const cid = c.req.param("id");
     const extId = c.req.param("extId");
     const p = c.get("profile")!;
-    const b = await c.req.json<{ paymentProofUrl?: string }>();
     const [contract] = await db.select().from(contracts).where(eq(contracts.id, cid)).limit(1);
     if (!contract) return c.json({ error: "Contract not found" }, 404);
     if (contract.clientId !== p.id) return c.json({ error: "Forbidden" }, 403);
     const [ext] = await db.select().from(extensions).where(and(eq(extensions.id, extId), eq(extensions.contractId, cid))).limit(1);
     if (!ext) return c.json({ error: "Extension not found" }, 404);
-    if (ext.status === "Paid") return c.json({ error: "Already paid." }, 400);
-    if (ext.status === "Lapsed") return c.json({ error: "This extension lapsed and can no longer be paid." }, 400);
+    if (ext.status === "Paid") return c.json({ error: "Already funded." }, 400);
+    if (ext.status === "Lapsed") return c.json({ error: "This extension lapsed and can no longer be funded." }, 400);
+    if (ext.status !== "PendingPayment") return c.json({ error: "This extension is not open for payment yet." }, 400);
 
-    await db.update(extensions).set({ status: "Paid", paymentProofUrl: b.paymentProofUrl ?? "" }).where(eq(extensions.id, extId));
-    // extend the contract: new end date, add funded amount to escrow balance
+    await db.update(extensions).set({ status: "PaymentPendingConfirmation" }).where(eq(extensions.id, extId));
+    const staff = await db.select().from(profile).where(inArray(profile.role, ["key_account", "admin"]));
+    await notifyMany(staff.map((s) => s.id), {
+      tenderId: contract.tenderId ?? "",
+      subject: "Extension payment cleared — confirm escrow",
+      body: `The client cleared the extension payment on "${contract.title}". Confirm escrow secured to extend the hire.`,
+    });
+    return c.json({ ok: true }, 200);
+  })
+  // Admin/KAM confirms the extension escrow is secured (back-office). Extends the
+  // contract end date, tops up escrow, and issues extension payment proofs.
+  .post("/contracts/:id/extend/:extId/confirm", requireAuth, requireRole("key_account", "admin"), async (c) => {
+    const cid = c.req.param("id");
+    const extId = c.req.param("extId");
+    const [contract] = await db.select().from(contracts).where(eq(contracts.id, cid)).limit(1);
+    if (!contract) return c.json({ error: "Contract not found" }, 404);
+    const [ext] = await db.select().from(extensions).where(and(eq(extensions.id, extId), eq(extensions.contractId, cid))).limit(1);
+    if (!ext) return c.json({ error: "Extension not found" }, 404);
+    if (ext.status === "Paid") return c.json({ error: "Already confirmed." }, 400);
+    if (ext.status !== "PaymentPendingConfirmation" && ext.status !== "PendingPayment") {
+      return c.json({ error: "This extension is not awaiting escrow confirmation." }, 400);
+    }
+    await db.update(extensions).set({ status: "Paid" }).where(eq(extensions.id, extId));
     await db
       .update(contracts)
       .set({
         endDate: ext.newEndDate,
         extensionStatus: "Extended",
-        reminderSentAt: "", // reset so the new period can trigger its own reminder
+        reminderSentAt: "",
         totalEscrowBalanceTzs: contract.totalEscrowBalanceTzs + ext.amountToFundTzs,
       })
       .where(eq(contracts.id, cid));
-    await logNotification({
-      recipientProfileId: contract.supplierId,
-      tenderId: contract.tenderId ?? "",
-      subject: "Hire extension confirmed",
-      body: `Extension paid. "${contract.title}" now runs through ${ext.newEndDate}.`,
-    });
+    try {
+      await issueExtensionProofs({ contractId: cid, extensionId: extId, extraAmountTzs: ext.extraAmountTzs, clientFeeTzs: ext.clientFeeTzs, amountToFundTzs: ext.amountToFundTzs });
+    } catch (err) {
+      console.warn("[extend/confirm] issueExtensionProofs failed:", (err as Error)?.message);
+    }
     return c.json({ ok: true }, 200);
   })
   .get("/contracts/:id/extensions", requireAuth, async (c) => {

@@ -125,7 +125,7 @@ function InspectJob({ id, me }: { id: string; me: Me }) {
 
   if (q.isLoading || !q.data?.tender) return <div className="p-6 text-slate-500">Loading…</div>;
   const { tender: t, documents, inspections } = q.data;
-  const machineDocs = documents.filter((d: any) => d.kind === "MachineDoc" || d.kind === "SignedAgreement");
+  const machineDocs = documents.filter((d: any) => ["MachineDoc", "SignedAgreement", "OperatorId", "OperatorLicence"].includes(d.kind));
   // latest report for this tender (most recent)
   const report = (inspections ?? [])[0];
   const submitted = report?.reportStatus === "Submitted";

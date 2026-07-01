@@ -182,11 +182,9 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
   const baseValue = t.flatFairPriceTzs * t.unitsNeeded;
   const escrowAmt = baseValue + Math.round(baseValue * 0.05);
   const permitDocs = documents.filter((d: any) => d.kind === "Permit");
-  const ttDocs = documents.filter((d: any) => d.kind === "TTProof");
   const pendingReport = (inspections ?? []).find((i: any) => i.reportStatus === "Submitted");
 
   const permitsAllVerified = permitDocs.length > 0 && permitDocs.every((d: any) => d.verifiedBy);
-  const ttAllVerified = ttDocs.length > 0 && ttDocs.every((d: any) => d.verifiedBy);
 
   return (
     <div className="p-6">
@@ -235,14 +233,13 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
           )}
           {stage === "TTUploaded" && (
             <Card className="border-amber-600 p-5">
-              <SectionTitle sub="Verify the payment proof, then confirm the escrow funding.">Confirm payment</SectionTitle>
+              <SectionTitle sub="The client cleared the payment. Confirm escrow is secured — we generate and email payment proofs to both parties, and the job advances.">Confirm escrow secured</SectionTitle>
               <div className="mb-3 flex items-center justify-between rounded-md border border-navy-600 bg-navy-900 p-3 text-sm">
-                <span className="text-slate-400">Escrow to confirm (held by AFRIGEN Link)</span>
+                <span className="text-slate-400">Escrow to confirm (monitored by AFRIGEN Link)</span>
                 <span className="tnum font-display font-semibold text-amber-500">{tzs(escrowAmt)}</span>
               </div>
-              <DocList docs={ttDocs} onVerify={(d) => verifyDoc.mutate(d)} />
-              <Button className="mt-3" variant="amber" disabled={!ttAllVerified || advance.isPending} onClick={() => advance.mutate("tt-confirmed")}>
-                {ttAllVerified ? "Confirm payment received" : "Verify payment proof first"}
+              <Button className="mt-3" variant="amber" disabled={advance.isPending} onClick={() => advance.mutate("tt-confirmed")}>
+                {advance.isPending ? "Working…" : "Confirm escrow secured"}
               </Button>
               {advance.error && <p className="mt-2 text-xs text-bad">{(advance.error as Error).message}</p>}
             </Card>
@@ -269,6 +266,10 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
             )}
           </Card>
 
+          {contracts.filter((c: any) => c.dailyRateTzs > 0).map((c: any) => (
+            <KamExtensionCard key={c.id} contract={c} onDone={refresh} />
+          ))}
+
           {documents.length > 0 && (
             <Card className="p-5">
               <div className="mb-3 text-[11px] uppercase tracking-wider text-slate-500">Documents</div>
@@ -289,6 +290,44 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/** KAM view of a machinery hire extension — activate the payment gateway once both parties sign, then confirm escrow after the client funds. */
+function KamExtensionCard({ contract, onDone }: { contract: any; onDone: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const exq = useQuery({ queryKey: ["kam-extensions", contract.id], queryFn: () => TenderAPI.getExtensions(contract.id).then((r) => r.extensions), refetchInterval: 4000 });
+  const exts = exq.data ?? [];
+  const active = exts.find((e: any) => !["Declined", "Lapsed", "Paid"].includes(e.status));
+  const refresh = () => { exq.refetch(); onDone(); };
+  const run = async (fn: () => Promise<any>) => {
+    setBusy(true); setErr("");
+    try { await fn(); refresh(); }
+    catch (e) { setErr((e as Error).message); }
+    finally { setBusy(false); }
+  };
+  if (!active) return null;
+  return (
+    <Card className="border-amber-600 p-5">
+      <SectionTitle sub={`${contract.supplierName} · +${active.addedDays} days → ${active.newEndDate}`}>Hire extension</SectionTitle>
+      <div className="mb-3 flex items-center justify-between rounded-md border border-navy-600 bg-navy-900 p-3 text-sm">
+        <span className="text-slate-400">Extension to fund (incl. 5%)</span>
+        <span className="tnum font-display font-semibold text-amber-500">{tzs(active.amountToFundTzs)}</span>
+      </div>
+      {active.status === "PendingSupplierAcceptance" && <div className="text-xs text-slate-400">Awaiting supplier acceptance.</div>}
+      {active.status === "AwaitingSignatures" && (
+        <div className="text-xs text-slate-400">Awaiting signatures — Client: {active.clientSignedAt ? "signed" : "pending"} · Supplier: {active.supplierSignedAt ? "signed" : "pending"}.</div>
+      )}
+      {active.status === "AwaitingKamActivation" && (
+        <Button variant="amber" disabled={busy} onClick={() => run(() => TenderAPI.extendActivate(contract.id, active.id))}>{busy ? "Working…" : "Activate payment gateway"}</Button>
+      )}
+      {active.status === "PendingPayment" && <div className="text-xs text-slate-400">Payment gateway open — awaiting the client to clear the payment.</div>}
+      {active.status === "PaymentPendingConfirmation" && (
+        <Button variant="amber" disabled={busy} onClick={() => run(() => TenderAPI.confirmExtension(contract.id, active.id))}>{busy ? "Working…" : "Confirm escrow secured"}</Button>
+      )}
+      {err && <p className="mt-2 text-xs text-bad">{err}</p>}
+    </Card>
   );
 }
 

@@ -124,11 +124,10 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
   const escrowAmt = baseValue + Math.round(baseValue * 0.05); // value + 5% client fee
   const nguzoRevenue = Math.round(baseValue * 0.1); // 10% total take
   const permitDocs = documents.filter((d: any) => d.kind === "Permit");
-  const ttDoc = documents.find((d: any) => d.kind === "TTProof");
 
   const adminAction =
     stage === "PermitsUploaded" ? { step: "permits-verified", label: "Verify permits & release", hint: "Confirm the uploaded permits are valid." }
-    : stage === "TTUploaded" ? { step: "tt-confirmed", label: "Confirm payment received", hint: "Confirm the TT proof — escrow is recorded as held by AFRIGEN Link." }
+    : stage === "TTUploaded" ? { step: "tt-confirmed", label: "Confirm escrow secured", hint: "The client cleared the payment. Confirm escrow is secured — we generate and email payment proofs to both parties, and the job advances." }
     : stage === "TTConfirmed" ? { step: "execute", label: "Approve to execute", hint: "Authorise the supplier and field force to begin execution." }
     : null;
 
@@ -208,7 +207,7 @@ function JobDetail({ id, me }: { id: string; me: Me }) {
                     <span className="text-slate-300">{d.label || d.kind} <span className="text-[11px] text-slate-500">· {d.kind}</span></span>
                     <span className="flex items-center gap-2">
                       {d.url && <a href={d.url} target="_blank" rel="noreferrer" className="text-xs text-amber-500 hover:underline">View ↗</a>}
-                      {!d.verifiedBy && (d.kind === "Permit" || d.kind === "TTProof") && (
+                      {!d.verifiedBy && d.kind === "Permit" && (
                         <button onClick={() => verifyDoc.mutate(d.id)} className="text-[11px] text-slate-400 hover:text-good">mark verified</button>
                       )}
                       {d.verifiedBy && <span className="text-[11px] text-good">verified</span>}

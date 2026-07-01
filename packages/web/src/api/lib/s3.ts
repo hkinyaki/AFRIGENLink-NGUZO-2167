@@ -36,6 +36,23 @@ export function presignPut(key: string, contentType: string) {
 export { MAX_UPLOAD_BYTES };
 
 /**
+ * Server-side direct upload of an in-memory buffer (e.g. a generated PDF).
+ * Returns the stored object key so a `documents` row can reference it and
+ * `presignGet` can later yield a short-lived View URL.
+ */
+export async function uploadBuffer(key: string, body: Uint8Array | Buffer, contentType: string) {
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: BUCKET,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+    })
+  );
+  return key;
+}
+
+/**
  * Presigned GET — short-lived read URL for an uploaded object.
  * Forces an attachment disposition so a malicious uploaded HTML/SVG can't be
  * rendered inline in the user's session origin.

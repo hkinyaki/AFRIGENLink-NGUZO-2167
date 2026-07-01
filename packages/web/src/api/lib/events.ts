@@ -72,6 +72,8 @@ export async function logNotification(opts: {
   channel?: "email" | "sms";
   subject: string;
   body: string;
+  /** Optional file attachments (e.g. generated PDF proofs), buffer content. */
+  attachments?: { filename: string; content: Buffer | Uint8Array }[];
 }) {
   if (!opts.recipientProfileId) return;
   const ntfId = id("ntf");
@@ -89,6 +91,9 @@ export async function logNotification(opts: {
             to,
             subject: `AFRIGEN Link — ${opts.subject}`,
             html: emailHtml(opts.subject, opts.body),
+            ...(opts.attachments?.length
+              ? { attachments: opts.attachments.map((a) => ({ filename: a.filename, content: Buffer.from(a.content) })) }
+              : {}),
           });
           status = "Sent";
         }
@@ -113,7 +118,7 @@ export async function logNotification(opts: {
 /** Notify several recipients at once with the same message. */
 export async function notifyMany(
   recipientProfileIds: string[],
-  msg: { tenderId?: string; subject: string; body: string; channel?: "email" | "sms" }
+  msg: { tenderId?: string; subject: string; body: string; channel?: "email" | "sms"; attachments?: { filename: string; content: Buffer | Uint8Array }[] }
 ) {
   const unique = [...new Set(recipientProfileIds.filter(Boolean))];
   for (const rid of unique) {
