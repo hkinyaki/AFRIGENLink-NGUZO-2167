@@ -9,7 +9,7 @@ import { AppShell, Icons, type NavItem } from "../components/shell";
 import { HelpDesk } from "../components/help-desk";
 import {
   Button, Card, Field, Input, Select, SectionTitle, StatusPill, Empty, KPIStat,
-  StageTracker, Timeline, MessageThread, FileUpload, ManagerCard, PaymentTracker,
+  StageTracker, Timeline, MessageThread, FileUpload, ManagerCard, PaymentTracker, contractRef,
 } from "../components/ui";
 
 const nav: NavItem[] = [
@@ -644,6 +644,7 @@ function FleetTable({ rows, openId, setOpenId }: { rows: any[]; openId: string; 
 function Ledger() {
   const q = useQuery({ queryKey: ["contracts"], queryFn: async () => (await (await api.contracts.$get()).json()).contracts });
   const revQ = useQuery({ queryKey: ["supplier-reversals"], queryFn: () => TenderAPI.listReversals().then((r) => r.reversals), refetchInterval: 10000 });
+  const [record, setRecord] = useState<any | null>(null);
   const rows = q.data ?? [];
   const reversals = (revQ.data ?? []).filter((r) => r.status === "Executed" && (r.supplierPenaltyTzs || r.transferFeeKeptTzs));
   const titleFor = (cid: string) => rows.find((c) => c.id === cid)?.title || cid;
@@ -671,6 +672,7 @@ function Ledger() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-navy-600 text-left text-[11px] uppercase tracking-wider text-slate-500">
+                <th className="px-4 py-3">Ref</th>
                 <th className="px-4 py-3">Contract</th>
                 <th className="px-4 py-3 text-right">Locked escrow</th>
                 <th className="px-4 py-3 text-right">Parts credit</th>
@@ -682,6 +684,9 @@ function Ledger() {
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id} className="border-b border-navy-700">
+                  <td className="px-4 py-3">
+                    <button onClick={() => setRecord(r)} className="tnum text-xs text-amber-500 hover:underline">{contractRef(r.id)}</button>
+                  </td>
                   <td className="px-4 py-3 text-slate-100">{r.title}</td>
                   <td className="px-4 py-3 text-right tnum text-slate-200">{tzs(r.totalEscrowBalanceTzs)}</td>
                   <td className={`px-4 py-3 text-right tnum ${r.emergencyCreditDeductedTzs ? "text-amber-500" : "text-slate-500"}`}>
@@ -705,7 +710,7 @@ function Ledger() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-navy-600 text-left text-[11px] uppercase tracking-wider text-slate-500">
-                  <th className="px-4 py-3">Contract</th><th className="px-4 py-3">Type</th>
+                  <th className="px-4 py-3">Ref</th><th className="px-4 py-3">Contract</th><th className="px-4 py-3">Type</th>
                   <th className="px-4 py-3 text-right">Penalty kept</th><th className="px-4 py-3 text-right">Transfer kept</th>
                   <th className="px-4 py-3 text-right">Net to you</th>
                 </tr>
@@ -713,6 +718,7 @@ function Ledger() {
               <tbody>
                 {reversals.map((r) => (
                   <tr key={r.id} className="border-b border-navy-700">
+                    <td className="px-4 py-3 tnum text-xs text-slate-400">{contractRef(r.contractId)}</td>
                     <td className="px-4 py-3 text-slate-100">{titleFor(r.contractId)}</td>
                     <td className="px-4 py-3 text-slate-300">{r.reason}</td>
                     <td className="px-4 py-3 text-right tnum text-slate-200">{r.supplierPenaltyTzs ? tzs(r.supplierPenaltyTzs) : "—"}</td>
@@ -725,6 +731,63 @@ function Ledger() {
           </Card>
         </div>
       )}
+      {record && <ContractRecordModal contract={record} onClose={() => setRecord(null)} onInvoice={downloadInvoice} />}
+    </div>
+  );
+}
+
+/** Full transaction record for one contract — details, settlement, spare orders, invoice. */
+function ContractRecordModal({ contract: r, onClose, onInvoice }: { contract: any; onClose: () => void; onInvoice: (id: string, r: any) => void }) {
+  const orders = useQuery({ queryKey: ["my-part-orders"], queryFn: () => PartsAPI.orders().then((res) => res.orders) });
+  const partsDebt = r.emergencyCreditDeductedTzs || 0;
+  const value = r.contractValueTzs || r.totalEscrowBalanceTzs || 0;
+  const fee = Math.round(value * 0.05);
+  const net = r.supplierPayoutTzs ?? Math.round(value * 0.95 - partsDebt);
+  const myOrders = (orders.data ?? []).filter((o: any) => o.contractId === r.id);
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+      <Card className="max-h-[88vh] w-full max-w-2xl overflow-y-auto p-6" onClick={(e: any) => e.stopPropagation()}>
+        <div className="mb-1 flex items-start justify-between">
+          <div>
+            <h3 className="font-display text-lg font-semibold text-slate-100">{r.title}</h3>
+            <div className="tnum text-[11px] uppercase tracking-wider text-amber-500">{contractRef(r.id)}</div>
+          </div>
+          <StatusPill status={r.milestoneStatus} />
+        </div>
+        <div className="mt-4 grid gap-2 rounded-md border border-navy-600 bg-navy-900 p-4 text-sm">
+          <div className="flex justify-between"><span className="text-slate-500">Route</span><span className="text-slate-200">{r.origin} → {r.destination}{r.routeClassification ? ` · ${r.routeClassification}` : ""}</span></div>
+          <div className="flex justify-between"><span className="text-slate-500">Locked escrow (monitored, not held)</span><span className="tnum text-slate-200">{tzs(r.totalEscrowBalanceTzs)}</span></div>
+        </div>
+        <div className="mt-4">
+          <div className="mb-2 text-[11px] uppercase tracking-wider text-slate-500">Settlement</div>
+          <div className="grid gap-2 rounded-md border border-navy-600 bg-navy-900 p-4 text-sm">
+            <div className="flex justify-between"><span className="text-slate-400">Contract value</span><span className="tnum text-slate-200">{tzs(value)}</span></div>
+            <div className="flex justify-between"><span className="text-slate-400">Service fee (5%, deducted at settlement)</span><span className="tnum text-slate-300">− {tzs(fee)}</span></div>
+            <div className="flex justify-between"><span className="text-slate-400">Emergency parts credit</span><span className={`tnum ${partsDebt ? "text-amber-500" : "text-slate-500"}`}>{partsDebt ? `− ${tzs(partsDebt)}` : "None"}</span></div>
+            <div className="flex justify-between border-t border-navy-700 pt-2 font-medium"><span className="text-slate-300">Net payout</span><span className="tnum text-good">{tzs(net)}</span></div>
+          </div>
+        </div>
+        <div className="mt-4">
+          <div className="mb-2 text-[11px] uppercase tracking-wider text-slate-500">Spare orders on this contract</div>
+          {myOrders.length === 0 ? <p className="text-sm text-slate-500">No spare orders on this contract.</p> : (
+            <div className="space-y-2">
+              {myOrders.map((o: any) => (
+                <div key={o.id} className="flex items-center justify-between rounded-md border border-navy-600 bg-navy-900 p-3 text-sm">
+                  <div>
+                    <div className="text-slate-100">{o.part?.partName ?? "Spare part"} <span className="text-[11px] text-slate-500">×{o.qty ?? 1}</span></div>
+                    <div className="text-[11px] text-slate-500">{o.deliverTo === "FieldAgent" ? "To field agent" : "To my team"}{o.waybillRef ? ` · ${o.courier} waybill ${o.waybillRef}` : ""}</div>
+                  </div>
+                  <StatusPill status={o.status} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="mt-5 flex items-center justify-end gap-2">
+          {r.milestoneStatus === "FundsDisbursed" && <Button variant="ghost" onClick={() => onInvoice(r.id, r)}>Invoice ↓</Button>}
+          <Button variant="amber" onClick={onClose}>Close</Button>
+        </div>
+      </Card>
     </div>
   );
 }
@@ -753,14 +816,33 @@ function SupplierPayout({ contract, onDone }: { contract: any; onDone: () => voi
   const [remarks, setRemarks] = useState("");
   const complete = useMutation({ mutationFn: () => TenderAPI.markComplete(contract.id, remarks), onSuccess: onDone });
   const canComplete = (!contract.payoutStatus || contract.payoutStatus === "None") && ["ActiveTransit", "BreakdownIncident"].includes(contract.milestoneStatus);
-  const net = contract.supplierPayoutTzs ?? Math.round((contract.contractValueTzs || contract.totalEscrowBalanceTzs || 0) * 0.95);
+  const value = contract.contractValueTzs || contract.totalEscrowBalanceTzs || 0;
+  const partsDebt = contract.emergencyCreditDeductedTzs || 0;
+  const net = contract.supplierPayoutTzs ?? Math.round(value * 0.95 - partsDebt);
   return (
     <Card className="p-5">
       <div className="mb-2 flex items-center justify-between">
-        <div className="font-medium text-slate-100">{contract.title}</div>
+        <div>
+          <div className="font-medium text-slate-100">{contract.title}</div>
+          <div className="tnum text-[11px] uppercase tracking-wider text-slate-500">{contractRef(contract.id)}</div>
+        </div>
         <StatusPill status={contract.payoutStatus === "Approved" ? "Settled" : contract.payoutStatus === "None" || !contract.payoutStatus ? "In progress" : "Payout in progress"} />
       </div>
-      <div className="mb-3 text-sm text-slate-400">Net payout (after 5% fee): <span className="tnum text-good">{tzs(net)}</span></div>
+      <div className="mb-3 grid grid-cols-3 gap-3 rounded-md border border-navy-600 bg-navy-900 p-3 text-sm">
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-slate-500">Contract value</div>
+          <div className="tnum text-slate-200">{tzs(value)}</div>
+        </div>
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-slate-500">Spare-parts debt</div>
+          <div className={`tnum ${partsDebt ? "text-amber-500" : "text-slate-500"}`}>{partsDebt ? `− ${tzs(partsDebt)}` : "None"}</div>
+        </div>
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-slate-500">Net payout</div>
+          <div className="tnum text-good">{tzs(net)}</div>
+        </div>
+      </div>
+      <p className="mb-3 text-[11px] text-slate-500">Net payout is your contract value less the 5% service fee deducted at settlement{partsDebt ? ", and any emergency spare-parts credit drawn against the monitored escrow" : ""}.</p>
       <div className="mb-3"><PaymentTracker payoutStatus={contract.payoutStatus} /></div>
       {canComplete ? (
         <div className="space-y-2 rounded-md border border-amber-600/40 bg-amber-bg/40 p-3">
@@ -784,23 +866,29 @@ function Breakdown({ me }: { me: Me }) {
   const qc = useQueryClient();
   const [contractId, setContractId] = useState("");
   const [query, setQuery] = useState("");
+  const [selectedPartId, setSelectedPartId] = useState("");
   const [deliverTo, setDeliverTo] = useState<"MachineSupplier" | "FieldAgent">("MachineSupplier");
   const [qty, setQty] = useState(1);
   const [receiverName, setReceiverName] = useState("");
   const [receiverDestination, setReceiverDestination] = useState("");
 
   const contracts = useQuery({ queryKey: ["contracts"], queryFn: async () => (await (await api.contracts.$get()).json()).contracts });
-  const parts = useQuery({ queryKey: ["parts-search", query], queryFn: () => PartsAPI.search(query).then((r) => r.parts) });
+  const parts = useQuery({ queryKey: ["parts-inventory"], queryFn: () => PartsAPI.search().then((r) => r.parts) });
   const orders = useQuery({ queryKey: ["my-part-orders"], queryFn: () => PartsAPI.orders().then((r) => r.orders), refetchInterval: 5000 });
   const request = useMutation({
     mutationFn: (partId: string) => PartsAPI.reportBreakdown(contractId, partId, { deliverTo, qty, receiverName, receiverDestination }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["my-part-orders"] }); qc.invalidateQueries({ queryKey: ["contracts"] }); setReceiverName(""); setReceiverDestination(""); setQty(1); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["my-part-orders"] }); qc.invalidateQueries({ queryKey: ["contracts"] }); setReceiverName(""); setReceiverDestination(""); setQty(1); setSelectedPartId(""); },
   });
 
   const activeContracts = (contracts.data ?? []).filter((c) => ["ActiveTransit", "BreakdownIncident"].includes(c.milestoneStatus));
   const selContract = activeContracts.find((c) => c.id === contractId);
   const escrowAvail = selContract ? selContract.totalEscrowBalanceTzs - selContract.emergencyCreditDeductedTzs : 0;
   const inStock = (parts.data ?? []).filter((p: any) => p.status !== "OutOfStock" && p.stockQty > 0);
+  const ql = query.trim().toLowerCase();
+  const filtered = ql
+    ? inStock.filter((p: any) => [p.partName, p.sku, p.compatibleModel].some((v: string) => (v || "").toLowerCase().includes(ql)))
+    : inStock;
+  const selectedPart = inStock.find((p: any) => p.id === selectedPartId);
 
   return (
     <div className="p-6">
@@ -838,21 +926,25 @@ function Breakdown({ me }: { me: Me }) {
               <Field label="Receiver name"><Input value={receiverName} onChange={(e) => setReceiverName(e.target.value)} placeholder="Who receives on site" /></Field>
               <Field label="Destination"><Input value={receiverDestination} onChange={(e) => setReceiverDestination(e.target.value)} placeholder="Site / yard / town" /></Field>
             </div>
-            <Field label="Search spare part by name or code"><Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="e.g. turbocharger, 320D, SKU…" /></Field>
-            <div className="space-y-2">
-              {inStock.length === 0 ? <p className="text-sm text-slate-500">No matching in-stock spares.</p> : inStock.map((p: any) => {
-                const total = p.retailCostTzs + p.logisticsHandlingFeeTzs;
-                return (
-                  <div key={p.id} className="flex items-center justify-between rounded-md border border-navy-600 bg-navy-900 p-3 text-sm">
-                    <div>
-                      <div className="text-slate-100">{p.partName} <span className="text-[11px] text-slate-500">{p.compatibleModel}</span></div>
-                      <div className="text-[11px] text-slate-500">Retail {tzs(p.retailCostTzs)} + handling {tzs(p.logisticsHandlingFeeTzs)} = {tzs(total)} · stock {p.stockQty}</div>
-                    </div>
-                    <Button variant="amber" disabled={!contractId || request.isPending} onClick={() => request.mutate(p.id)}>Approve order</Button>
-                  </div>
-                );
-              })}
-            </div>
+            <Field label="Filter the parts catalogue (optional)"><Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Type to narrow by name, code or model…" /></Field>
+            <Field label="Select spare part from inventory">
+              <Select value={selectedPartId} onChange={(e) => setSelectedPartId(e.target.value)}>
+                <option value="">{filtered.length === 0 ? "No matching in-stock spares" : "Choose a spare part…"}</option>
+                {filtered.map((p: any) => (
+                  <option key={p.id} value={p.id}>{p.partName} · {p.compatibleModel} · {tzs(p.retailCostTzs + p.logisticsHandlingFeeTzs)} · stock {p.stockQty}</option>
+                ))}
+              </Select>
+            </Field>
+            <p className="text-[11px] text-slate-500">Spares are drawn live from the parts suppliers' inventory. In-stock items only.</p>
+            {selectedPart && (
+              <div className="flex items-center justify-between rounded-md border border-amber-600/50 bg-navy-900 p-3 text-sm">
+                <div>
+                  <div className="text-slate-100">{selectedPart.partName} <span className="text-[11px] text-slate-500">{selectedPart.compatibleModel}{selectedPart.sku ? ` · ${selectedPart.sku}` : ""}</span></div>
+                  <div className="text-[11px] text-slate-500">Retail {tzs(selectedPart.retailCostTzs)} + handling {tzs(selectedPart.logisticsHandlingFeeTzs)} = {tzs(selectedPart.retailCostTzs + selectedPart.logisticsHandlingFeeTzs)} · stock {selectedPart.stockQty}</div>
+                </div>
+                <Button variant="amber" disabled={!contractId || request.isPending} onClick={() => request.mutate(selectedPart.id)}>Approve order</Button>
+              </div>
+            )}
             {request.error && <p className="text-xs text-bad">{(request.error as Error).message}</p>}
             {request.isSuccess && <p className="text-xs text-good">Request sent to your Key Account Manager.</p>}
           </div>
