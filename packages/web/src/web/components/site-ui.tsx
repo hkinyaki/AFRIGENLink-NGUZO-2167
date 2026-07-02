@@ -160,7 +160,7 @@ export function Lead({ children, className = "" }: { children: React.ReactNode; 
 
 export function CTASection({
   title = "Ready when you are.",
-  body = "Tell us what you need to move or rent. We'll take it from there — and we'll keep your money safe the whole way.",
+  body = "Tell us what you need to move or rent. We'll take it from there — funds monitored, not held, every step of the way.",
 }: {
   title?: string;
   body?: string;

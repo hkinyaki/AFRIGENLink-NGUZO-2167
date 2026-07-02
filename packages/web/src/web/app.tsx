@@ -83,8 +83,10 @@ function App() {
 
   let body: React.ReactNode;
 
-  if (onApp && isLoading) {
-    // only show the workspace loader when heading INTO the dashboard
+  if (onApp && session?.user && isLoading) {
+    // only show the workspace loader when a signed-in user is heading INTO the
+    // dashboard — never while logged out, or the 2FA challenge screen (which has
+    // no session yet) would be unmounted mid-flow and reset to the login form.
     body = <Splash label="Loading workspace…" />;
   } else if (onApp && session?.user && !me) {
     body = <Splash label="Preparing your account…" />;

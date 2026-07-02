@@ -155,7 +155,7 @@ export default function Auth() {
             You're in the right place.
           </h1>
           <p className="mt-4 text-sm leading-relaxed text-slate-400">
-            We keep your money safe, the equipment real, and a person on the ground when it matters.
+            We keep the equipment real, the paperwork honest, and a person on the ground when it matters.
             Funds monitored, not held. A flat 10% per deal — 5% from each side. Southern, Central and
             Northern corridors, Dar to Geita — one accountable ledger.
           </p>

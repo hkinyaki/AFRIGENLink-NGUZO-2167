@@ -2647,7 +2647,7 @@ const app = new Hono<{ Variables: Vars }>()
   })
 
   // ---- public contact form ----
-  .post("/contact", async (c) => {
+  .post("/contact", rateLimit({ windowMs: 60_000, max: 5, bucket: "contact" }), async (c) => {
     const b = await c.req.json<{
       name?: string; company?: string; email?: string; phone?: string; role?: string; message?: string;
     }>().catch(() => ({}));

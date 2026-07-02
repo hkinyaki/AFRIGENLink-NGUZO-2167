@@ -64,7 +64,7 @@ export function SiteFooter() {
               </span>
             </a>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-slate-400">
-              Cargo &amp; machinery coordination, secured. We keep the money safe, the equipment real,
+              Cargo &amp; machinery coordination, secured. Funds monitored, not held — the equipment real,
               and a person on the ground when it matters.
             </p>
             <a
